@@ -1,0 +1,170 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{mathpartir}
+\mprset{flushleft}
+\newcommand{\kw}[1]{\text{\textbf{#1}}}
+\newcommand{\Let}[3]{\kw{let}\, #1 = #2\, \kw{in}\, #3}
+\newcommand{\Fun}[2]{\kw{fun}\, #1 \Rightarrow #2}
+\newcommand{\App}[2]{#1\, #2}
+\newcommand{\Pair}[2]{(#1, #2)}
+\newcommand{\LetPair}[4]{\kw{let}\, (#1, #2) = #3\, \kw{in}\, #4}
+\newcommand{\Inl}[1]{\kw{left}(#1)}
+\newcommand{\Inr}[1]{\kw{right}(#1)}
+\newcommand{\Match}[5]{\kw{match}\, #1\, \kw{with}\, \Inl{#2} \Rightarrow #3 \mid \Inr{#4} \Rightarrow #5}
+\newcommand{\TFun}[2]{#1 \to #2}
+\newcommand{\TPair}[2]{#1 \times #2}
+\newcommand{\TSum}[2]{#1 + #2}
+\newcommand{\TUnit}{\kw{unit}}
+\newcommand{\TEmpty}{\kw{empty}}
+\newcommand{\UnitTerm}{\kw{unit}}
+\newcommand{\Absurd}[1]{\kw{absurd}\, #1}
+\newcommand{\judge}[3]{#1 \vdash #2 : #3}
+\newcommand{\Jud}[2]{\judge{\Gamma}{#1}{#2}}
+\newcommand{\leqto}{\mathrel{\leq_{\mathrm{to}}}}
+\newcommand{\leqin}{\mathrel{\leq_{\mathrm{in}}}}
+\newcommand{\mode}[1]{\textsc{#1}}
+
+\title{Mox Notes}
+\author{Jules Jacobs}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\paragraph{Expressions}
+
+\begin{flalign*}
+e &\mathrel{::=} {} && \text{-- expressions} &&\\
+ & \mid x \mid \Let{x}{e_1}{e_2} && \text{-- variables} &&\\
+ & \mid \UnitTerm \mid \Absurd{e}&& \text{-- unit and empty} &&\\
+ & \mid \App{e_1}{e_2} \mid \Fun{x}{e} && \text{-- functions} &&\\
+ & \mid \Pair{e_1}{e_2} \mid \LetPair{x_1}{x_2}{e_1}{e_2} && \text{-- pairs} &&\\
+ & \mid \Inl{e} \mid \Inr{e} \mid \Match{e}{x_1}{e_1}{x_2}{e_2} && \text{-- sums} &&
+\end{flalign*}
+
+\bigskip
+
+\paragraph{Types}
+
+\begin{flalign*}
+\tau &\mathrel{::=} {} &&&&\\
+ & \mid \alpha && \text{-- variables} &&\\
+ & \mid \TUnit \mid \TEmpty && \text{-- unit and empty} &&\\
+ & \mid \TFun{\tau_1}{\tau_2} && \text{-- functions} &&\\
+ & \mid \TPair{\tau_1}{\tau_2} && \text{-- pairs} &&\\
+ & \mid \TSum{\tau_1}{\tau_2} && \text{-- sums} &&
+\end{flalign*}
+
+\bigskip
+
+\paragraph{Typing Rules}\ \\
+
+\textit{Variables}
+\begin{mathpar}
+\inferrule
+  {(x : \tau) \in \Gamma}
+  {\Jud{x}{\tau}}
+\and
+\inferrule
+  {\Jud{e_1}{\tau_1} \\ \judge{\Gamma, x : \tau_1}{e_2}{\tau_2}}
+  {\Jud{\Let{x}{e_1}{e_2}}{\tau_2}}
+\end{mathpar}
+
+\vspace{0.5em}\textit{Unit and Empty}
+\begin{mathpar}
+\inferrule
+  {\ }
+  {\Jud{\UnitTerm}{\TUnit}}
+\and
+\inferrule
+  {\Jud{e}{\TEmpty}}
+  {\Jud{\Absurd{e}}{\tau}}
+\end{mathpar}
+
+\vspace{0.5em}\textit{Functions}
+\begin{mathpar}
+\inferrule
+  {\judge{\Gamma, x : \tau_1}{e}{\tau_2}}
+  {\Jud{\Fun{x}{e}}{\TFun{\tau_1}{\tau_2}}}
+\and
+\inferrule
+  {\Jud{e_1}{\TFun{\tau_1}{\tau_2}} \\ \Jud{e_2}{\tau_1}}
+  {\Jud{\App{e_1}{e_2}}{\tau_2}}
+\end{mathpar}
+
+\vspace{0.5em}\textit{Pairs}
+\begin{mathpar}
+\inferrule
+  {\Jud{e_1}{\tau_1} \\ \Jud{e_2}{\tau_2}}
+  {\Jud{\Pair{e_1}{e_2}}{\TPair{\tau_1}{\tau_2}}}
+\and
+\inferrule
+  {\Jud{e_1}{\TPair{\tau_1}{\tau_2}} \\ \judge{\Gamma, x_1 : \tau_1, x_2 : \tau_2}{e_2}{\tau}}
+  {\Jud{\LetPair{x_1}{x_2}{e_1}{e_2}}{\tau}}
+\end{mathpar}
+
+\vspace{0.5em}\textit{Sums}
+\begin{mathpar}
+\inferrule
+  {\Jud{e}{\tau_1}}
+  {\Jud{\Inl{e}}{\TSum{\tau_1}{\tau_2}}}
+\and
+\inferrule
+  {\Jud{e}{\tau_2}}
+  {\Jud{\Inr{e}}{\TSum{\tau_1}{\tau_2}}}
+\and
+\inferrule
+  {\Jud{e}{\TSum{\tau_1}{\tau_2}} \\ \judge{\Gamma, x_1 : \tau_1}{e_1}{\tau} \\ \judge{\Gamma, x_2 : \tau_2}{e_2}{\tau}}
+  {\Jud{\Match{e}{x_1}{e_1}{x_2}{e_2}}{\tau}}
+\end{mathpar}
+
+
+\paragraph{Modes}
+
+We distinguish two mode families—\emph{past} and \emph{future}.
+Each axis is ordered by the conversion relation~$\leqto$ (values that can be coerced ``to'' a weaker mode) and an in-placement relation~$\leqin$ (values that can live ``in'' a surrounding mode).
+For future modes the two orders coincide, whereas for past modes the in-placement relation reverses conversion.
+
+\medskip
+\noindent\textbf{Past axes ($p$)}
+\[
+\begin{alignedat}{2}
+\text{uniqueness:}&\quad \mode{unique} \leqto \mode{aliased}\\
+&\quad \mode{aliased} \leqin \mode{unique}\\[0.5ex]
+\text{contention:}&\quad \mode{uncontended} \leqto \mode{shared} \leqto \mode{contended}\\
+&\quad \mode{contended} \leqin \mode{shared} \leqin \mode{uncontended}
+\end{alignedat}
+\]
+
+\medskip
+\noindent\textbf{Future axes ($f$)}
+\[
+\begin{alignedat}{2}
+\text{areality:}&\quad \mode{global} \leqto \mode{regional} \leqto \mode{local}\\
+&\quad \mode{global} \leqin \mode{regional} \leqin \mode{local}\\[0.5ex]
+\text{linearity:}&\quad \mode{many} \leqto \mode{once}\\
+&\quad \mode{many} \leqin \mode{once}\\[0.5ex]
+\text{portability:}&\quad \mode{portable} \leqto \mode{non-portable}\\
+&\quad \mode{portable} \leqin \mode{non-portable}
+\end{alignedat}
+\]
+
+\noindent\emph{Example intuition.}
+If a value may be used many times, it is safe to coerce it to a value that may be used only once, hence $\mode{many} \leqto \mode{once}$.
+Conversely, values that can be used many times can be stored in containers that can only be used once, hence $\mode{many} \leqin \mode{once}$.
+Allowing the converse storage would be unsound: placing a one-time value inside a reusable container could expose it to multiple uses by copying the outer container.
+
+A uniquely referenced value can be coerced to an aliased value -- we simply forget that it was uniquely referenced -- hence $\mode{unique} \leqto \mode{aliased}$. It is also safe to store an aliased value inside a uniquely referenced structure, so $\mode{aliased} \leqin \mode{unique}$. Conversely, it is nonsensical to say that a value is uniquely referenced when it is stored in a container to which there exist multiple references.
+
+In summary, the guarantees along past axes can get stronger as one goes from an element to its container, and the restrictions along future axes also get stronger as one goes from an element to its container.
+Said differently, when we follow pointers from containers to their elements, the guarantees about the past may get weaker, and the restrictions on the future also get weaker.
+The flipping of the order stems from the fact that it's safe to \emph{forget} facts about the past whereas it's safe to \emph{add} restrictions on the future.
+
+\medskip                               
+We collect the past modes into the tuple $p = (\text{uniqueness}, \text{contention})$ and the future modes into $f = (\text{areality}, \text{linearity}, \text{portability})$, lifting $\leqto$ and $\leqin$ componentwise.
+A mode is then the pair $m = (p, f)$, with both relations lifted again to $m$.
+
+
+\end{document}
