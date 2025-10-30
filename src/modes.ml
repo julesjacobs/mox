@@ -1,105 +1,114 @@
-(** Mode lattice as described in tex/mox.tex. *)
+(** Mode lattice as described in tex/mox.tex, factored through reusable axis helpers. *)
 
-module Uniqueness = struct
-  type t = Unique | Aliased
+module type AXIS_SPEC = sig
+  type t
 
-  let all = [ Unique; Aliased ]
-  let default = Aliased
+  val order_to : t list
+  (** Increasing order for the conversion relation [\leqto]. *)
 
-  let rank_to = function Unique -> 0 | Aliased -> 1
-  let rank_in = function Aliased -> 0 | Unique -> 1
+  val order_in : t list
+  (** Increasing order for the in-placement relation [\leqin]. *)
 
-  let leq_to a b = rank_to a <= rank_to b
-  let leq_in a b = rank_in a <= rank_in b
-
-  let join_to a b = if rank_to a >= rank_to b then a else b
-  let meet_in a b = if rank_in a <= rank_in b then a else b
-
-  let to_string = function Unique -> "unique" | Aliased -> "aliased"
-  let to_short_string = function Unique -> "unique" | Aliased -> ""
+  val default : t
+  val show : t -> string
+  val equal : t -> t -> bool
 end
 
-module Contention = struct
+module Make_axis (Spec : AXIS_SPEC) = struct
+  type t = Spec.t
+
+  let all = Spec.order_to
+  let default = Spec.default
+
+  let rank order value =
+    let rec loop idx = function
+      | [] -> invalid_arg "Make_axis.rank: value not found in axis"
+      | x :: xs -> if Spec.equal value x then idx else loop (idx + 1) xs
+    in
+    loop 0 order
+
+  let leq order a b = rank order a <= rank order b
+  let join order a b = if rank order a >= rank order b then a else b
+  let meet order a b = if rank order a <= rank order b then a else b
+
+  let leq_to = leq Spec.order_to
+  let leq_in = leq Spec.order_in
+
+  let join_to = join Spec.order_to
+  let meet_to = meet Spec.order_to
+
+  let join_in = join Spec.order_in
+  let meet_in = meet Spec.order_in
+
+  let to_string = Spec.show
+  let to_short_string value = if Spec.equal value Spec.default then "" else Spec.show value
+end
+
+module Uniqueness_spec = struct
+  type t = Unique | Aliased
+
+  let order_to = [ Unique; Aliased ]
+  let order_in = [ Aliased; Unique ]
+  let default = Aliased
+  let show = function Unique -> "unique" | Aliased -> "aliased"
+  let equal = ( = )
+end
+
+module Uniqueness = Make_axis (Uniqueness_spec)
+
+module Contention_spec = struct
   type t = Uncontended | Shared | Contended
 
-  let all = [ Uncontended; Shared; Contended ]
+  let order_to = [ Uncontended; Shared; Contended ]
+  let order_in = [ Contended; Shared; Uncontended ]
   let default = Uncontended
-
-  let rank_to = function Uncontended -> 0 | Shared -> 1 | Contended -> 2
-  let rank_in = function Contended -> 0 | Shared -> 1 | Uncontended -> 2
-
-  let leq_to a b = rank_to a <= rank_to b
-  let leq_in a b = rank_in a <= rank_in b
-
-  let join_to a b = if rank_to a >= rank_to b then a else b
-  let meet_in a b = if rank_in a <= rank_in b then a else b
-
-  let to_string = function
+  let show = function
     | Uncontended -> "uncontended"
     | Shared -> "shared"
     | Contended -> "contended"
-  let to_short_string = function
-    | Uncontended -> ""
-    | Shared -> "shared"
-    | Contended -> "contended"
+  let equal = ( = )
 end
 
-module Linearity = struct
+module Contention = Make_axis (Contention_spec)
+
+module Linearity_spec = struct
   type t = Many | Once
 
-  let all = [ Many; Once ]
+  let order_to = [ Many; Once ]
+  let order_in = order_to
   let default = Many
-
-  let rank = function Many -> 0 | Once -> 1
-
-  let leq_to a b = rank a <= rank b
-  let leq_in = leq_to
-
-  let join_to a b = if rank a >= rank b then a else b
-  let meet_to a b = if rank a <= rank b then a else b
-
-  let to_string = function Many -> "many" | Once -> "once"
-  let to_short_string = function Many -> "" | Once -> "once"
+  let show = function Many -> "many" | Once -> "once"
+  let equal = ( = )
 end
 
-module Portability = struct
+module Linearity = Make_axis (Linearity_spec)
+
+module Portability_spec = struct
   type t = Portable | NonPortable
 
-  let all = [ Portable; NonPortable ]
+  let order_to = [ Portable; NonPortable ]
+  let order_in = order_to
   let default = NonPortable
-
-  let rank = function Portable -> 0 | NonPortable -> 1
-
-  let leq_to a b = rank a <= rank b
-  let leq_in = leq_to
-
-  let join_to a b = if rank a >= rank b then a else b
-  let meet_to a b = if rank a <= rank b then a else b
-
-  let to_string = function Portable -> "portable" | NonPortable -> "non-portable"
-  let to_short_string = function Portable -> "portable" | NonPortable -> ""
+  let show = function Portable -> "portable" | NonPortable -> "non-portable"
+  let equal = ( = )
 end
 
-module Areality = struct
+module Portability = Make_axis (Portability_spec)
+
+module Areality_spec = struct
   type t = Global | Regional | Local
 
-  let all = [ Global; Regional; Local ]
+  let order_to = [ Global; Regional; Local ]
+  let order_in = order_to
   let default = Global
-
-  let rank = function Global -> 0 | Regional -> 1 | Local -> 2
-
-  let leq_to a b = rank a <= rank b
-  let leq_in = leq_to
-
-  let join_to a b = if rank a >= rank b then a else b
-  let meet_to a b = if rank a <= rank b then a else b
-
-  let to_string = function Global -> "global" | Regional -> "regional" | Local -> "local"
-  let to_short_string = function
-    | Global -> ""
-    | Regional -> "regional"
-    | Local -> "local"
+  let show = function Global -> "global" | Regional -> "regional" | Local -> "local"
+  let equal = ( = )
 end
+
+module Areality = Make_axis (Areality_spec)
+
+let concat parts =
+  parts |> List.filter (fun s -> s <> "") |> String.concat " "
 
 module Past = struct
   type t = { uniqueness : Uniqueness.t; contention : Contention.t }
@@ -121,14 +130,22 @@ module Past = struct
     { uniqueness = Uniqueness.join_to a.uniqueness b.uniqueness;
       contention = Contention.join_to a.contention b.contention }
 
+  let meet_to a b =
+    { uniqueness = Uniqueness.meet_to a.uniqueness b.uniqueness;
+      contention = Contention.meet_to a.contention b.contention }
+
   let meet_in a b =
     { uniqueness = Uniqueness.meet_in a.uniqueness b.uniqueness;
       contention = Contention.meet_in a.contention b.contention }
+
+  let join_in a b =
+    { uniqueness = Uniqueness.join_in a.uniqueness b.uniqueness;
+      contention = Contention.join_in a.contention b.contention }
+
   let to_string t =
-    [ Uniqueness.to_short_string t.uniqueness;
-      Contention.to_short_string t.contention ]
-    |> List.filter (fun s -> String.length s > 0)
-    |> String.concat " "
+    concat
+      [ Uniqueness.to_short_string t.uniqueness;
+        Contention.to_short_string t.contention ]
 end
 
 module Future = struct
@@ -160,12 +177,22 @@ module Future = struct
     { linearity = Linearity.meet_to a.linearity b.linearity;
       portability = Portability.meet_to a.portability b.portability;
       areality = Areality.meet_to a.areality b.areality }
+
+  let meet_in a b =
+    { linearity = Linearity.meet_in a.linearity b.linearity;
+      portability = Portability.meet_in a.portability b.portability;
+      areality = Areality.meet_in a.areality b.areality }
+
+  let join_in a b =
+    { linearity = Linearity.join_in a.linearity b.linearity;
+      portability = Portability.join_in a.portability b.portability;
+      areality = Areality.join_in a.areality b.areality }
+
   let to_string t =
-    [ Areality.to_short_string t.areality;
-      Linearity.to_short_string t.linearity;
-      Portability.to_short_string t.portability ]
-    |> List.filter (fun s -> String.length s > 0)
-    |> String.concat " "
+    concat
+      [ Areality.to_short_string t.areality;
+        Linearity.to_short_string t.linearity;
+        Portability.to_short_string t.portability ]
 end
 
 module Mode = struct
@@ -181,12 +208,14 @@ module Mode = struct
   let join_to a b =
     { past = Past.join_to a.past b.past; future = Future.join_to a.future b.future }
 
+  let meet_to a b =
+    { past = Past.meet_to a.past b.past; future = Future.meet_to a.future b.future }
+
   let meet_in a b =
-    { past = Past.meet_in a.past b.past; future = Future.meet_to a.future b.future }
-  let to_string t =
-    let parts =
-      [ Past.to_string t.past; Future.to_string t.future ]
-      |> List.filter (fun s -> String.length s > 0)
-    in
-    String.concat " " parts
+    { past = Past.meet_in a.past b.past; future = Future.meet_in a.future b.future }
+
+  let join_in a b =
+    { past = Past.join_in a.past b.past; future = Future.join_in a.future b.future }
+
+  let to_string t = concat [ Past.to_string t.past; Future.to_string t.future ]
 end
