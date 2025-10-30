@@ -1,6 +1,6 @@
 (library
  (name mox)
- (modules ast lexer parser pretty typechecker expect)
+ (modules ast lexer parser pretty typechecker expect modes)
  (wrapped false)
  (flags (:standard -w -9-27-32-33-37-39)))
 
