@@ -1,0 +1,9 @@
+match (left(unit) : (unit + empty)) with left(x) => x | right(y) => ((absurd y) : unit)
+> unit
+
+match (right(unit) : (empty + unit)) with left(x) => ((absurd x) : unit) | right(y) => y
+> unit
+
+let make = ((fun x => (left(x) : (unit + empty))) : (unit -> (unit + empty))) in
+match (make unit) with left(x) => x | right(y) => ((absurd y) : unit)
+> unit

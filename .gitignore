@@ -1,3 +1,9 @@
+# Dune build output
+/_build/
+
+# OCaml tooling
+/.merlin
+
 # LaTeX build artifacts
 *.aux
 *.bbl

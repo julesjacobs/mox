@@ -1,0 +1,24 @@
+unit
+> unit
+
+let x = unit in x
+> unit
+
+((fun x => x) : (unit -> unit)) unit
+> unit
+
+let pair = (unit, unit) in
+let (x, y) = pair in x
+> unit
+
+((fun p => let (x, y) = p in y) : (unit * unit -> unit)) (unit, unit)
+> unit
+
+((fun x => absurd x) : (empty -> unit))
+> (empty -> unit)
+
+(left(unit) : (unit + empty))
+> (unit + empty)
+
+(right(unit) : (empty + unit))
+> (empty + unit)

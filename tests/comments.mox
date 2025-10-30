@@ -1,0 +1,8 @@
+(* leading comment *)
+unit
+> unit
+
+let x = unit in
+  (* inside let body comment *)
+  x
+> unit

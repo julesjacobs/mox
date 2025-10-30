@@ -1,0 +1,23 @@
+left(unit)
+> error: Cannot infer the type of left; add a type annotation
+
+unit unit
+> error: Expected a function type, found unit
+
+let (x, y) = unit in x
+> error: Expected a pair type, found unit
+
+match unit with left(x) => x | right(y) => y
+> error: Expected a sum type, found unit
+
+let x = unit in (x : empty)
+> error: Type mismatch: expected empty, found unit
+
+x
+> error: Unbound variable x
+
+absurd unit
+> error: Cannot infer the type of absurd; add a type annotation
+
+((fun x => x) : (unit -> unit)) ((left(unit) : (unit + empty)))
+> error: Type mismatch: expected unit, found (unit + empty)
