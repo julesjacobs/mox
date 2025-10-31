@@ -90,21 +90,15 @@ let process_chunk ~filename chunk =
       | Typechecker.Mode_error msg -> PExpr (lines, Error msg)
 
 let render processed =
-  let rec aux acc = function
-    | [] -> List.rev acc
-    | PBlank line :: rest -> aux (line :: acc) rest
-    | PExpr (lines, expect) :: rest ->
-        let acc =
-          List.fold_left (fun acc line -> line :: acc) acc lines
-        in
-        let rendered =
-          match expect with
-          | Type ty -> "> " ^ ty
-          | Error msg -> "> error: " ^ msg
-        in
-        aux (rendered :: acc) rest
+  let expectation_to_string = function
+    | Type ty -> "> " ^ ty
+    | Error msg -> "> error: " ^ msg
   in
-  aux [] processed
+  let render_chunk = function
+    | PBlank line -> [ line ]
+    | PExpr (lines, expect) -> lines @ [ expectation_to_string expect ]
+  in
+  List.concat (List.map render_chunk processed)
 
 let process_lines ?(filename = "<tests>") lines =
   let chunks = parse_chunks lines in

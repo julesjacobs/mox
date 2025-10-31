@@ -47,9 +47,12 @@ module Make_axis (Spec : AXIS_SPEC) = struct
     | [] -> invalid_arg "Make_axis.bottom: empty order"
 
   let top order =
-    match order with
-    | [] -> invalid_arg "Make_axis.top: empty order"
-    | x :: xs -> List.fold_left (fun _ y -> y) x xs
+    let rec last = function
+      | [] -> invalid_arg "Make_axis.top: empty order"
+      | [ x ] -> x
+      | _ :: xs -> last xs
+    in
+    last order
 
   let bottom_to = bottom Spec.order_to
   let top_to = top Spec.order_to
