@@ -1,0 +1,6 @@
+(library
+ (name modes_expect)
+ (modules modes_expect)
+ (libraries mox)
+ (preprocess (pps ppx_expect))
+ (inline_tests))

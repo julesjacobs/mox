@@ -3,12 +3,13 @@ open Ast
 %}
 
 %token LET IN FUN MATCH WITH LEFT RIGHT ABSURD UNIT EMPTY
-%token LPAREN RPAREN COMMA EQUAL BAR ARROW FATARROW PLUS TIMES COLON
+%token LPAREN RPAREN LBRACKET RBRACKET COMMA EQUAL BAR ARROW FATARROW PLUS TIMES COLON
 %token <string> IDENT
 %token EOF
 
 %start <Ast.expr> expr_eof
 %start <Ast.ty> ty_eof
+%start <string list> modes_eof
 
 %left BAR
 %left PLUS
@@ -51,6 +52,16 @@ expr_atom:
 
 ty_eof:
   | ty EOF { $1 }
+
+modes_eof:
+  | mode_list EOF { $1 }
+
+mode_list:
+  | LBRACKET mode_items RBRACKET { $2 }
+
+mode_items:
+  | /* empty */ { [] }
+  | IDENT mode_items { $1 :: $2 }
 
 ty:
   | ty_sum { $1 }

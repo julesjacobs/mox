@@ -42,6 +42,25 @@ module Make_axis (Spec : AXIS_SPEC) = struct
 
   let to_string = Spec.show
   let to_short_string value = if Spec.equal value Spec.default then "" else Spec.show value
+
+  let of_string name =
+    List.find_opt (fun v -> String.equal (Spec.show v) name) Spec.order_to
+
+  let extract names =
+    let rec aux seen acc = function
+      | [] -> (seen, List.rev acc)
+      | candidate :: rest -> (
+          match of_string candidate with
+          | Some value ->
+              if Option.is_some seen then
+                invalid_arg
+                  (Printf.sprintf "Mode %s provided multiple times" (Spec.show value));
+              aux (Some value) acc rest
+          | None -> aux seen (candidate :: acc) rest)
+    in
+    match aux None [] names with
+    | Some value, remaining -> (value, remaining)
+    | None, remaining -> (Spec.default, remaining)
 end
 
 module Uniqueness_spec = struct
@@ -142,6 +161,11 @@ module Past = struct
     { uniqueness = Uniqueness.join_in a.uniqueness b.uniqueness;
       contention = Contention.join_in a.contention b.contention }
 
+  let extract names =
+    let uniqueness, names = Uniqueness.extract names in
+    let contention, names = Contention.extract names in
+    ({ uniqueness; contention }, names)
+
   let to_string t =
     concat
       [ Uniqueness.to_short_string t.uniqueness;
@@ -188,6 +212,12 @@ module Future = struct
       portability = Portability.join_in a.portability b.portability;
       areality = Areality.join_in a.areality b.areality }
 
+  let extract names =
+    let areality, names = Areality.extract names in
+    let linearity, names = Linearity.extract names in
+    let portability, names = Portability.extract names in
+    ({ areality; linearity; portability }, names)
+
   let to_string t =
     concat
       [ Areality.to_short_string t.areality;
@@ -216,6 +246,19 @@ module Mode = struct
 
   let join_in a b =
     { past = Past.join_in a.past b.past; future = Future.join_in a.future b.future }
+
+  let extract names =
+    let past, names = Past.extract names in
+    let future, names = Future.extract names in
+    ({ past; future }, names)
+
+  let of_strings names =
+    let mode, remaining = extract names in
+    if remaining = [] then mode
+    else
+      invalid_arg
+        (Printf.sprintf "Unrecognised mode names: %s"
+           (String.concat ", " remaining))
 
   let to_string t = concat [ Past.to_string t.past; Future.to_string t.future ]
 end

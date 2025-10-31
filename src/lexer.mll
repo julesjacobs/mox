@@ -31,6 +31,8 @@ rule token = parse
   | ","                  { COMMA }
   | "="                  { EQUAL }
   | "|"                  { BAR }
+  | "["                  { LBRACKET }
+  | "]"                  { RBRACKET }
   | ":"                  { COLON }
   | "=>"                 { FATARROW }
   | "->"                 { ARROW }
