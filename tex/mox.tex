@@ -12,9 +12,22 @@
 \newcommand{\Inl}[1]{\kw{left}(#1)}
 \newcommand{\Inr}[1]{\kw{right}(#1)}
 \newcommand{\Match}[5]{\kw{match}\, #1\, \kw{with}\, \Inl{#2} \Rightarrow #3 \mid \Inr{#4} \Rightarrow #5}
-\newcommand{\TFun}[2]{#1 \to #2}
-\newcommand{\TPair}[2]{#1 \times #2}
-\newcommand{\TSum}[2]{#1 + #2}
+\newcommand{\AnnotArrow}[1]{%
+  \if\relax\detokenize{#1}\relax
+    \to
+  \else
+    \xrightarrow[\AnnotBelow{#1}]{}
+  \fi}
+\newcommand{\AnnotBinop}[2]{%
+  \if\relax\detokenize{#2}\relax
+    #1
+  \else
+    \underset{\AnnotBelow{#2}}{#1}
+  \fi}
+\newcommand{\AnnotBelow}[1]{\smash{\raisebox{0.25ex}{$\scriptstyle #1$}}}
+\newcommand{\TFun}[3][]{#2 \mathrel{\AnnotArrow{#1}} #3}
+\newcommand{\TPair}[3][]{#2 \mathbin{\AnnotBinop{\times}{#1}} #3}
+\newcommand{\TSum}[3][]{#2 \mathbin{\AnnotBinop{+}{#1}} #3}
 \newcommand{\TUnit}{\kw{unit}}
 \newcommand{\TEmpty}{\kw{empty}}
 \newcommand{\UnitTerm}{\kw{unit}}
@@ -93,16 +106,54 @@ e &\mathrel{::=} {} && \text{-- expressions} &&\\
 
 \bigskip
 
+
 \paragraph{Types}
 
 \begin{flalign*}
 \tau &\mathrel{::=} {} &&&&\\
- & \mid \alpha && \text{-- variables} &&\\
  & \mid \TUnit \mid \TEmpty && \text{-- unit and empty} &&\\
- & \mid \TFun{\tau_1}{\tau_2} && \text{-- functions} &&\\
- & \mid \TPair{\tau_1}{\tau_2} && \text{-- pairs} &&\\
- & \mid \TSum{\tau_1}{\tau_2} && \text{-- sums} &&
+ & \mid \TFun[f]{\tau_1}{\tau_2} && \text{-- functions} &&\\
+ & \mid \TPair[s]{\tau_1}{\tau_2} && \text{-- pairs} &&\\
+ & \mid \TSum[s]{\tau_1}{\tau_2} && \text{-- sums} &&
 \end{flalign*}
+
+\paragraph{Notation}
+
+Function arrows carry a function (future) mode annotation~$f$, drawing from the future lattice so $f = (\text{areality}, \text{linearity}, \text{portability})$.
+Storage annotations~$s$ appear on products and sums, recording how elements are kept with $s = (\text{uniqueness}, \text{areality})$.
+We write $\hat{f}$ for the embedding of $f$ into the full mode lattice (past component~$\bot_{\mathrm{in}}$, future component~$f$) and $\hat{s}$ for the embedding of $s$.
+
+\bigskip
+
+\paragraph{Kinding Rules}\ \\
+
+We write $\tau : m$ to state that type $\tau$ is well-formed at mode $m$.
+Write $m \sqcap \hat{s}$ for the meet of $m$ with $\hat{s}$ in the $\leqin$-lattice; it leaves the future components unchanged and meets the uniqueness and areality components with those recorded by $s$.
+Here $\top_{\mathrm{in}}$ denotes the greatest mode with respect to $\leqin$.
+
+\begin{mathpar}
+\inferrule
+  {\ }
+  {\TUnit : m}
+\and
+\inferrule
+  {\ }
+  {\TEmpty : m}
+\and
+\inferrule
+  {\hat{f} \leqin m \\ \tau_1 : \top_{\mathrm{in}} \\ \tau_2 : \top_{\mathrm{in}}}
+  {\TFun[f]{\tau_1}{\tau_2} : m}
+\and
+\inferrule
+  {\hat{s} \leqin m \\ \tau_1 : m \sqcap \hat{s} \\ \tau_2 : m \sqcap \hat{s}}
+  {\TPair[s]{\tau_1}{\tau_2} : m}
+\and
+\inferrule
+  {\hat{s} \leqin m \\ \tau_1 : m \sqcap \hat{s} \\ \tau_2 : m \sqcap \hat{s}}
+  {\TSum[s]{\tau_1}{\tau_2} : m}
+\end{mathpar}
+
+We will omit the annotations when they are not needed.
 
 \bigskip
 

@@ -107,26 +107,14 @@ let%expect_test "type sum custom" =
   |> Printf.printf "%s\n";
   [%expect {|(unit +[unique local] empty)|}]
 
-let%expect_test "mode pair custom" =
-  Typechecker.synth_mode (parse_ty "unit *[unique local] unit")
-  |> Modes.Mode.to_string
-  |> Printf.printf "%s\n";
-  [%expect {|unique contended local portable|}]
-
-let%expect_test "mode arrow custom" =
-  Typechecker.synth_mode (parse_ty "unit ->[local once portable] unit")
-  |> Modes.Mode.to_string
-  |> Printf.printf "%s\n";
-  [%expect {|contended local once portable|}]
-
 let%expect_test "mode violation" =
   (match
-     Typechecker.synth_mode
-       (parse_ty "(unit *[unique local] unit) *[aliased global] unit")
+     Typechecker.check_mode
+       (parse_ty "(unit *[unique local] unit) *[aliased global] unit") Modes.Mode.top_in
    with
-  | _ -> Printf.printf "unexpected success\n"
+  | () -> Printf.printf "unexpected success\n"
   | exception Typechecker.Mode_error msg -> Printf.printf "%s\n" msg);
-  [%expect {|Component uniqueness unique exceeds annotation aliased|}]
+  [%expect {|Mode unique contended local portable exceeds allowed once|}]
 
 let%expect_test "check mode success" =
   Typechecker.check_mode (parse_ty "unit *[unique local] unit") Modes.Mode.top_in;

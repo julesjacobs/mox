@@ -70,79 +70,46 @@ let mode_of_storage { uniqueness; areality } =
   let future = { Modes.Future.bottom_in with areality } in
   Modes.Mode.make ~past ~future
 
-let rec synth_mode ty =
-  match ty with
-  | TyUnit | TyEmpty -> Modes.Mode.bottom_in
-  | TyArrow (domain, arrow_mode, codomain) ->
-      ignore (synth_mode domain);
-      ignore (synth_mode codomain);
-      Modes.Mode.make ~past:Modes.Past.bottom_in ~future:arrow_mode
-  | TyPair (left, storage, right)
-  | TySum (left, storage, right) ->
-      let left_mode = synth_mode left in
-      let right_mode = synth_mode right in
-      let combined = Modes.Mode.join_in left_mode right_mode in
-      let combined_uniqueness = combined.Modes.Mode.past.Modes.Past.uniqueness in
-      let combined_areality = combined.Modes.Mode.future.Modes.Future.areality in
-      if not (Modes.Uniqueness.leq_in combined_uniqueness storage.uniqueness) then
-        raise
-          (Mode_error
-             (Printf.sprintf
-                "Component uniqueness %s exceeds annotation %s"
-                (Modes.Uniqueness.to_string combined_uniqueness)
-                (Modes.Uniqueness.to_string storage.uniqueness)));
-      if not (Modes.Areality.leq_in combined_areality storage.areality) then
-        raise
-          (Mode_error
-             (Printf.sprintf
-                "Component areality %s exceeds annotation %s"
-                (Modes.Areality.to_string combined_areality)
-                (Modes.Areality.to_string storage.areality)));
-      Modes.Mode.join_in combined (mode_of_storage storage)
+let mode_violation actual expected =
+  Mode_error
+    (Printf.sprintf "Mode %s exceeds allowed %s"
+       (string_of_mode actual) (string_of_mode expected))
+
+let ensure_mode_within actual expected =
+  if Modes.Mode.leq_in actual expected then () else raise (mode_violation actual expected)
+
+let component_expectation storage expected =
+  let storage_mode = mode_of_storage storage in
+  ensure_mode_within storage_mode expected;
+  let open Modes in
+  let { Mode.past = expected_past; future = expected_future } = expected in
+  let component_past =
+    Past.make
+      ~uniqueness:(Uniqueness.meet_in expected_past.Past.uniqueness storage.uniqueness)
+      ~contention:expected_past.Past.contention
+  in
+  let component_future =
+    Future.make
+      ~linearity:expected_future.Future.linearity
+      ~portability:expected_future.Future.portability
+      ~areality:(Areality.meet_in expected_future.Future.areality storage.areality)
+  in
+  Mode.make ~past:component_past ~future:component_future
 
 let rec check_mode ty expected =
   match ty with
   | TyUnit | TyEmpty -> ()
   | TyArrow (domain, arrow_mode, codomain) ->
       (* Check that the arrow mode does not exceed the expected mode *)
-      let actual =
-        Modes.Mode.make ~past:Modes.Past.bottom_in ~future:arrow_mode
-      in
-      if not (Modes.Mode.leq_in actual expected) then
-        raise
-          (Mode_error
-             (Printf.sprintf "Mode %s exceeds allowed %s"
-                (string_of_mode actual) (string_of_mode expected)));
+      let actual = Modes.Mode.make ~past:Modes.Past.bottom_in ~future:arrow_mode in
+      ensure_mode_within actual expected;
       (* Check the domain and codomain at the top mode *)
       check_mode domain Modes.Mode.top_in;
       check_mode codomain Modes.Mode.top_in;
   | TyPair (left, storage, right) | TySum (left, storage, right) ->
       (* Check that the storage mode does not exceed the expected mode *)
-      let storage_mode = mode_of_storage storage in
-      if not (Modes.Mode.leq_in storage_mode expected) then
-        raise
-          (Mode_error
-             (Printf.sprintf "Mode %s exceeds allowed %s"
-                (string_of_mode storage_mode) (string_of_mode expected)));
       (* Check the components at the expected mode extended with the storage mode *)
-      let expected_past = expected.Modes.Mode.past in
-      let expected_future = expected.Modes.Mode.future in
-      let component_past =
-        { Modes.Past.uniqueness =
-            Modes.Uniqueness.meet_in expected_past.Modes.Past.uniqueness
-              storage.uniqueness;
-          contention = expected_past.Modes.Past.contention }
-      in
-      let component_future =
-        { Modes.Future.linearity = expected_future.Modes.Future.linearity;
-          portability = expected_future.Modes.Future.portability;
-          areality =
-            Modes.Areality.meet_in expected_future.Modes.Future.areality
-              storage.areality }
-      in
-      let component_expected =
-        Modes.Mode.make ~past:component_past ~future:component_future
-      in
+      let component_expected = component_expectation storage expected in
       check_mode left component_expected;
       check_mode right component_expected
 
