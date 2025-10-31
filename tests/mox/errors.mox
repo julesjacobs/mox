@@ -11,7 +11,7 @@ match unit with left(x) => x | right(y) => y
 > error: Expected a sum type, found unit
 
 let x = unit in (x : empty)
-> error: Type mismatch: expected empty, found unit
+> error: unit is not a subtype of empty
 
 x
 > error: Unbound variable x
@@ -20,4 +20,4 @@ absurd unit
 > error: Cannot infer the type of absurd; add a type annotation
 
 ((fun x => x) : (unit -> unit)) ((left(unit) : (unit + empty)))
-> error: Type mismatch: expected unit, found (unit + empty)
+> error: (unit + empty) is not a subtype of unit
