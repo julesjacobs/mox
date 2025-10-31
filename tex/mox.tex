@@ -324,14 +324,9 @@ Here $f=(\text{areality}, \text{linearity}, \text{portability})$ tracks the func
 The lock records which bindings remain accessible inside the closure and how their modes are weakened so that the body can run safely.
 We define the operation structurally on contexts.
 \begin{align*}
-(x:\tau') \in \Lock[f]{\Gamma} &\iff (x:\tau) \in \Gamma \ \land\ \Lock[f]{\tau} = \tau'\\
-\Lock[(l_2,o_2,p_2)]{\Gamma, x :-} &= \Lock[(l_2,o_2,p_2)]{\Gamma}, x :-\\
-\Lock[(l_2,o_2,p_2)]{\Gamma, x : \tau @ (l_1,o_1,u_1,p_1,c_1)} &=
-  \begin{cases}
-    \Lock[(l_2,o_2,p_2)]{\Gamma}, x : \tau @ (l_1,o_1, u_1 \lor o_2^{\dagger}, p_1, c_1 \lor p_2^{\dagger}) & l_1 \leqto l_2,\ o_1 \leqto o_2,\ p_1 \leqto p_2,\\
-    \Lock[(l_2,o_2,p_2)]{\Gamma}, x :- & \text{otherwise.}
-  \end{cases}
+(x:\tau') \in \Lock[f]{\Gamma} &\iff (x:\tau) \in \Gamma \ \land\ \Lock[f]{\tau} = \tau'
 \end{align*}
+where
 \begin{align*}
   \Lock[f]{\TUnit} &\ =\  \TUnit\\
   \Lock[f]{\TEmpty} &\ =\ \TEmpty\\
