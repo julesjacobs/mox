@@ -161,63 +161,65 @@ We will omit the annotations when they are not needed.
 
 \paragraph{Typing Rules}\ \\
 
+Typing judgments use linear contexts: $\Gamma \uplus \Delta$ denotes a partition of the context into disjoint subcontexts, and $\emptyset$ is the empty context.
+
 \textit{Variables}
 \begin{mathpar}
 \inferrule
-  {(x : \tau) \in \Gamma}
-  {\Jud{x}{\tau}}
+  {\ }
+  {\judge{x : \tau}{x}{\tau}}
 \and
 \inferrule
-  {\Jud{e_1}{\tau_1} \\ \judge{\Gamma, x : \tau_1}{e_2}{\tau_2}}
-  {\Jud{\Let{x}{e_1}{e_2}}{\tau_2}}
+  {\judge{\Gamma_1}{e_1}{\tau_1} \\ \judge{\Gamma_2, x : \tau_1}{e_2}{\tau_2}}
+  {\judge{\Gamma_1 \uplus \Gamma_2}{\Let{x}{e_1}{e_2}}{\tau_2}}
 \end{mathpar}
 
 \vspace{0.5em}\textit{Unit and Empty}
 \begin{mathpar}
 \inferrule
   {\ }
-  {\Jud{\UnitTerm}{\TUnit}}
+  {\judge{\emptyset}{\UnitTerm}{\TUnit}}
 \and
 \inferrule
-  {\Jud{e}{\TEmpty}}
-  {\Jud{\Absurd{e}}{\tau}}
+  {\judge{\Gamma}{e}{\TEmpty}}
+  {\judge{\Gamma}{\Absurd{e}}{\tau}}
 \end{mathpar}
 
 \vspace{0.5em}\textit{Functions}
 \begin{mathpar}
 \inferrule
   {\judge{\Gamma, x : \tau_1}{e}{\tau_2}}
-  {\Jud{\Fun{x}{e}}{\TFun{\tau_1}{\tau_2}}}
+  {\judge{\Gamma}{\Fun{x}{e}}{\TFun{\tau_1}{\tau_2}}}
 \and
 \inferrule
-  {\Jud{e_1}{\TFun{\tau_1}{\tau_2}} \\ \Jud{e_2}{\tau_1}}
-  {\Jud{\App{e_1}{e_2}}{\tau_2}}
+  {\judge{\Gamma_1}{e_1}{\TFun{\tau_1}{\tau_2}} \\ \judge{\Gamma_2}{e_2}{\tau_1}}
+  {\judge{\Gamma_1 \uplus \Gamma_2}{\App{e_1}{e_2}}{\tau_2}}
 \end{mathpar}
 
 \vspace{0.5em}\textit{Pairs}
 \begin{mathpar}
 \inferrule
-  {\Jud{e_1}{\tau_1} \\ \Jud{e_2}{\tau_2}}
-  {\Jud{\Pair{e_1}{e_2}}{\TPair{\tau_1}{\tau_2}}}
+  {\judge{\Gamma_1}{e_1}{\tau_1} \\ \judge{\Gamma_2}{e_2}{\tau_2}}
+  {\judge{\Gamma_1 \uplus \Gamma_2}{\Pair{e_1}{e_2}}{\TPair{\tau_1}{\tau_2}}}
 \and
 \inferrule
-  {\Jud{e_1}{\TPair{\tau_1}{\tau_2}} \\ \judge{\Gamma, x_1 : \tau_1, x_2 : \tau_2}{e_2}{\tau}}
-  {\Jud{\LetPair{x_1}{x_2}{e_1}{e_2}}{\tau}}
+  {\judge{\Gamma_1}{e_1}{\TPair{\tau_1}{\tau_2}} \\ \judge{\Gamma_2, x_1 : \tau_1, x_2 : \tau_2}{e_2}{\tau}}
+  {\judge{\Gamma_1 \uplus \Gamma_2}{\LetPair{x_1}{x_2}{e_1}{e_2}}{\tau}}
 \end{mathpar}
 
 \vspace{0.5em}\textit{Sums}
 \begin{mathpar}
 \inferrule
-  {\Jud{e}{\tau_1}}
-  {\Jud{\Inl{e}}{\TSum{\tau_1}{\tau_2}}}
+  {\judge{\Gamma}{e}{\tau_1}}
+  {\judge{\Gamma}{\Inl{e}}{\TSum{\tau_1}{\tau_2}}}
 \and
 \inferrule
-  {\Jud{e}{\tau_2}}
-  {\Jud{\Inr{e}}{\TSum{\tau_1}{\tau_2}}}
+  {\judge{\Gamma}{e}{\tau_2}}
+  {\judge{\Gamma}{\Inr{e}}{\TSum{\tau_1}{\tau_2}}}
 \and
 \inferrule
-  {\Jud{e}{\TSum{\tau_1}{\tau_2}} \\ \judge{\Gamma, x_1 : \tau_1}{e_1}{\tau} \\ \judge{\Gamma, x_2 : \tau_2}{e_2}{\tau}}
-  {\Jud{\Match{e}{x_1}{e_1}{x_2}{e_2}}{\tau}}
+  {\judge{\Gamma_0}{e}{\TSum{\tau_1}{\tau_2}} \\ \judge{\Gamma_1, x_1 : \tau_1}{e_1}{\tau} \\ \judge{\Gamma_1, x_2 : \tau_2}{e_2}{\tau}}
+  {\judge{\Gamma_0 \uplus \Gamma_1}{\Match{e}{x_1}{e_1}{x_2}{e_2}}{\tau}}
 \end{mathpar}
 
 \paragraph{Subtyping Rules}\ \\
