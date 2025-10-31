@@ -33,7 +33,8 @@ let string_of_error = function
       Printf.sprintf "%s is not a subtype of %s"
         (string_of_ty t1) (string_of_ty t2)
 
-let string_of_mode = Modes.Mode.to_string
+let remove_vars vars set =
+  List.fold_left (fun acc var -> StringSet.remove var acc) set vars
 
 let rec free_vars expr =
   match expr with
@@ -41,36 +42,32 @@ let rec free_vars expr =
   | Unit -> StringSet.empty
   | Absurd e -> free_vars e
   | Annot (e, _) -> free_vars e
-  | Fun (x, body) -> StringSet.remove x (free_vars body)
+  | Fun (x, body) -> free_vars_without body [ x ]
   | App (fn, arg) -> StringSet.union (free_vars fn) (free_vars arg)
   | Let (x, e1, e2) ->
-      StringSet.union (free_vars e1) (StringSet.remove x (free_vars e2))
+      StringSet.union (free_vars e1) (free_vars_without e2 [ x ])
   | LetPair (x1, x2, e1, e2) ->
-      StringSet.union
-        (free_vars e1)
-        (free_vars e2 |> StringSet.remove x1 |> StringSet.remove x2)
+      StringSet.union (free_vars e1) (free_vars_without e2 [ x1; x2 ])
   | Pair (left, right) ->
       StringSet.union (free_vars left) (free_vars right)
   | Inl e -> free_vars e
   | Inr e -> free_vars e
   | Match (scrut, x1, e1, x2, e2) ->
       let fv_scrut = free_vars scrut in
-      let fv_e1 = StringSet.remove x1 (free_vars e1) in
-      let fv_e2 = StringSet.remove x2 (free_vars e2) in
+      let fv_e1 = free_vars_without e1 [ x1 ] in
+      let fv_e2 = free_vars_without e2 [ x2 ] in
       StringSet.union fv_scrut (StringSet.union fv_e1 fv_e2)
 
-let remove_vars vars set =
-  List.fold_left (fun acc var -> StringSet.remove var acc) set vars
-
-let free_vars_without expr vars = remove_vars vars (free_vars expr)
+and free_vars_without expr vars = remove_vars vars (free_vars expr)
 
 (* -------------------------------------------------------------------------- *)
 (* Modes and well-formedness                                                   *)
 (* -------------------------------------------------------------------------- *)
 
 let mode_of_storage { uniqueness; areality } =
-  { Modes.Mode.past = { Modes.Past.bottom_in with uniqueness };
-    future = { Modes.Future.bottom_in with areality } }
+  let past = { Modes.Past.bottom_in with uniqueness } in
+  let future = { Modes.Future.bottom_in with areality } in
+  Modes.Mode.make ~past ~future
 
 let rec mode_of_type ty =
   match ty with
@@ -78,7 +75,7 @@ let rec mode_of_type ty =
   | TyArrow (domain, arrow_mode, codomain) ->
       ignore (mode_of_type domain);
       ignore (mode_of_type codomain);
-      { Modes.Mode.past = Modes.Past.bottom_in; future = arrow_mode }
+      Modes.Mode.make ~past:Modes.Past.bottom_in ~future:arrow_mode
   | TyPair (left, storage, right)
   | TySum (left, storage, right) ->
       let left_mode = mode_of_type left in
