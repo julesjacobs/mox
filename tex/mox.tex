@@ -4,6 +4,7 @@
 \usepackage{amssymb}
 \usepackage{mathpartir}
 \usepackage{fontawesome5}
+\usepackage{xcolor}
 \mprset{flushleft}
 \newcommand{\kw}[1]{\text{\textbf{#1}}}
 \newcommand{\Let}[3]{\kw{let}\, #1 = #2\, \kw{in}\, #3}
@@ -48,6 +49,8 @@
   \text{\faLock}_{#1}(#2)
 }
 
+\newcommand{\jules}[1]{{\textcolor{red}{\textbf{J}: #1}}}
+
 \title{Mox Notes}
 \author{Jules Jacobs}
 \date{\today}
@@ -77,7 +80,7 @@ For future modes the two orders coincide, whereas for past modes the in-placemen
 \noindent\textbf{Future axes ($f$)}
 \[
 \begin{alignedat}{2}
-\text{linearity (l):}&\quad \mode{many} \leqto \mode{once}\\
+\text{linearity (l):}&\quad \mode{many} \leqto \mode{once} \\
 &\quad \mode{many} \leqin \mode{once}\\[0.5ex]
 \text{portability (p):}&\quad \mode{portable} \leqto \mode{non-portable}\\
 &\quad \mode{portable} \leqin \mode{non-portable}\\
@@ -85,6 +88,8 @@ For future modes the two orders coincide, whereas for past modes the in-placemen
 &\quad \mode{global} \leqin \mode{regional} \leqin \mode{local}
 \end{alignedat}
 \]
+
+\jules{It isn't clear that the linearity axis' $\leqin$ relation is useful for anything, at least at the moment.}
 
 \medskip                               
 We collect the past modes into the tuple $p = (\text{uniqueness}, \text{contention})$ and the future modes into $f = (\text{areality}, \text{linearity}, \text{portability})$, lifting $\leqto$ and $\leqin$ componentwise.
