@@ -9,6 +9,7 @@ type type_error =
   | Cannot_infer of string
 
 exception Error of type_error
+exception Mode_error of string
 
 let equal_arrow_mode m1 m2 =
   Modes.Areality.equal m1.Modes.Future.areality m2.Modes.Future.areality
@@ -57,6 +58,8 @@ let string_of_error = function
       Printf.sprintf "Expected a sum type, found %s" (string_of_ty ty)
   | Cannot_infer what ->
       Printf.sprintf "Cannot infer the type of %s; add a type annotation" what
+
+let string_of_mode mode = Modes.Mode.to_string mode
 
 let rec synth env expr =
   match expr with
@@ -149,3 +152,67 @@ and check env expr ty =
 let infer expr = synth [] expr
 
 let check_top expr ty = check [] expr ty
+
+let rec mode_of_type ty =
+  let bottom_mode = { Modes.Mode.past = Modes.Past.bottom_in; future = Modes.Future.bottom_in } in
+  match ty with
+  | TyUnit | TyEmpty -> bottom_mode
+  | TyArrow (t1, arrow_mode, t2) ->
+      ignore (mode_of_type t1);
+      ignore (mode_of_type t2);
+      { Modes.Mode.past = Modes.Past.bottom_in;
+        future = Modes.Future.join_in arrow_mode Modes.Future.bottom_in }
+  | TyPair (t1, annotation, t2) ->
+      let mode_left = mode_of_type t1 in
+      let mode_right = mode_of_type t2 in
+      let combined = Modes.Mode.join_in mode_left mode_right in
+      let { Modes.Mode.past = combined_past; future = combined_future } = combined in
+      let combined_uniqueness = combined_past.uniqueness in
+      let combined_areality = combined_future.areality in
+      if not (Modes.Uniqueness.leq_in combined_uniqueness annotation.uniqueness) then
+        raise
+          (Mode_error
+             (Printf.sprintf
+                "Pair uniqueness %s exceeds annotation %s"
+                (Modes.Uniqueness.to_string combined_uniqueness)
+                (Modes.Uniqueness.to_string annotation.uniqueness)));
+      if not (Modes.Areality.leq_in combined_areality annotation.areality) then
+        raise
+          (Mode_error
+             (Printf.sprintf
+                "Pair areality %s exceeds annotation %s"
+                (Modes.Areality.to_string combined_areality)
+                (Modes.Areality.to_string annotation.areality)));
+      let annotation_mode =
+        { Modes.Mode.past =
+            { Modes.Past.bottom_in with uniqueness = annotation.uniqueness };
+          future = { Modes.Future.bottom_in with areality = annotation.areality } }
+      in
+      Modes.Mode.join_in combined annotation_mode
+  | TySum (t1, annotation, t2) ->
+      let mode_left = mode_of_type t1 in
+      let mode_right = mode_of_type t2 in
+      let combined = Modes.Mode.join_in mode_left mode_right in
+      let { Modes.Mode.past = combined_past; future = combined_future } = combined in
+      let combined_uniqueness = combined_past.uniqueness in
+      let combined_areality = combined_future.areality in
+      if not (Modes.Uniqueness.leq_in combined_uniqueness annotation.uniqueness) then
+        raise
+          (Mode_error
+             (Printf.sprintf
+                "Sum uniqueness %s exceeds annotation %s"
+                (Modes.Uniqueness.to_string combined_uniqueness)
+                (Modes.Uniqueness.to_string annotation.uniqueness)));
+      if not (Modes.Areality.leq_in combined_areality annotation.areality) then
+        raise
+          (Mode_error
+             (Printf.sprintf
+                "Sum areality %s exceeds annotation %s"
+                (Modes.Areality.to_string combined_areality)
+                (Modes.Areality.to_string annotation.areality)));
+      let annotation_mode =
+        { Modes.Mode.past =
+            { Modes.Past.bottom_in with uniqueness = annotation.uniqueness };
+          future = { Modes.Future.bottom_in with areality = annotation.areality } }
+      in
+      Modes.Mode.join_in combined annotation_mode

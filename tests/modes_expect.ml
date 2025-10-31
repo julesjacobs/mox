@@ -106,3 +106,24 @@ let%expect_test "type sum custom" =
   |> Pretty.string_of_ty
   |> Printf.printf "%s\n";
   [%expect {|(unit +[unique local] empty)|}]
+
+let%expect_test "mode pair custom" =
+  Typechecker.mode_of_type (parse_ty "unit *[unique local] unit")
+  |> Modes.Mode.to_string
+  |> Printf.printf "%s\n";
+  [%expect {|unique contended local portable|}]
+
+let%expect_test "mode arrow custom" =
+  Typechecker.mode_of_type (parse_ty "unit ->[local once portable] unit")
+  |> Modes.Mode.to_string
+  |> Printf.printf "%s\n";
+  [%expect {|contended local once portable|}]
+
+let%expect_test "mode violation" =
+  (match
+     Typechecker.mode_of_type
+       (parse_ty "(unit *[unique local] unit) *[aliased global] unit")
+   with
+  | _ -> Printf.printf "unexpected success\n"
+  | exception Typechecker.Mode_error msg -> Printf.printf "%s\n" msg);
+  [%expect {|Pair uniqueness unique exceeds annotation aliased|}]
