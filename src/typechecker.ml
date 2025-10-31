@@ -7,6 +7,7 @@ type type_error =
   | Expected_pair of ty
   | Expected_sum of ty
   | Cannot_infer of string
+  | Not_a_subtype of ty * ty
 
 exception Error of type_error
 exception Mode_error of string
@@ -58,6 +59,9 @@ let string_of_error = function
       Printf.sprintf "Expected a sum type, found %s" (string_of_ty ty)
   | Cannot_infer what ->
       Printf.sprintf "Cannot infer the type of %s; add a type annotation" what
+  | Not_a_subtype (t1, t2) ->
+      Printf.sprintf "%s is not a subtype of %s"
+        (string_of_ty t1) (string_of_ty t2)
 
 let string_of_mode mode = Modes.Mode.to_string mode
 
@@ -216,3 +220,25 @@ let rec mode_of_type ty =
           future = { Modes.Future.bottom_in with areality = annotation.areality } }
       in
       Modes.Mode.join_in combined annotation_mode
+
+let rec subtype t1 t2 =
+  match (t1, t2) with
+  | TyUnit, TyUnit -> ()
+  | TyEmpty, TyEmpty -> ()
+  | TyArrow (a1, m1, b1), TyArrow (a2, m2, b2) ->
+      subtype a2 a1;
+      subtype b1 b2;
+      if not (Modes.Future.leq_to m1 m2) then raise (Error (Not_a_subtype (t1, t2)))
+  | TyPair (a1, m1, b1), TyPair (a2, m2, b2) ->
+      subtype a1 a2;
+      subtype b1 b2;
+      if not (Modes.Uniqueness.leq_to m1.uniqueness m2.uniqueness)
+         || not (Modes.Areality.leq_to m1.areality m2.areality)
+      then raise (Error (Not_a_subtype (t1, t2)))
+  | TySum (a1, m1, b1), TySum (a2, m2, b2) ->
+      subtype a1 a2;
+      subtype b1 b2;
+      if not (Modes.Uniqueness.leq_to m1.uniqueness m2.uniqueness)
+         || not (Modes.Areality.leq_to m1.areality m2.areality)
+      then raise (Error (Not_a_subtype (t1, t2)))
+  | _ -> raise (Error (Not_a_subtype (t1, t2)))
