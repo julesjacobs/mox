@@ -111,7 +111,8 @@ e &\mathrel{::=} {} && \text{-- expressions} &&\\
  & \mid \UnitTerm \mid \Absurd{e}&& \text{-- unit and empty} &&\\
  & \mid \App{e_1}{e_2} \mid \Fun{x}{e} && \text{-- functions} &&\\
  & \mid \Pair{e_1}{e_2} \mid \LetPair{x_1}{x_2}{e_1}{e_2} && \text{-- pairs} &&\\
- & \mid \Inl{e} \mid \Inr{e} \mid \Match{e}{x_1}{e_1}{x_2}{e_2} && \text{-- sums} &&
+ & \mid \Inl{e} \mid \Inr{e} && \text{-- sums} &&\\
+ & \mid \Match{e}{x_1}{e_1}{x_2}{e_2} && &&
 \end{flalign*}
 
 \bigskip
