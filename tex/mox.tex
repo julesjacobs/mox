@@ -334,11 +334,26 @@ We define the operation structurally on contexts.
 \end{align*}
 The dagger map translates closure capabilities into the weakening applied to captured bindings:
 \[
-\mode{once}^{\dagger} = \mode{unique},\quad
-\mode{many}^{\dagger} = \mode{aliased},\quad
-\mode{non-portable}^{\dagger} = \mode{uncontended},\quad
-\mode{portable}^{\dagger} = \mode{contended}.
+\begin{aligned}
+\mode{once}^{\dagger} &= \mode{unique},\\
+\mode{many}^{\dagger} &= \mode{aliased},\\
+\mode{non-portable}^{\dagger} &= \mode{uncontended},\\
+\mode{portable}^{\dagger} &= \mode{contended}.
+\end{aligned}
 \]
 Joins $\lor$ are computed in the $\leqto$ lattice. Intuitively, a many closure can only reuse captured data as aliased, and a portable closure forces captured bindings to be contended. Locks appear in the $\lambda$-rule above and in constructs such as $\kw{fork}$, which applies $\Lock[(\mode{global}, o, \mode{portable})]{\Gamma}$ to ensure the forked closure is global and portable. Because the lock filters out mode-incompatible bindings and weakens the rest, applying it preserves the semantic interpretation of $\Gamma$; after a portable lock, no binding in the context remains non-portable or uncontended.
+
+
+\section{Desiderata}
+
+\begin{enumerate}
+  \item Borrowing
+  \item Mode polymorphism
+  \item Mutable references \& Fork
+  \item Algebraic data types
+  \item Type inference
+  \item Modules \& abstract types
+  \item Fine grained uniquness analysis
+\end{enumerate}
 
 \end{document}
