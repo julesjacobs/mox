@@ -325,24 +325,33 @@ The lock records which bindings remain accessible inside the closure and how the
 We define the operation structurally on contexts.
 \begin{align*}
 (x:\tau') \in \Lock[f]{\Gamma} &\iff (x:\tau) \in \Gamma \ \land\ \Lock[f]{\tau} = \tau'\\
-% \Lock[(l_2,o_2,p_2)]{\Gamma, x :-} &= \Lock[(l_2,o_2,p_2)]{\Gamma}, x :-\\
-% \Lock[(l_2,o_2,p_2)]{\Gamma, x : \tau @ (l_1,o_1,u_1,p_1,c_1)} &=
-%   \begin{cases}
-%     \Lock[(l_2,o_2,p_2)]{\Gamma}, x : \tau @ (l_1,o_1, u_1 \lor o_2^{\dagger}, p_1, c_1 \lor p_2^{\dagger}) & l_1 \leqto l_2,\ o_1 \leqto o_2,\ p_1 \leqto p_2,\\
-%     \Lock[(l_2,o_2,p_2)]{\Gamma}, x :- & \text{otherwise.}
-%   \end{cases}
+\Lock[(l_2,o_2,p_2)]{\Gamma, x :-} &= \Lock[(l_2,o_2,p_2)]{\Gamma}, x :-\\
+\Lock[(l_2,o_2,p_2)]{\Gamma, x : \tau @ (l_1,o_1,u_1,p_1,c_1)} &=
+  \begin{cases}
+    \Lock[(l_2,o_2,p_2)]{\Gamma}, x : \tau @ (l_1,o_1, u_1 \lor o_2^{\dagger}, p_1, c_1 \lor p_2^{\dagger}) & l_1 \leqto l_2,\ o_1 \leqto o_2,\ p_1 \leqto p_2,\\
+    \Lock[(l_2,o_2,p_2)]{\Gamma}, x :- & \text{otherwise.}
+  \end{cases}
+\end{align*}
+\begin{align*}
+  \Lock[f]{\TUnit} &\ =\  \TUnit\\
+  \Lock[f]{\TEmpty} &\ =\ \TEmpty\\
+  \Lock[f]{\TFun[f']{\tau_1}{\tau_2}} &\ =\ \TFun[f']{\tau_1}{\tau_2} \quad\text{ if }\quad f \leqto f'\\
+  \Lock[f]{\TPair[s]{\tau_1}{\tau_2}} &\ =\ \TPair[s']{\Lock[f]{\tau_1}}{\Lock[f]{\tau_2}} \quad\text{ where }\quad s' = s \sqcup f^\dagger\\
+  \Lock[f]{\TSum[s]{\tau_1}{\tau_2}} &\ =\ \TSum[s']{\Lock[f]{\tau_1}}{\Lock[f]{\tau_2}} \quad\text{ where }\quad s' = s \sqcup f^\dagger\\
+  \Lock[f]{\tau} &\ =\ \bot \quad\text{ otherwise}
 \end{align*}
 The dagger map translates closure capabilities into the weakening applied to captured bindings:
 \[
 \begin{aligned}
-\mode{once}^{\dagger} &= \mode{unique},\\
-\mode{many}^{\dagger} &= \mode{aliased},\\
-\mode{non-portable}^{\dagger} &= \mode{uncontended},\\
-\mode{portable}^{\dagger} &= \mode{contended}.
+\mode{once}^{\dagger} &= \mode{unique}\\
+\mode{many}^{\dagger} &= \mode{aliased}\\
+\mode{non-portable}^{\dagger} &= \mode{uncontended}\\
+\mode{portable}^{\dagger} &= \mode{contended}\\
+(a,l,p)^\dagger &= (l^\dagger, p^\dagger)
 \end{aligned}
 \]
-Joins $\lor$ are computed in the $\leqto$ lattice. Intuitively, a many closure can only reuse captured data as aliased, and a portable closure forces captured bindings to be contended. Locks appear in the $\lambda$-rule above and in constructs such as $\kw{fork}$, which applies $\Lock[(\mode{global}, o, \mode{portable})]{\Gamma}$ to ensure the forked closure is global and portable. Because the lock filters out mode-incompatible bindings and weakens the rest, applying it preserves the semantic interpretation of $\Gamma$; after a portable lock, no binding in the context remains non-portable or uncontended.
 
+Intuitively, a $\mode{many}$ closure can only reuse captured data as $\mode{aliased}$, and a $\mode{portable}$ closure forces captured bindings to be $\mode{contended}$.
 
 \section{Desiderata}
 
