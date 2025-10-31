@@ -1,0 +1,20 @@
+(* pair with stricter modes on both sides *)
+(((unit, unit), unit) : ((unit *[unique local] unit) *[unique local] unit))
+> ((unit *[unique local] unit) *[unique local] unit)
+
+(* sum distributing modes across branches *)
+(((left(unit)), (left(unit))) : ((unit +[unique local] empty) * (unit +[unique local] empty)))
+> error: Component uniqueness unique exceeds annotation aliased
+
+(* nested arrow with modes *)
+((fun f => fun x => f (fun y => x))
+ : ((unit ->[local once portable] unit) ->[regional once portable] (unit ->[local once portable] unit)))
+> error: Expected a function type, found unit
+
+(* invalid pair: areality violation *)
+(((unit, unit), unit) : ((unit *[unique local] unit) *[unique global] unit))
+> error: Component areality local exceeds annotation global
+
+(* invalid sum: uniqueness violation across branches *)
+(((left(unit)), (right(unit))) : ((unit +[unique local] empty) * (unit +[aliased local] unit)))
+> error: Component uniqueness unique exceeds annotation aliased
