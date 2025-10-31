@@ -83,9 +83,11 @@ let process_chunk ~filename chunk =
       try
         let ty = Typechecker.infer expr in
         PExpr (lines, Type (Pretty.string_of_ty ty))
-      with Typechecker.Error err ->
-        let msg = Typechecker.string_of_error err in
-        PExpr (lines, Error msg)
+      with
+      | Typechecker.Error err ->
+          let msg = Typechecker.string_of_error err in
+          PExpr (lines, Error msg)
+      | Typechecker.Mode_error msg -> PExpr (lines, Error msg)
 
 let render processed =
   let rec aux acc = function

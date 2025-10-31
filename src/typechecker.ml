@@ -1,5 +1,9 @@
 open Ast
 
+(* -------------------------------------------------------------------------- *)
+(* Error reporting                                                             *)
+(* -------------------------------------------------------------------------- *)
+
 type type_error =
   | Unbound_variable of ident
   | Expected_function of ty
@@ -10,13 +14,6 @@ type type_error =
 
 exception Error of type_error
 exception Mode_error of string
-
-let lookup env x =
-  let rec aux = function
-    | [] -> raise (Error (Unbound_variable x))
-    | (y, ty) :: rest -> if String.equal x y then ty else aux rest
-  in
-  aux env
 
 let string_of_ty = Pretty.string_of_ty
 
@@ -34,182 +31,179 @@ let string_of_error = function
       Printf.sprintf "%s is not a subtype of %s"
         (string_of_ty t1) (string_of_ty t2)
 
-let string_of_mode mode = Modes.Mode.to_string mode
+let string_of_mode = Modes.Mode.to_string
 
-let rec synth env expr =
+(* -------------------------------------------------------------------------- *)
+(* Modes and well-formedness                                                   *)
+(* -------------------------------------------------------------------------- *)
+
+let bottom_mode =
+  { Modes.Mode.past = Modes.Past.bottom_in; future = Modes.Future.bottom_in }
+
+let mode_of_storage { uniqueness; areality } =
+  { Modes.Mode.past = { Modes.Past.bottom_in with uniqueness };
+    future = { Modes.Future.bottom_in with areality } }
+
+let rec mode_of_type ty =
+  match ty with
+  | TyUnit | TyEmpty -> bottom_mode
+  | TyArrow (domain, arrow_mode, codomain) ->
+      ignore (mode_of_type domain);
+      ignore (mode_of_type codomain);
+      { Modes.Mode.past = Modes.Past.bottom_in; future = arrow_mode }
+  | TyPair (left, storage, right)
+  | TySum (left, storage, right) ->
+      let left_mode = mode_of_type left in
+      let right_mode = mode_of_type right in
+      let combined = Modes.Mode.join_in left_mode right_mode in
+      let combined_uniqueness = combined.Modes.Mode.past.Modes.Past.uniqueness in
+      let combined_areality = combined.Modes.Mode.future.Modes.Future.areality in
+      if not (Modes.Uniqueness.leq_in combined_uniqueness storage.uniqueness) then
+        raise
+          (Mode_error
+             (Printf.sprintf
+                "Component uniqueness %s exceeds annotation %s"
+                (Modes.Uniqueness.to_string combined_uniqueness)
+                (Modes.Uniqueness.to_string storage.uniqueness)));
+      if not (Modes.Areality.leq_in combined_areality storage.areality) then
+        raise
+          (Mode_error
+             (Printf.sprintf
+                "Component areality %s exceeds annotation %s"
+                (Modes.Areality.to_string combined_areality)
+                (Modes.Areality.to_string storage.areality)));
+      Modes.Mode.join_in combined (mode_of_storage storage)
+
+let ensure_well_formed ty = ignore (mode_of_type ty)
+
+(* -------------------------------------------------------------------------- *)
+(* Subtyping                                                                   *)
+(* -------------------------------------------------------------------------- *)
+
+let rec subtype t1 t2 =
+  ensure_well_formed t1;
+  ensure_well_formed t2;
+  match (t1, t2) with
+  | TyUnit, TyUnit -> ()
+  | TyEmpty, TyEmpty -> ()
+  | TyArrow (arg1, mode1, res1), TyArrow (arg2, mode2, res2) ->
+      subtype arg2 arg1;
+      subtype res1 res2;
+      if not (Modes.Future.leq_to mode1 mode2) then
+        raise (Error (Not_a_subtype (t1, t2)))
+  | TyPair (l1, mode1, r1), TyPair (l2, mode2, r2)
+  | TySum (l1, mode1, r1), TySum (l2, mode2, r2) ->
+      subtype l1 l2;
+      subtype r1 r2;
+      if not (Modes.Uniqueness.leq_to mode1.uniqueness mode2.uniqueness)
+         || not (Modes.Areality.leq_to mode1.areality mode2.areality)
+      then raise (Error (Not_a_subtype (t1, t2)))
+  | _ -> raise (Error (Not_a_subtype (t1, t2)))
+
+(* -------------------------------------------------------------------------- *)
+(* Core type checking                                                          *)
+(* -------------------------------------------------------------------------- *)
+
+let lookup env x =
+  match List.assoc_opt x env with
+  | Some ty -> ty
+  | None -> raise (Error (Unbound_variable x))
+
+let default_storage_mode =
+  { uniqueness = Modes.Uniqueness.default; areality = Modes.Areality.default }
+
+let rec infer_expr env expr =
   match expr with
   | Var x -> lookup env x
   | Unit -> TyUnit
   | Absurd _ -> raise (Error (Cannot_infer "absurd"))
   | Fun _ -> raise (Error (Cannot_infer "function"))
-  | App (e1, e2) ->
-      let tf = synth env e1 in
-      (match tf with
-      | TyArrow (targ, _, tres) ->
-          check env e2 targ;
-          tres
-      | _ -> raise (Error (Expected_function tf)))
-  | Pair (e1, e2) ->
-      let t1 = synth env e1 in
-      let t2 = synth env e2 in
-      let mode =
-        { uniqueness = Modes.Uniqueness.default; areality = Modes.Areality.default }
-      in
-      TyPair (t1, mode, t2)
+  | App (fn, arg) ->
+      let fn_ty = infer_expr env fn in
+      (match fn_ty with
+      | TyArrow (param, _, result) ->
+          check_expr env arg param;
+          result
+      | _ -> raise (Error (Expected_function fn_ty)))
+  | Pair (left, right) ->
+      let left_ty = infer_expr env left in
+      let right_ty = infer_expr env right in
+      let ty = TyPair (left_ty, default_storage_mode, right_ty) in
+      ensure_well_formed ty;
+      ty
   | Let (x, e1, e2) ->
-      let t1 = synth env e1 in
-      synth ((x, t1) :: env) e2
+      let t1 = infer_expr env e1 in
+      infer_expr ((x, t1) :: env) e2
   | LetPair (x1, x2, e1, e2) ->
-      let t = synth env e1 in
+      let t = infer_expr env e1 in
       (match t with
-      | TyPair (t1, _, t2) -> synth ((x2, t2) :: (x1, t1) :: env) e2
+      | TyPair (t_left, _, t_right) ->
+          infer_expr ((x2, t_right) :: (x1, t_left) :: env) e2
       | _ -> raise (Error (Expected_pair t)))
-  | Inl e ->
-      ignore e;
-      raise (Error (Cannot_infer "left"))
-  | Inr e -> raise (Error (Cannot_infer "right"))
-  | Match (scrut, x1, e1, x2, e2) ->
-      let scrut_ty = synth env scrut in
+  | Inl _ -> raise (Error (Cannot_infer "left"))
+  | Inr _ -> raise (Error (Cannot_infer "right"))
+  | Match (scrutinee, x1, e1, x2, e2) ->
+      let scrut_ty = infer_expr env scrutinee in
       (match scrut_ty with
-      | TySum (t_left, _, t_right) ->
-          let t_branch = synth ((x1, t_left) :: env) e1 in
-          check ((x2, t_right) :: env) e2 t_branch;
-          t_branch
+      | TySum (left_ty, _, right_ty) ->
+          let branch_ty = infer_expr ((x1, left_ty) :: env) e1 in
+          check_expr ((x2, right_ty) :: env) e2 branch_ty;
+          branch_ty
       | _ -> raise (Error (Expected_sum scrut_ty)))
-  | Annot (e, ty) ->
-      check env e ty;
+  | Annot (expr, ty) ->
+      check_expr env expr ty;
       ty
 
-and mode_of_type ty =
-  let bottom_mode = { Modes.Mode.past = Modes.Past.bottom_in; future = Modes.Future.bottom_in } in
-  match ty with
-  | TyUnit | TyEmpty -> bottom_mode
-  | TyArrow (t1, arrow_mode, t2) ->
-      ignore (mode_of_type t1);
-      ignore (mode_of_type t2);
-      { Modes.Mode.past = Modes.Past.bottom_in;
-        future = Modes.Future.join_in arrow_mode Modes.Future.bottom_in }
-  | TyPair (t1, annotation, t2) ->
-      let mode_left = mode_of_type t1 in
-      let mode_right = mode_of_type t2 in
-      let combined = Modes.Mode.join_in mode_left mode_right in
-      let { Modes.Mode.past = combined_past; future = combined_future } = combined in
-      let combined_uniqueness = combined_past.uniqueness in
-      let combined_areality = combined_future.areality in
-      if not (Modes.Uniqueness.leq_in combined_uniqueness annotation.uniqueness) then
-        raise
-          (Mode_error
-             (Printf.sprintf
-                "Pair uniqueness %s exceeds annotation %s"
-                (Modes.Uniqueness.to_string combined_uniqueness)
-                (Modes.Uniqueness.to_string annotation.uniqueness)));
-      if not (Modes.Areality.leq_in combined_areality annotation.areality) then
-        raise
-          (Mode_error
-             (Printf.sprintf
-                "Pair areality %s exceeds annotation %s"
-                (Modes.Areality.to_string combined_areality)
-                (Modes.Areality.to_string annotation.areality)));
-      let annotation_mode =
-        { Modes.Mode.past =
-            { Modes.Past.bottom_in with uniqueness = annotation.uniqueness };
-          future = { Modes.Future.bottom_in with areality = annotation.areality } }
-      in
-      Modes.Mode.join_in combined annotation_mode
-  | TySum (t1, annotation, t2) ->
-      let mode_left = mode_of_type t1 in
-      let mode_right = mode_of_type t2 in
-      let combined = Modes.Mode.join_in mode_left mode_right in
-      let { Modes.Mode.past = combined_past; future = combined_future } = combined in
-      let combined_uniqueness = combined_past.uniqueness in
-      let combined_areality = combined_future.areality in
-      if not (Modes.Uniqueness.leq_in combined_uniqueness annotation.uniqueness) then
-        raise
-          (Mode_error
-             (Printf.sprintf
-                "Sum uniqueness %s exceeds annotation %s"
-                (Modes.Uniqueness.to_string combined_uniqueness)
-                (Modes.Uniqueness.to_string annotation.uniqueness)));
-      if not (Modes.Areality.leq_in combined_areality annotation.areality) then
-        raise
-          (Mode_error
-             (Printf.sprintf
-                "Sum areality %s exceeds annotation %s"
-                (Modes.Areality.to_string combined_areality)
-                (Modes.Areality.to_string annotation.areality)));
-      let annotation_mode =
-        { Modes.Mode.past =
-            { Modes.Past.bottom_in with uniqueness = annotation.uniqueness };
-          future = { Modes.Future.bottom_in with areality = annotation.areality } }
-      in
-      Modes.Mode.join_in combined annotation_mode
-
-and subtype t1 t2 =
-  match (t1, t2) with
-  | TyUnit, TyUnit -> ()
-  | TyEmpty, TyEmpty -> ()
-  | TyArrow (a1, m1, b1), TyArrow (a2, m2, b2) ->
-      subtype a2 a1;
-      subtype b1 b2;
-      if not (Modes.Future.leq_to m1 m2) then raise (Error (Not_a_subtype (t1, t2)))
-  | TyPair (a1, m1, b1), TyPair (a2, m2, b2) ->
-      subtype a1 a2;
-      subtype b1 b2;
-      if not (Modes.Uniqueness.leq_to m1.uniqueness m2.uniqueness)
-         || not (Modes.Areality.leq_to m1.areality m2.areality)
-      then raise (Error (Not_a_subtype (t1, t2)))
-  | TySum (a1, m1, b1), TySum (a2, m2, b2) ->
-      subtype a1 a2;
-      subtype b1 b2;
-      if not (Modes.Uniqueness.leq_to m1.uniqueness m2.uniqueness)
-         || not (Modes.Areality.leq_to m1.areality m2.areality)
-      then raise (Error (Not_a_subtype (t1, t2)))
-  | _ -> raise (Error (Not_a_subtype (t1, t2)))
-
-and check env expr ty =
+and check_expr env expr ty =
+  ensure_well_formed ty;
   match expr with
   | Unit -> subtype TyUnit ty
-  | Absurd e -> check env e TyEmpty
+  | Absurd e -> check_expr env e TyEmpty
   | Fun (x, body) ->
       (match ty with
-      | TyArrow (t_arg, _, t_res) -> check ((x, t_arg) :: env) body t_res
+      | TyArrow (param, _, result) -> check_expr ((x, param) :: env) body result
       | _ -> raise (Error (Expected_function ty)))
   | Inl e ->
       (match ty with
-      | TySum (t_left, _, _) -> check env e t_left
+      | TySum (left_ty, _, _) -> check_expr env e left_ty
       | _ -> raise (Error (Expected_sum ty)))
   | Inr e ->
       (match ty with
-      | TySum (_, _, t_right) -> check env e t_right
+      | TySum (_, _, right_ty) -> check_expr env e right_ty
       | _ -> raise (Error (Expected_sum ty)))
-  | Pair (e1, e2) ->
+  | Pair (left, right) ->
       (match ty with
-      | TyPair (t1, _, t2) ->
-          check env e1 t1;
-          check env e2 t2
+      | TyPair (left_ty, _, right_ty) ->
+          check_expr env left left_ty;
+          check_expr env right right_ty
       | _ -> raise (Error (Expected_pair ty)))
   | Let (x, e1, e2) ->
-      let t1 = synth env e1 in
-      check ((x, t1) :: env) e2 ty
+      let t1 = infer_expr env e1 in
+      check_expr ((x, t1) :: env) e2 ty
   | LetPair (x1, x2, e1, e2) ->
-      let t = synth env e1 in
+      let t = infer_expr env e1 in
       (match t with
-      | TyPair (t1, _, t2) -> check ((x2, t2) :: (x1, t1) :: env) e2 ty
+      | TyPair (t_left, _, t_right) ->
+          check_expr ((x2, t_right) :: (x1, t_left) :: env) e2 ty
       | _ -> raise (Error (Expected_pair t)))
-  | Match (scrut, x1, e1, x2, e2) ->
-      let scrut_ty = synth env scrut in
+  | Match (scrutinee, x1, e1, x2, e2) ->
+      let scrut_ty = infer_expr env scrutinee in
       (match scrut_ty with
-      | TySum (t_left, _, t_right) ->
-          check ((x1, t_left) :: env) e1 ty;
-          check ((x2, t_right) :: env) e2 ty
+      | TySum (left_ty, _, right_ty) ->
+          check_expr ((x1, left_ty) :: env) e1 ty;
+          check_expr ((x2, right_ty) :: env) e2 ty
       | _ -> raise (Error (Expected_sum scrut_ty)))
-  | Annot (e, ty') ->
-      check env e ty';
+  | Annot (expr, ty') ->
+      check_expr env expr ty';
       subtype ty' ty
   | _ ->
-      let inferred = synth env expr in
+      let inferred = infer_expr env expr in
       subtype inferred ty
 
-let infer expr = synth [] expr
+(* -------------------------------------------------------------------------- *)
+(* Public entry points                                                         *)
+(* -------------------------------------------------------------------------- *)
 
-let check_top expr ty = check [] expr ty
+let infer expr = infer_expr [] expr
+
+let check_top expr ty = check_expr [] expr ty
