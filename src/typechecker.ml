@@ -122,6 +122,27 @@ let make_sum_ty left storage right =
   ignore (ensure_well_formed ty);
   ty
 
+let rec alias_type ty =
+  match ty with
+  | TyUnit | TyEmpty -> ty
+  | TyArrow (domain, mode, codomain) ->
+      ignore (ensure_well_formed domain);
+      ignore (ensure_well_formed codomain);
+      let linearity = mode.Modes.Future.linearity in
+      if not (Modes.Linearity.leq_to linearity Modes.Linearity.default) then
+        raise (Mode_error "Cannot alias a once-qualified function");
+      TyArrow (domain, mode, codomain)
+  | TyPair (left, storage, right) ->
+      let left' = alias_type left in
+      let right' = alias_type right in
+      let storage' = { storage with uniqueness = Modes.Uniqueness.default } in
+      make_pair_ty left' storage' right'
+  | TySum (left, storage, right) ->
+      let left' = alias_type left in
+      let right' = alias_type right in
+      let storage' = { storage with uniqueness = Modes.Uniqueness.default } in
+      make_sum_ty left' storage' right'
+
 let rec infer_expr env expr =
   match expr with
   | Var x -> lookup env x
