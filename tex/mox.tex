@@ -37,6 +37,8 @@
 \newcommand{\leqto}{\mathrel{\leq_{\mathrm{to}}}}
 \newcommand{\leqin}{\mathrel{\leq_{\mathrm{in}}}}
 \newcommand{\mode}[1]{\textsc{#1}}
+\newcommand{\subtype}{\mathrel{\sqsubseteq}}
+\newcommand{\Sub}[2]{#1 \subtype #2}
 
 \title{Mox Notes}
 \author{Jules Jacobs}
@@ -216,6 +218,37 @@ We will omit the annotations when they are not needed.
 \inferrule
   {\Jud{e}{\TSum{\tau_1}{\tau_2}} \\ \judge{\Gamma, x_1 : \tau_1}{e_1}{\tau} \\ \judge{\Gamma, x_2 : \tau_2}{e_2}{\tau}}
   {\Jud{\Match{e}{x_1}{e_1}{x_2}{e_2}}{\tau}}
+\end{mathpar}
+
+\paragraph{Subtyping Rules}\ \\
+
+\textit{Base}
+\begin{mathpar}
+\inferrule
+  {\ }
+  {\Sub{\TUnit}{\TUnit}}
+\and
+\inferrule
+  {\ }
+  {\Sub{\TEmpty}{\TEmpty}}
+\end{mathpar}
+
+\vspace{0.5em}\textit{Functions}
+\begin{mathpar}
+\inferrule
+  {\Sub{\tau_1'}{\tau_1} \\ \Sub{\tau_2}{\tau_2'} \\ f_1 \leqto f_2}
+  {\Sub{\TFun[f_1]{\tau_1}{\tau_2}}{\TFun[f_2]{\tau_1'}{\tau_2'}}}
+\end{mathpar}
+
+\vspace{0.5em}\textit{Products and Sums}
+\begin{mathpar}
+\inferrule
+  {\Sub{\tau_1}{\tau_1'} \\ \Sub{\tau_2}{\tau_2'} \\ s_1 \leqto s_2}
+  {\Sub{\TPair[s_1]{\tau_1}{\tau_2}}{\TPair[s_2]{\tau_1'}{\tau_2'}}}
+\and
+\inferrule
+  {\Sub{\tau_1}{\tau_1'} \\ \Sub{\tau_2}{\tau_2'} \\ s_1 \leqto s_2}
+  {\Sub{\TSum[s_1]{\tau_1}{\tau_2}}{\TSum[s_2]{\tau_1'}{\tau_2'}}}
 \end{mathpar}
 
 
