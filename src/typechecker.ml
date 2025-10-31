@@ -68,16 +68,13 @@ let free_vars_without expr vars = remove_vars vars (free_vars expr)
 (* Modes and well-formedness                                                   *)
 (* -------------------------------------------------------------------------- *)
 
-let bottom_mode =
-  { Modes.Mode.past = Modes.Past.bottom_in; future = Modes.Future.bottom_in }
-
 let mode_of_storage { uniqueness; areality } =
   { Modes.Mode.past = { Modes.Past.bottom_in with uniqueness };
     future = { Modes.Future.bottom_in with areality } }
 
 let rec mode_of_type ty =
   match ty with
-  | TyUnit | TyEmpty -> bottom_mode
+  | TyUnit | TyEmpty -> Modes.Mode.bottom_in
   | TyArrow (domain, arrow_mode, codomain) ->
       ignore (mode_of_type domain);
       ignore (mode_of_type codomain);
