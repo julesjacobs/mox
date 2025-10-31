@@ -15,6 +15,14 @@
 \newcommand{\Inl}[1]{\kw{left}(#1)}
 \newcommand{\Inr}[1]{\kw{right}(#1)}
 \newcommand{\Match}[5]{\kw{match}\, #1\, \kw{with}\, \Inl{#2} \Rightarrow #3 \mid \Inr{#4} \Rightarrow #5}
+\newcommand{\AnnotSub}[1]{%
+  \if\relax\detokenize{#1}\relax
+  \else
+    _{\smash{\raisebox{-0.25ex}{$\scriptstyle #1$}}}
+  \fi}
+\newcommand{\RefCell}[1]{\kw{ref}\, #1}
+\newcommand{\Deref}[1]{\ !#1}
+\newcommand{\Assign}[2]{#1 := #2}
 \newcommand{\AnnotArrow}[1]{%
   \if\relax\detokenize{#1}\relax
     \to
@@ -31,6 +39,7 @@
 \newcommand{\TFun}[3][]{#2 \mathrel{\AnnotArrow{#1}} #3}
 \newcommand{\TPair}[3][]{#2 \mathbin{\AnnotBinop{\times}{#1}} #3}
 \newcommand{\TSum}[3][]{#2 \mathbin{\AnnotBinop{+}{#1}} #3}
+\newcommand{\TRef}[2][]{\kw{ref}\AnnotSub{#1}\, #2}
 \newcommand{\TUnit}{\kw{unit}}
 \newcommand{\TEmpty}{\kw{empty}}
 \newcommand{\UnitTerm}{\kw{unit}}
@@ -90,6 +99,8 @@ For future modes the two orders coincide, whereas for past modes the in-placemen
 
 \jules{It isn't clear that the linearity axis' $\leqin$ relation is useful for anything, at least at the moment.}
 
+\jules{Carefully check the $\leqin$ relation, considering the borrowing issue.}
+
 \medskip                               
 We collect the past modes into the tuple $p = (\text{uniqueness}, \text{contention})$ and the future modes into $f = (\text{areality}, \text{linearity}, \text{portability})$, lifting $\leqto$ and $\leqin$ componentwise.
 A mode is then the pair $m = (p, f)$, with both relations lifted again to $m$.
@@ -116,7 +127,8 @@ e &\mathrel{::=} {} && \text{-- expressions} &&\\
  & \mid \App{e_1}{e_2} \mid \Fun{x}{e} && \text{-- functions} &&\\
  & \mid \Pair{e_1}{e_2} \mid \LetPair{x_1}{x_2}{e_1}{e_2} && \text{-- pairs} &&\\
  & \mid \Inl{e} \mid \Inr{e} && \text{-- sums} &&\\
- & \mid \Match{e}{x_1}{e_1}{x_2}{e_2} && &&
+ & \mid \Match{e}{x_1}{e_1}{x_2}{e_2} && &&\\
+ & \mid \RefCell{e} \mid \Deref{e} \mid \Assign{e_1}{e_2} && \text{-- references} &&
 \end{flalign*}
 
 \bigskip
@@ -129,21 +141,31 @@ e &\mathrel{::=} {} && \text{-- expressions} &&\\
  & \mid \TUnit \mid \TEmpty && \text{-- unit and empty} &&\\
  & \mid \TFun[f]{\tau_1}{\tau_2} && \text{-- functions} &&\\
  & \mid \TPair[s]{\tau_1}{\tau_2} && \text{-- pairs} &&\\
- & \mid \TSum[s]{\tau_1}{\tau_2} && \text{-- sums} &&
+ & \mid \TSum[s]{\tau_1}{\tau_2} && \text{-- sums} &&\\
+ & \mid \TRef[r]{\tau} && \text{-- references} &&
 \end{flalign*}
 
 \paragraph{Notation}
 
 Function arrows carry a function (future) mode annotation~$f$, drawing from the future lattice so $f = (\text{areality}, \text{linearity}, \text{portability})$.
 Storage annotations~$s$ appear on products and sums, recording how elements are kept with $s = (\text{uniqueness}, \text{areality})$.
-We write $\hat{f}$ for the embedding of $f$ into the full mode lattice (past component~$\bot_{\mathrm{in}}$, future component~$f$) and $\hat{s}$ for the embedding of $s$.
+Reference annotations~$r$ decorate mutable references and collect the axes that matter for cells: $r = (\text{uniqueness}, \text{areality}, \text{contention})$ and we write $r_{\text{u}}, r_{\text{a}}, r_{\text{c}}$ for their respective components.
+We write $\hat{f}$ for the embedding of $f$ into the full mode lattice (past component~$\bot_{\mathrm{in}}$, future component~$f$), and $\hat{s}$ and $\hat{r}$ for the embeddings of $s$ and $r$ respectively.
+Comparisons such as $s_1 \leqto s_2$ or $r_1 \leqin r_2$ are taken componentwise, and joins and meets on $s$ or $r$ use the $\leqin$ order on each axis; we reuse the symbols $\sqcup$ and $\sqcap$ for these operations.
+
+\paragraph{Mutable references}
+
+The type $\TRef[r]{\tau}$ denotes a mutable cell that stores a value of type $\tau$.
+The uniqueness component $r_{\text{u}}$ tracks how many aliases exist to the cell's handle; the areality component $r_{\text{a}}$ tracks where the cell can reside; and the contention component $r_{\text{c}}$ records how much simultaneous access the cell tolerates.
+Creating a reference defaults to the most precise handle $r_0 = (\mode{unique}, \mode{local}, \mode{uncontended})$, from which weaker capabilities can be derived via subtyping or aliasing.
 
 \bigskip
 
 \section{Kinding Rules}
 
 We write $\tau : m$ to state that type $\tau$ is well-formed at mode $m$.
-Write $m \sqcap \hat{s}$ for the meet of $m$ with $\hat{s}$ in the $\leqin$-lattice; it leaves the future components unchanged and meets the uniqueness and areality components with those recorded by $s$.
+For storage annotations we write $m \sqcap \hat{s}$ for the meet of $m$ with $\hat{s}$ in the $\leqin$-lattice; this leaves the axes not mentioned in $s$ untouched and meets the uniqueness and areality axes with those recorded by $s$.
+For reference annotations we analogously write $m \sqcap \hat{r}$, meeting the uniqueness, contention, and areality axes with the capabilities recorded by $r$.
 Here $\top_{\mathrm{in}}$ denotes the greatest mode with respect to $\leqin$.
 
 \begin{mathpar}
@@ -166,7 +188,13 @@ Here $\top_{\mathrm{in}}$ denotes the greatest mode with respect to $\leqin$.
 \inferrule
   {\hat{s} \leqin m \\ \tau_1 : m \sqcap \hat{s} \\ \tau_2 : m \sqcap \hat{s}}
   {\TSum[s]{\tau_1}{\tau_2} : m}
+\and
+\inferrule
+  {\hat{r} \leqin m \\ \tau : m \sqcap \hat{r}}
+  {\TRef[r]{\tau} : m}
 \end{mathpar}
+
+\jules{Carefully check the kinding rules}
 
 We will omit the annotations when they are not needed.
 
@@ -237,6 +265,24 @@ Typing judgments use linear contexts: $\Gamma_1 \uplus \Gamma_2$ denotes a parti
   {\judge{\Gamma_0 \uplus \Gamma_1}{\Match{e}{x_1}{e_1}{x_2}{e_2}}{\tau}}
 \end{mathpar}
 
+\vspace{0.5em}\textit{References}
+\begin{mathpar}
+\inferrule
+  {\judge{\Gamma}{e}{\tau}}
+  {\judge{\Gamma}{\RefCell{e}}{\TRef{\tau}}}
+\and
+\inferrule
+  {\judge{\Gamma}{e}{\TRef{\tau}}}
+  {\judge{\Gamma}{\Deref{e}}{\tau}}
+\and
+\inferrule
+  {\judge{\Gamma_1}{e_1}{\TRef{\tau}} \\ \judge{\Gamma_2}{e_2}{\tau}}
+  {\judge{\Gamma_1 \uplus \Gamma_2}{\Assign{e_1}{e_2}}{\TUnit}}
+\end{mathpar}
+
+We write simply $\RefCell{e}$ when allocating a cell; the resulting handle adopts the most precise capability $r_0 = (\mode{unique}, \mode{local}, \mode{uncontended})$, with weaker modes obtained by subtyping its type.
+A dereference yields the stored payload, and assignment consumes the contexts used to establish the reference and the incoming value.
+
 \vspace{0.5em}\textit{Subsumption}
 \begin{mathpar}
 \inferrule
@@ -282,6 +328,15 @@ Typing judgments use linear contexts: $\Gamma_1 \uplus \Gamma_2$ denotes a parti
   {\Sub{\TSum[s_1]{\tau_1}{\tau_2}}{\TSum[s_2]{\tau_1'}{\tau_2'}}}
 \end{mathpar}
 
+\vspace{0.5em}\textit{References}
+\begin{mathpar}
+\inferrule
+  {r_1 \leqto r_2}
+  {\Sub{\TRef[r_1]{\tau}}{\TRef[r_2]{\tau}}}
+\end{mathpar}
+
+The payload type is invariant because references support mutation.
+
 \section{Aliasing}
 
 The judgment $\Alias{\tau}{\tau'}$ records that aliasing $\tau$ is allowed and yields type $\tau'$.
@@ -317,6 +372,15 @@ The judgment $\Alias{\tau}{\tau'}$ records that aliasing $\tau$ is allowed and y
   {\Alias{\TSum[s]{\tau_1}{\tau_2}}{\TSum[(\mode{aliased}, a)]{\tau_1'}{\tau_2'}}}
 \end{mathpar}
 
+\vspace{0.5em}\textit{References}
+\begin{mathpar}
+\inferrule
+  {\Alias{\tau}{\tau'} \\ r = (u, a, c)}
+  {\Alias{\TRef[r]{\tau}}{\TRef[(\mode{aliased}, a, c)]{\tau'}}}
+\end{mathpar}
+
+Aliasing a reference thus forgets both uniqueness and uncontended status while recursively aliasing the stored payload.
+
 \section{Locking}
 
 Typing a closure of type $\TFun[f]{\tau_1}{\tau_2}$ applies a lock to the ambient context, written $\Lock[f]{\Gamma}$. 
@@ -331,8 +395,9 @@ where
   \Lock[f]{\TUnit} &\ =\  \TUnit\\
   \Lock[f]{\TEmpty} &\ =\ \TEmpty\\
   \Lock[f]{\TFun[f']{\tau_1}{\tau_2}} &\ =\ \TFun[f']{\tau_1}{\tau_2} \quad\text{ if }\quad f \leqto f'\\
-  \Lock[f]{\TPair[s]{\tau_1}{\tau_2}} &\ =\ \TPair[s']{\Lock[f]{\tau_1}}{\Lock[f]{\tau_2}} \quad\text{ where }\quad s' = s \sqcup f_{\text{linearity}}^\dagger\\
-  \Lock[f]{\TSum[s]{\tau_1}{\tau_2}} &\ =\ \TSum[s']{\Lock[f]{\tau_1}}{\Lock[f]{\tau_2}} \quad\text{ where }\quad s' = s \sqcup f_{\text{linearity}}^\dagger\\
+  \Lock[f]{\TPair[s]{\tau_1}{\tau_2}} &\ =\ \TPair[s']{\Lock[f]{\tau_1}}{\Lock[f]{\tau_2}} \quad\text{ where }\quad s' = (s_{\text{u}} \sqcup f_{\text{linearity}}^\dagger,\ s_{\text{a}})\\
+  \Lock[f]{\TSum[s]{\tau_1}{\tau_2}} &\ =\ \TSum[s']{\Lock[f]{\tau_1}}{\Lock[f]{\tau_2}} \quad\text{ where }\quad s' = (s_{\text{u}} \sqcup f_{\text{linearity}}^\dagger,\ s_{\text{a}})\\
+  \Lock[f]{\TRef[r]{\tau}} &\ =\ \TRef[r']{\Lock[f]{\tau}} \quad\text{ where }\quad r' = (r_{\text{u}} \sqcup f_{\text{linearity}}^\dagger,\ r_{\text{a}},\ r_{\text{c}} \sqcup f_{\text{portability}}^\dagger)\\
   \Lock[f]{\tau} &\ =\ \bot \quad\text{ otherwise}
 \end{align*}
 The dagger map translates closure capabilities into the weakening applied to captured bindings:
@@ -345,6 +410,7 @@ The linearity and portability axes translate to past modes as follows:
 \end{align*}
 
 Intuitively, a $\mode{many}$ closure can only reuse captured data as $\mode{aliased}$, and a $\mode{portable}$ closure forces captured bindings to be $\mode{contended}$.
+When the captured value is a reference we update the pointer's uniqueness and contention components while locking the stored payload recursively.
 
 \section{Desiderata}
 
