@@ -2,7 +2,6 @@ open Ast
 
 type type_error =
   | Unbound_variable of ident
-  | Type_mismatch of ty * ty
   | Expected_function of ty
   | Expected_pair of ty
   | Expected_sum of ty
@@ -11,31 +10,6 @@ type type_error =
 
 exception Error of type_error
 exception Mode_error of string
-
-let equal_arrow_mode m1 m2 =
-  Modes.Areality.equal m1.Modes.Future.areality m2.Modes.Future.areality
-  && Modes.Linearity.equal m1.Modes.Future.linearity m2.Modes.Future.linearity
-  && Modes.Portability.equal m1.Modes.Future.portability m2.Modes.Future.portability
-
-let equal_storage_mode m1 m2 =
-  Modes.Uniqueness.equal m1.uniqueness m2.uniqueness
-  && Modes.Areality.equal m1.areality m2.areality
-
-let rec equal_ty t1 t2 =
-  match (t1, t2) with
-  | TyUnit, TyUnit -> true
-  | TyEmpty, TyEmpty -> true
-  | TyArrow (a1, m1, b1), TyArrow (a2, m2, b2) ->
-      equal_ty a1 a2 && equal_arrow_mode m1 m2 && equal_ty b1 b2
-  | TyPair (a1, m1, b1), TyPair (a2, m2, b2) ->
-      equal_ty a1 a2 && equal_storage_mode m1 m2 && equal_ty b1 b2
-  | TySum (a1, m1, b1), TySum (a2, m2, b2) ->
-      equal_ty a1 a2 && equal_storage_mode m1 m2 && equal_ty b1 b2
-  | _ -> false
-
-let ensure_equal expected actual =
-  if equal_ty expected actual then ()
-  else raise (Error (Type_mismatch (expected, actual)))
 
 let lookup env x =
   let rec aux = function
@@ -48,9 +22,6 @@ let string_of_ty = Pretty.string_of_ty
 
 let string_of_error = function
   | Unbound_variable x -> Printf.sprintf "Unbound variable %s" x
-  | Type_mismatch (expected, actual) ->
-      Printf.sprintf "Type mismatch: expected %s, found %s"
-        (string_of_ty expected) (string_of_ty actual)
   | Expected_function ty ->
       Printf.sprintf "Expected a function type, found %s" (string_of_ty ty)
   | Expected_pair ty ->
@@ -109,55 +80,7 @@ let rec synth env expr =
       check env e ty;
       ty
 
-and check env expr ty =
-  match expr with
-  | Unit -> ensure_equal ty TyUnit
-  | Absurd e -> check env e TyEmpty
-  | Fun (x, body) ->
-      (match ty with
-      | TyArrow (t_arg, _, t_res) -> check ((x, t_arg) :: env) body t_res
-      | _ -> raise (Error (Expected_function ty)))
-  | Inl e ->
-      (match ty with
-      | TySum (t_left, _, _) -> check env e t_left
-      | _ -> raise (Error (Expected_sum ty)))
-  | Inr e ->
-      (match ty with
-      | TySum (_, _, t_right) -> check env e t_right
-      | _ -> raise (Error (Expected_sum ty)))
-  | Pair (e1, e2) ->
-      (match ty with
-      | TyPair (t1, _, t2) ->
-          check env e1 t1;
-          check env e2 t2
-      | _ -> raise (Error (Expected_pair ty)))
-  | Let (x, e1, e2) ->
-      let t1 = synth env e1 in
-      check ((x, t1) :: env) e2 ty
-  | LetPair (x1, x2, e1, e2) ->
-      let t = synth env e1 in
-      (match t with
-      | TyPair (t1, _, t2) -> check ((x2, t2) :: (x1, t1) :: env) e2 ty
-      | _ -> raise (Error (Expected_pair t)))
-  | Match (scrut, x1, e1, x2, e2) ->
-      let scrut_ty = synth env scrut in
-      (match scrut_ty with
-      | TySum (t_left, _, t_right) ->
-          check ((x1, t_left) :: env) e1 ty;
-          check ((x2, t_right) :: env) e2 ty
-      | _ -> raise (Error (Expected_sum scrut_ty)))
-  | Annot (e, ty') ->
-      check env e ty';
-      ensure_equal ty ty'
-  | _ ->
-      let inferred = synth env expr in
-      ensure_equal ty inferred
-
-let infer expr = synth [] expr
-
-let check_top expr ty = check [] expr ty
-
-let rec mode_of_type ty =
+and mode_of_type ty =
   let bottom_mode = { Modes.Mode.past = Modes.Past.bottom_in; future = Modes.Future.bottom_in } in
   match ty with
   | TyUnit | TyEmpty -> bottom_mode
@@ -221,7 +144,7 @@ let rec mode_of_type ty =
       in
       Modes.Mode.join_in combined annotation_mode
 
-let rec subtype t1 t2 =
+and subtype t1 t2 =
   match (t1, t2) with
   | TyUnit, TyUnit -> ()
   | TyEmpty, TyEmpty -> ()
@@ -242,3 +165,51 @@ let rec subtype t1 t2 =
          || not (Modes.Areality.leq_to m1.areality m2.areality)
       then raise (Error (Not_a_subtype (t1, t2)))
   | _ -> raise (Error (Not_a_subtype (t1, t2)))
+
+and check env expr ty =
+  match expr with
+  | Unit -> subtype TyUnit ty
+  | Absurd e -> check env e TyEmpty
+  | Fun (x, body) ->
+      (match ty with
+      | TyArrow (t_arg, _, t_res) -> check ((x, t_arg) :: env) body t_res
+      | _ -> raise (Error (Expected_function ty)))
+  | Inl e ->
+      (match ty with
+      | TySum (t_left, _, _) -> check env e t_left
+      | _ -> raise (Error (Expected_sum ty)))
+  | Inr e ->
+      (match ty with
+      | TySum (_, _, t_right) -> check env e t_right
+      | _ -> raise (Error (Expected_sum ty)))
+  | Pair (e1, e2) ->
+      (match ty with
+      | TyPair (t1, _, t2) ->
+          check env e1 t1;
+          check env e2 t2
+      | _ -> raise (Error (Expected_pair ty)))
+  | Let (x, e1, e2) ->
+      let t1 = synth env e1 in
+      check ((x, t1) :: env) e2 ty
+  | LetPair (x1, x2, e1, e2) ->
+      let t = synth env e1 in
+      (match t with
+      | TyPair (t1, _, t2) -> check ((x2, t2) :: (x1, t1) :: env) e2 ty
+      | _ -> raise (Error (Expected_pair t)))
+  | Match (scrut, x1, e1, x2, e2) ->
+      let scrut_ty = synth env scrut in
+      (match scrut_ty with
+      | TySum (t_left, _, t_right) ->
+          check ((x1, t_left) :: env) e1 ty;
+          check ((x2, t_right) :: env) e2 ty
+      | _ -> raise (Error (Expected_sum scrut_ty)))
+  | Annot (e, ty') ->
+      check env e ty';
+      subtype ty' ty
+  | _ ->
+      let inferred = synth env expr in
+      subtype inferred ty
+
+let infer expr = synth [] expr
+
+let check_top expr ty = check [] expr ty

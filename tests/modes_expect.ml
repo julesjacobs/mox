@@ -127,3 +127,11 @@ let%expect_test "mode violation" =
   | _ -> Printf.printf "unexpected success\n"
   | exception Typechecker.Mode_error msg -> Printf.printf "%s\n" msg);
   [%expect {|Pair uniqueness unique exceeds annotation aliased|}]
+
+let%expect_test "subtype modes" =
+  let t1 = parse_ty "unit *[unique local] unit" in
+  let t2 = parse_ty "unit *[aliased local] unit" in
+  (match Typechecker.subtype t1 t2 with
+  | () -> print_endline "ok"
+  | exception Typechecker.Error (Typechecker.Not_a_subtype _) -> print_endline "fail");
+  [%expect {|ok|}]
