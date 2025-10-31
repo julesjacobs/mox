@@ -3,6 +3,7 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{mathpartir}
+\usepackage{fontawesome5}
 \mprset{flushleft}
 \newcommand{\kw}[1]{\text{\textbf{#1}}}
 \newcommand{\Let}[3]{\kw{let}\, #1 = #2\, \kw{in}\, #3}
@@ -43,6 +44,9 @@
 \newcommand{\alias}{\mathrel{\underset{\AnnotBelow{\text{alias}}}{\rightsquigarrow}}}
 \newcommand{\Alias}[2]{#1 \alias #2}
 \newcommand{\lin}[1]{\operatorname{lin}(#1)}
+\newcommand{\Lock}[2][]{
+  \text{\faLock}_{#1}(#2)
+}
 
 \title{Mox Notes}
 \author{Jules Jacobs}
@@ -167,6 +171,8 @@ We will omit the annotations when they are not needed.
 
 Typing judgments use linear contexts: $\Gamma_1 \uplus \Gamma_2$ denotes a partition of the context into disjoint subcontexts, and $\emptyset$ is the empty context.
 
+\bigskip
+
 \textit{Variables}
 \begin{mathpar}
 \inferrule
@@ -192,8 +198,8 @@ Typing judgments use linear contexts: $\Gamma_1 \uplus \Gamma_2$ denotes a parti
 \vspace{0.5em}\textit{Functions}
 \begin{mathpar}
 \inferrule
-  {\judge{\Gamma, x : \tau_1}{e}{\tau_2}}
-  {\judge{\Gamma}{\Fun{x}{e}}{\TFun{\tau_1}{\tau_2}}}
+  {\judge{\Lock[f]{\Gamma}, x : \tau_1}{e}{\tau_2}}
+  {\judge{\Gamma}{\Fun{x}{e}}{\TFun[f]{\tau_1}{\tau_2}}}
 \and
 \inferrule
   {\judge{\Gamma_1}{e_1}{\TFun{\tau_1}{\tau_2}} \\ \judge{\Gamma_2}{e_2}{\tau_1}}
