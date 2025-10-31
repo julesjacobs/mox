@@ -58,7 +58,7 @@
 
 \maketitle
 
-\paragraph{Modes}
+\section{Modes}
 
 We distinguish two mode families—\emph{past} and \emph{future}.
 Each axis is ordered by the conversion relation~$\leqto$ (values that can be coerced ``to'' a weaker mode) and an in-placement relation~$\leqin$ (values that can live ``in'' a surrounding mode).
@@ -107,7 +107,7 @@ In summary, the guarantees along past axes can get weaker as one goes from a con
 The flipping of the $\leqto$ order stems from the fact that it's safe to \emph{forget} facts about the past whereas it's safe to \emph{add} restrictions on the future.
 
 
-\paragraph{Expressions}
+\section{Expressions}
 
 \begin{flalign*}
 e &\mathrel{::=} {} && \text{-- expressions} &&\\
@@ -122,7 +122,7 @@ e &\mathrel{::=} {} && \text{-- expressions} &&\\
 \bigskip
 
 
-\paragraph{Types}
+\section{Types}
 
 \begin{flalign*}
 \tau &\mathrel{::=} {} &&&&\\
@@ -132,7 +132,7 @@ e &\mathrel{::=} {} && \text{-- expressions} &&\\
  & \mid \TSum[s]{\tau_1}{\tau_2} && \text{-- sums} &&
 \end{flalign*}
 
-\paragraph{Notation}
+\section{Notation}
 
 Function arrows carry a function (future) mode annotation~$f$, drawing from the future lattice so $f = (\text{areality}, \text{linearity}, \text{portability})$.
 Storage annotations~$s$ appear on products and sums, recording how elements are kept with $s = (\text{uniqueness}, \text{areality})$.
@@ -140,7 +140,7 @@ We write $\hat{f}$ for the embedding of $f$ into the full mode lattice (past com
 
 \bigskip
 
-\paragraph{Kinding Rules}\ \\
+\section{Kinding Rules}
 
 We write $\tau : m$ to state that type $\tau$ is well-formed at mode $m$.
 Write $m \sqcap \hat{s}$ for the meet of $m$ with $\hat{s}$ in the $\leqin$-lattice; it leaves the future components unchanged and meets the uniqueness and areality components with those recorded by $s$.
@@ -172,7 +172,7 @@ We will omit the annotations when they are not needed.
 
 \bigskip
 
-\paragraph{Typing Rules}\ \\
+\section{Typing Rules}
 
 Typing judgments use linear contexts: $\Gamma_1 \uplus \Gamma_2$ denotes a partition of the context into disjoint subcontexts, and $\emptyset$ is the empty context.
 
@@ -251,7 +251,7 @@ Typing judgments use linear contexts: $\Gamma_1 \uplus \Gamma_2$ denotes a parti
   {\judge{\Gamma, x : \tau_1}{e}{\tau_2}}
 \end{mathpar}
 
-\paragraph{Subtyping Rules}\ \\
+\section{Subtyping Rules}
 
 \textit{Base}
 \begin{mathpar}
