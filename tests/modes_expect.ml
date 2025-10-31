@@ -82,3 +82,27 @@ let%expect_test "type arrow mode rejection" =
   | _ -> Printf.printf "unexpected success\n"
   | exception Invalid_argument msg -> Printf.printf "%s\n" msg);
   [%expect {|Modes [shared] not allowed on functions|}]
+
+let%expect_test "type pair default" =
+  parse_ty "unit * unit"
+  |> Pretty.string_of_ty
+  |> Printf.printf "%s\n";
+  [%expect {|(unit * unit)|}]
+
+let%expect_test "type pair custom" =
+  parse_ty "unit *[unique local] unit"
+  |> Pretty.string_of_ty
+  |> Printf.printf "%s\n";
+  [%expect {|(unit *[unique local] unit)|}]
+
+let%expect_test "type pair invalid mode" =
+  (match parse_ty "unit *[portable] unit" with
+  | _ -> Printf.printf "unexpected success\n"
+  | exception Invalid_argument msg -> Printf.printf "%s\n" msg);
+  [%expect {|Modes [portable] not allowed on products/sums|}]
+
+let%expect_test "type sum custom" =
+  parse_ty "unit +[unique local] empty"
+  |> Pretty.string_of_ty
+  |> Printf.printf "%s\n";
+  [%expect {|(unit +[unique local] empty)|}]

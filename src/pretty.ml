@@ -33,5 +33,27 @@ and string_of_ty = function
         | _ -> Printf.sprintf "->[%s]" (String.concat " " parts)
       in
       Printf.sprintf "(%s %s %s)" (string_of_ty t1) arrow (string_of_ty t2)
-  | TyPair (t1, t2) -> Printf.sprintf "(%s * %s)" (string_of_ty t1) (string_of_ty t2)
-  | TySum (t1, t2) -> Printf.sprintf "(%s + %s)" (string_of_ty t1) (string_of_ty t2)
+  | TyPair (t1, mode, t2) ->
+      let parts =
+        [ Modes.Uniqueness.to_short_string mode.uniqueness;
+          Modes.Areality.to_short_string mode.areality ]
+        |> List.filter (fun s -> String.trim s <> "")
+      in
+      let sep =
+        match parts with
+        | [] -> " * "
+        | _ -> Printf.sprintf " *[%s] " (String.concat " " parts)
+      in
+      Printf.sprintf "(%s%s%s)" (string_of_ty t1) sep (string_of_ty t2)
+  | TySum (t1, mode, t2) ->
+      let parts =
+        [ Modes.Uniqueness.to_short_string mode.uniqueness;
+          Modes.Areality.to_short_string mode.areality ]
+        |> List.filter (fun s -> String.trim s <> "")
+      in
+      let sep =
+        match parts with
+        | [] -> " + "
+        | _ -> Printf.sprintf " +[%s] " (String.concat " " parts)
+      in
+      Printf.sprintf "(%s%s%s)" (string_of_ty t1) sep (string_of_ty t2)

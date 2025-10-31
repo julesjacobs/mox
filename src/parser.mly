@@ -1,5 +1,17 @@
 %{
 open Ast
+
+let default_storage_mode =
+  { uniqueness = Modes.Uniqueness.default; areality = Modes.Areality.default }
+
+let storage_mode_from_list names =
+  let uniqueness, remaining = Modes.Uniqueness.extract names in
+  let areality, remaining = Modes.Areality.extract remaining in
+  if remaining <> [] then
+    invalid_arg
+      (Printf.sprintf "Modes [%s] not allowed on products/sums"
+         (String.concat ", " remaining));
+  { uniqueness; areality }
 %}
 
 %token LET IN FUN MATCH WITH LEFT RIGHT ABSURD UNIT EMPTY
@@ -79,11 +91,13 @@ arrow_tail:
     }
 
 ty_sum:
-  | ty_sum PLUS ty_prod { TySum ($1, $3) }
+  | ty_sum PLUS ty_prod { TySum ($1, default_storage_mode, $3) }
+  | ty_sum PLUS mode_list ty_prod { TySum ($1, storage_mode_from_list $3, $4) }
   | ty_prod { $1 }
 
 ty_prod:
-  | ty_prod TIMES ty_atom { TyPair ($1, $3) }
+  | ty_prod TIMES ty_atom { TyPair ($1, default_storage_mode, $3) }
+  | ty_prod TIMES mode_list ty_atom { TyPair ($1, storage_mode_from_list $3, $4) }
   | ty_atom { $1 }
 
 ty_atom:

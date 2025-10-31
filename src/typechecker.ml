@@ -15,14 +15,20 @@ let equal_arrow_mode m1 m2 =
   && Modes.Linearity.equal m1.Modes.Future.linearity m2.Modes.Future.linearity
   && Modes.Portability.equal m1.Modes.Future.portability m2.Modes.Future.portability
 
+let equal_storage_mode m1 m2 =
+  Modes.Uniqueness.equal m1.uniqueness m2.uniqueness
+  && Modes.Areality.equal m1.areality m2.areality
+
 let rec equal_ty t1 t2 =
   match (t1, t2) with
   | TyUnit, TyUnit -> true
   | TyEmpty, TyEmpty -> true
   | TyArrow (a1, m1, b1), TyArrow (a2, m2, b2) ->
       equal_ty a1 a2 && equal_arrow_mode m1 m2 && equal_ty b1 b2
-  | TyPair (a1, b1), TyPair (a2, b2) -> equal_ty a1 a2 && equal_ty b1 b2
-  | TySum (a1, b1), TySum (a2, b2) -> equal_ty a1 a2 && equal_ty b1 b2
+  | TyPair (a1, m1, b1), TyPair (a2, m2, b2) ->
+      equal_ty a1 a2 && equal_storage_mode m1 m2 && equal_ty b1 b2
+  | TySum (a1, m1, b1), TySum (a2, m2, b2) ->
+      equal_ty a1 a2 && equal_storage_mode m1 m2 && equal_ty b1 b2
   | _ -> false
 
 let ensure_equal expected actual =
@@ -68,21 +74,26 @@ let rec synth env expr =
   | Pair (e1, e2) ->
       let t1 = synth env e1 in
       let t2 = synth env e2 in
-      TyPair (t1, t2)
+      let mode =
+        { uniqueness = Modes.Uniqueness.default; areality = Modes.Areality.default }
+      in
+      TyPair (t1, mode, t2)
   | Let (x, e1, e2) ->
       let t1 = synth env e1 in
       synth ((x, t1) :: env) e2
   | LetPair (x1, x2, e1, e2) ->
       let t = synth env e1 in
       (match t with
-      | TyPair (t1, t2) -> synth ((x2, t2) :: (x1, t1) :: env) e2
+      | TyPair (t1, _, t2) -> synth ((x2, t2) :: (x1, t1) :: env) e2
       | _ -> raise (Error (Expected_pair t)))
-  | Inl _ -> raise (Error (Cannot_infer "left"))
-  | Inr _ -> raise (Error (Cannot_infer "right"))
+  | Inl e ->
+      ignore e;
+      raise (Error (Cannot_infer "left"))
+  | Inr e -> raise (Error (Cannot_infer "right"))
   | Match (scrut, x1, e1, x2, e2) ->
       let scrut_ty = synth env scrut in
       (match scrut_ty with
-      | TySum (t_left, t_right) ->
+      | TySum (t_left, _, t_right) ->
           let t_branch = synth ((x1, t_left) :: env) e1 in
           check ((x2, t_right) :: env) e2 t_branch;
           t_branch
@@ -101,15 +112,15 @@ and check env expr ty =
       | _ -> raise (Error (Expected_function ty)))
   | Inl e ->
       (match ty with
-      | TySum (t_left, _) -> check env e t_left
+      | TySum (t_left, _, _) -> check env e t_left
       | _ -> raise (Error (Expected_sum ty)))
   | Inr e ->
       (match ty with
-      | TySum (_, t_right) -> check env e t_right
+      | TySum (_, _, t_right) -> check env e t_right
       | _ -> raise (Error (Expected_sum ty)))
   | Pair (e1, e2) ->
       (match ty with
-      | TyPair (t1, t2) ->
+      | TyPair (t1, _, t2) ->
           check env e1 t1;
           check env e2 t2
       | _ -> raise (Error (Expected_pair ty)))
@@ -119,12 +130,12 @@ and check env expr ty =
   | LetPair (x1, x2, e1, e2) ->
       let t = synth env e1 in
       (match t with
-      | TyPair (t1, t2) -> check ((x2, t2) :: (x1, t1) :: env) e2 ty
+      | TyPair (t1, _, t2) -> check ((x2, t2) :: (x1, t1) :: env) e2 ty
       | _ -> raise (Error (Expected_pair t)))
   | Match (scrut, x1, e1, x2, e2) ->
       let scrut_ty = synth env scrut in
       (match scrut_ty with
-      | TySum (t_left, t_right) ->
+      | TySum (t_left, _, t_right) ->
           check ((x1, t_left) :: env) e1 ty;
           check ((x2, t_right) :: env) e2 ty
       | _ -> raise (Error (Expected_sum scrut_ty)))
