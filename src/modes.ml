@@ -41,6 +41,22 @@ module Make_axis (Spec : AXIS_SPEC) = struct
   let join_in = join Spec.order_in
   let meet_in = meet Spec.order_in
 
+  let bottom order =
+    match order with
+    | x :: _ -> x
+    | [] -> invalid_arg "Make_axis.bottom: empty order"
+
+  let top order =
+    match order with
+    | [] -> invalid_arg "Make_axis.top: empty order"
+    | x :: xs -> List.fold_left (fun _ y -> y) x xs
+
+  let bottom_to = bottom Spec.order_to
+  let top_to = top Spec.order_to
+
+  let bottom_in = bottom Spec.order_in
+  let top_in = top Spec.order_in
+
   let to_string = Spec.show
   let to_short_string value = if Spec.equal value Spec.default then "" else Spec.show value
 
@@ -154,6 +170,12 @@ module Past = struct
     { uniqueness = Uniqueness.meet_to a.uniqueness b.uniqueness;
       contention = Contention.meet_to a.contention b.contention }
 
+  let top_to =
+    { uniqueness = Uniqueness.top_to; contention = Contention.top_to }
+
+  let bottom_to =
+    { uniqueness = Uniqueness.bottom_to; contention = Contention.bottom_to }
+
   let meet_in a b =
     { uniqueness = Uniqueness.meet_in a.uniqueness b.uniqueness;
       contention = Contention.meet_in a.contention b.contention }
@@ -161,6 +183,12 @@ module Past = struct
   let join_in a b =
     { uniqueness = Uniqueness.join_in a.uniqueness b.uniqueness;
       contention = Contention.join_in a.contention b.contention }
+
+  let top_in =
+    { uniqueness = Uniqueness.top_in; contention = Contention.top_in }
+
+  let bottom_in =
+    { uniqueness = Uniqueness.bottom_in; contention = Contention.bottom_in }
 
   let extract names =
     let uniqueness, names = Uniqueness.extract names in
@@ -203,6 +231,16 @@ module Future = struct
       portability = Portability.meet_to a.portability b.portability;
       areality = Areality.meet_to a.areality b.areality }
 
+  let top_to =
+    { linearity = Linearity.top_to;
+      portability = Portability.top_to;
+      areality = Areality.top_to }
+
+  let bottom_to =
+    { linearity = Linearity.bottom_to;
+      portability = Portability.bottom_to;
+      areality = Areality.bottom_to }
+
   let meet_in a b =
     { linearity = Linearity.meet_in a.linearity b.linearity;
       portability = Portability.meet_in a.portability b.portability;
@@ -212,6 +250,16 @@ module Future = struct
     { linearity = Linearity.join_in a.linearity b.linearity;
       portability = Portability.join_in a.portability b.portability;
       areality = Areality.join_in a.areality b.areality }
+
+  let top_in =
+    { linearity = Linearity.top_in;
+      portability = Portability.top_in;
+      areality = Areality.top_in }
+
+  let bottom_in =
+    { linearity = Linearity.bottom_in;
+      portability = Portability.bottom_in;
+      areality = Areality.bottom_in }
 
   let extract names =
     let areality, names = Areality.extract names in
@@ -242,11 +290,17 @@ module Mode = struct
   let meet_to a b =
     { past = Past.meet_to a.past b.past; future = Future.meet_to a.future b.future }
 
+  let top_to = { past = Past.top_to; future = Future.top_to }
+  let bottom_to = { past = Past.bottom_to; future = Future.bottom_to }
+
   let meet_in a b =
     { past = Past.meet_in a.past b.past; future = Future.meet_in a.future b.future }
 
   let join_in a b =
     { past = Past.join_in a.past b.past; future = Future.join_in a.future b.future }
+
+  let top_in = { past = Past.top_in; future = Future.top_in }
+  let bottom_in = { past = Past.bottom_in; future = Future.bottom_in }
 
   let extract names =
     let past, names = Past.extract names in
