@@ -222,6 +222,13 @@ Typing judgments use linear contexts: $\Gamma \uplus \Delta$ denotes a partition
   {\judge{\Gamma_0 \uplus \Gamma_1}{\Match{e}{x_1}{e_1}{x_2}{e_2}}{\tau}}
 \end{mathpar}
 
+\vspace{0.5em}\textit{Subsumption}
+\begin{mathpar}
+\inferrule
+  {\judge{\Gamma}{e}{\tau_1} \\ \Sub{\tau_1}{\tau_2}}
+  {\judge{\Gamma}{e}{\tau_2}}
+\end{mathpar}
+
 \paragraph{Subtyping Rules}\ \\
 
 \textit{Base}
