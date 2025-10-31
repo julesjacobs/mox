@@ -18,6 +18,7 @@ exception Error of type_error
 exception Mode_error of string
 
 let string_of_ty = Pretty.string_of_ty
+let string_of_mode = Modes.Mode.to_string
 
 let string_of_error = function
   | Unbound_variable x -> Printf.sprintf "Unbound variable %s" x
@@ -69,17 +70,17 @@ let mode_of_storage { uniqueness; areality } =
   let future = { Modes.Future.bottom_in with areality } in
   Modes.Mode.make ~past ~future
 
-let rec mode_of_type ty =
+let rec synth_mode ty =
   match ty with
   | TyUnit | TyEmpty -> Modes.Mode.bottom_in
   | TyArrow (domain, arrow_mode, codomain) ->
-      ignore (mode_of_type domain);
-      ignore (mode_of_type codomain);
+      ignore (synth_mode domain);
+      ignore (synth_mode codomain);
       Modes.Mode.make ~past:Modes.Past.bottom_in ~future:arrow_mode
   | TyPair (left, storage, right)
   | TySum (left, storage, right) ->
-      let left_mode = mode_of_type left in
-      let right_mode = mode_of_type right in
+      let left_mode = synth_mode left in
+      let right_mode = synth_mode right in
       let combined = Modes.Mode.join_in left_mode right_mode in
       let combined_uniqueness = combined.Modes.Mode.past.Modes.Past.uniqueness in
       let combined_areality = combined.Modes.Mode.future.Modes.Future.areality in
@@ -99,8 +100,54 @@ let rec mode_of_type ty =
                 (Modes.Areality.to_string storage.areality)));
       Modes.Mode.join_in combined (mode_of_storage storage)
 
+let rec check_mode ty expected =
+  match ty with
+  | TyUnit | TyEmpty -> ()
+  | TyArrow (domain, arrow_mode, codomain) ->
+      (* Check that the arrow mode does not exceed the expected mode *)
+      let actual =
+        Modes.Mode.make ~past:Modes.Past.bottom_in ~future:arrow_mode
+      in
+      if not (Modes.Mode.leq_in actual expected) then
+        raise
+          (Mode_error
+             (Printf.sprintf "Mode %s exceeds allowed %s"
+                (string_of_mode actual) (string_of_mode expected)));
+      (* Check the domain and codomain at the top mode *)
+      check_mode domain Modes.Mode.top_in;
+      check_mode codomain Modes.Mode.top_in;
+  | TyPair (left, storage, right) | TySum (left, storage, right) ->
+      (* Check that the storage mode does not exceed the expected mode *)
+      let storage_mode = mode_of_storage storage in
+      if not (Modes.Mode.leq_in storage_mode expected) then
+        raise
+          (Mode_error
+             (Printf.sprintf "Mode %s exceeds allowed %s"
+                (string_of_mode storage_mode) (string_of_mode expected)));
+      (* Check the components at the expected mode extended with the storage mode *)
+      let expected_past = expected.Modes.Mode.past in
+      let expected_future = expected.Modes.Mode.future in
+      let component_past =
+        { Modes.Past.uniqueness =
+            Modes.Uniqueness.meet_in expected_past.Modes.Past.uniqueness
+              storage.uniqueness;
+          contention = expected_past.Modes.Past.contention }
+      in
+      let component_future =
+        { Modes.Future.linearity = expected_future.Modes.Future.linearity;
+          portability = expected_future.Modes.Future.portability;
+          areality =
+            Modes.Areality.meet_in expected_future.Modes.Future.areality
+              storage.areality }
+      in
+      let component_expected =
+        Modes.Mode.make ~past:component_past ~future:component_future
+      in
+      check_mode left component_expected;
+      check_mode right component_expected
+
 let ensure_well_formed ty =
-  ignore (mode_of_type ty)
+  check_mode ty Modes.Mode.top_in
 
 (* -------------------------------------------------------------------------- *)
 (* Subtyping                                                                   *)

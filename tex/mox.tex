@@ -33,6 +33,53 @@
 
 \maketitle
 
+\paragraph{Modes}
+
+We distinguish two mode families—\emph{past} and \emph{future}.
+Each axis is ordered by the conversion relation~$\leqto$ (values that can be coerced ``to'' a weaker mode) and an in-placement relation~$\leqin$ (values that can live ``in'' a surrounding mode).
+For future modes the two orders coincide, whereas for past modes the in-placement relation reverses conversion.
+
+\medskip
+\noindent\textbf{Past axes ($p$)}
+\[
+\begin{alignedat}{2}
+\text{uniqueness (u):}&\quad \mode{unique} \leqto \mode{aliased}\\
+&\quad \mode{aliased} \leqin \mode{unique}\\[0.5ex]
+\text{contention (c):}&\quad \mode{uncontended} \leqto \mode{shared} \leqto \mode{contended}\\
+&\quad \mode{contended} \leqin \mode{shared} \leqin \mode{uncontended}
+\end{alignedat}
+\]
+
+\medskip
+\noindent\textbf{Future axes ($f$)}
+\[
+\begin{alignedat}{2}
+\text{linearity (l):}&\quad \mode{many} \leqto \mode{once}\\
+&\quad \mode{many} \leqin \mode{once}\\[0.5ex]
+\text{portability (p):}&\quad \mode{portable} \leqto \mode{non-portable}\\
+&\quad \mode{portable} \leqin \mode{non-portable}\\
+\text{areality (a):}&\quad \mode{global} \leqto \mode{regional} \leqto \mode{local}\\
+&\quad \mode{global} \leqin \mode{regional} \leqin \mode{local}
+\end{alignedat}
+\]
+
+\medskip                               
+We collect the past modes into the tuple $p = (\text{uniqueness}, \text{contention})$ and the future modes into $f = (\text{areality}, \text{linearity}, \text{portability})$, lifting $\leqto$ and $\leqin$ componentwise.
+A mode is then the pair $m = (p, f)$, with both relations lifted again to $m$.
+
+\noindent\emph{Intuition.}
+Modes are about \emph{deep} operations on values. For example, the uniqueness and linearity axes are about the operation of creating an alias to a value. Alias creation is deep in the sense that when we alias a data structure, then all its children should also be considered aliased (i.e., there are multiple pointer paths from the stack roots to the element). Uniqueness is about whether the pointer path to it is unique, i.e., whether an aliasing operation has been performed on it in the past, and linearity is about whether we're allowed to perform an aliasing operation on it in the future.
+
+A $\mode{unique}$ly referenced value can be coerced to an $\mode{aliased}$ value -- we simply forget that it was uniquely referenced -- hence $\mode{unique} \leqto \mode{aliased}$. It is also safe to store an aliased value inside a uniquely referenced structure, so $\mode{aliased} \leqin \mode{unique}$. Conversely, it is nonsensical to say a uniquely referenced value is stored in an aliased container, because aliasing is a deep property: if the container is considered aliased, then all its elements are as well.
+
+If an aliasing operation may be performed on a value (mode $\mode{many}$, think ``aliasable''), it is safe to coerce it to a value on which we are not allowed to perform an aliasing operation (mode $\mode{once}$, think ``nonaliasable''), hence $\mode{many} \leqto \mode{once}$.
+Conversely, values that we can create aliases to may be safely stored in containers that we are not allowed to create aliases to, hence $\mode{many} \leqin \mode{once}$.
+Allowing the converse storage would be unsound: placing a one-time value inside a aliasable container would expose the value to multiple aliases by aliasing the outer container.
+
+In summary, the guarantees along past axes can get weaker as one goes from a container to its elements, and the restrictions along future axes also get weaker as one goes from a container to its elements.
+The flipping of the $\leqto$ order stems from the fact that it's safe to \emph{forget} facts about the past whereas it's safe to \emph{add} restrictions on the future.
+
+
 \paragraph{Expressions}
 
 \begin{flalign*}
@@ -120,52 +167,6 @@ e &\mathrel{::=} {} && \text{-- expressions} &&\\
   {\Jud{\Match{e}{x_1}{e_1}{x_2}{e_2}}{\tau}}
 \end{mathpar}
 
-
-\paragraph{Modes}
-
-We distinguish two mode families—\emph{past} and \emph{future}.
-Each axis is ordered by the conversion relation~$\leqto$ (values that can be coerced ``to'' a weaker mode) and an in-placement relation~$\leqin$ (values that can live ``in'' a surrounding mode).
-For future modes the two orders coincide, whereas for past modes the in-placement relation reverses conversion.
-
-\medskip
-\noindent\textbf{Past axes ($p$)}
-\[
-\begin{alignedat}{2}
-\text{uniqueness:}&\quad \mode{unique} \leqto \mode{aliased}\\
-&\quad \mode{aliased} \leqin \mode{unique}\\[0.5ex]
-\text{contention:}&\quad \mode{uncontended} \leqto \mode{shared} \leqto \mode{contended}\\
-&\quad \mode{contended} \leqin \mode{shared} \leqin \mode{uncontended}
-\end{alignedat}
-\]
-
-\medskip
-\noindent\textbf{Future axes ($f$)}
-\[
-\begin{alignedat}{2}
-\text{linearity:}&\quad \mode{many} \leqto \mode{once}\\
-&\quad \mode{many} \leqin \mode{once}\\[0.5ex]
-\text{portability:}&\quad \mode{portable} \leqto \mode{non-portable}\\
-&\quad \mode{portable} \leqin \mode{non-portable}\\
-\text{areality:}&\quad \mode{global} \leqto \mode{regional} \leqto \mode{local}\\
-&\quad \mode{global} \leqin \mode{regional} \leqin \mode{local}
-\end{alignedat}
-\]
-
-\medskip                               
-We collect the past modes into the tuple $p = (\text{uniqueness}, \text{contention})$ and the future modes into $f = (\text{areality}, \text{linearity}, \text{portability})$, lifting $\leqto$ and $\leqin$ componentwise.
-A mode is then the pair $m = (p, f)$, with both relations lifted again to $m$.
-
-\noindent\emph{Intuition.}
-Modes are about \emph{deep} operations on values. For example, the uniqueness and linearity axes are about the operation of creating an alias to a value. Alias creation is deep in the sense that when we alias a data structure, then all its children should also be considered aliased (i.e., there are multiple pointer paths from the stack roots to the element). Uniqueness is about whether the pointer path to it is unique, i.e., whether an aliasing operation has been performed on it in the past, and linearity is about whether we're allowed to perform an aliasing operation on it in the future.
-
-A $\mode{unique}$ly referenced value can be coerced to an $\mode{aliased}$ value -- we simply forget that it was uniquely referenced -- hence $\mode{unique} \leqto \mode{aliased}$. It is also safe to store an aliased value inside a uniquely referenced structure, so $\mode{aliased} \leqin \mode{unique}$. Conversely, it is nonsensical to say a uniquely referenced value is stored in an aliased container, because aliasing is a deep property: if the container is considered aliased, then all its elements are as well.
-
-If an aliasing operation may be performed on a value (mode $\mode{many}$, think ``aliasable''), it is safe to coerce it to a value on which we are not allowed to perform an aliasing operation (mode $\mode{once}$, think ``nonaliasable''), hence $\mode{many} \leqto \mode{once}$.
-Conversely, values that we can create aliases to may be safely stored in containers that we are not allowed to create aliases to, hence $\mode{many} \leqin \mode{once}$.
-Allowing the converse storage would be unsound: placing a one-time value inside a aliasable container would expose the value to multiple aliases by aliasing the outer container.
-
-In summary, the guarantees along past axes can get weaker as one goes from a container to its elements, and the restrictions along future axes also get weaker as one goes from a container to its elements.
-The flipping of the $\leqto$ order stems from the fact that it's safe to \emph{forget} facts about the past whereas it's safe to \emph{add} restrictions on the future.
 
 \section{Desiderata}
 

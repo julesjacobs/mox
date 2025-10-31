@@ -108,25 +108,53 @@ let%expect_test "type sum custom" =
   [%expect {|(unit +[unique local] empty)|}]
 
 let%expect_test "mode pair custom" =
-  Typechecker.mode_of_type (parse_ty "unit *[unique local] unit")
+  Typechecker.synth_mode (parse_ty "unit *[unique local] unit")
   |> Modes.Mode.to_string
   |> Printf.printf "%s\n";
   [%expect {|unique contended local portable|}]
 
 let%expect_test "mode arrow custom" =
-  Typechecker.mode_of_type (parse_ty "unit ->[local once portable] unit")
+  Typechecker.synth_mode (parse_ty "unit ->[local once portable] unit")
   |> Modes.Mode.to_string
   |> Printf.printf "%s\n";
   [%expect {|contended local once portable|}]
 
 let%expect_test "mode violation" =
   (match
-     Typechecker.mode_of_type
+     Typechecker.synth_mode
        (parse_ty "(unit *[unique local] unit) *[aliased global] unit")
    with
   | _ -> Printf.printf "unexpected success\n"
   | exception Typechecker.Mode_error msg -> Printf.printf "%s\n" msg);
   [%expect {|Component uniqueness unique exceeds annotation aliased|}]
+
+let%expect_test "check mode success" =
+  Typechecker.check_mode (parse_ty "unit *[unique local] unit") Modes.Mode.top_in;
+  print_endline "ok";
+  [%expect {|ok|}]
+
+let%expect_test "check mode violation" =
+  (match
+     Typechecker.check_mode
+       (parse_ty "unit *[unique local] unit") Modes.Mode.bottom_in
+   with
+  | () -> print_endline "unexpected success"
+  | exception Typechecker.Mode_error msg -> print_endline msg);
+  [%expect {|Mode unique contended local portable exceeds allowed contended portable|}]
+
+let%expect_test "check mode arrow success" =
+  Typechecker.check_mode (parse_ty "unit ->[local once portable] unit") Modes.Mode.top_in;
+  print_endline "ok";
+  [%expect {|ok|}]
+
+let%expect_test "check mode arrow violation" =
+  (match
+     Typechecker.check_mode
+       (parse_ty "unit ->[local once portable] unit") Modes.Mode.bottom_in
+   with
+  | () -> print_endline "unexpected success"
+  | exception Typechecker.Mode_error msg -> print_endline msg);
+  [%expect {|Mode contended local once portable exceeds allowed contended portable|}]
 
 let%expect_test "subtype modes" =
   let t1 = parse_ty "unit *[unique local] unit" in
