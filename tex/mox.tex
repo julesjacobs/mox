@@ -282,7 +282,7 @@ Typing judgments use linear contexts: $\Gamma_1 \uplus \Gamma_2$ denotes a parti
   {\Sub{\TSum[s_1]{\tau_1}{\tau_2}}{\TSum[s_2]{\tau_1'}{\tau_2'}}}
 \end{mathpar}
 
-\paragraph{Aliasing}\ \\
+\section{Aliasing}
 
 The judgment $\Alias{\tau}{\tau'}$ records that aliasing $\tau$ is allowed and yields type $\tau'$.
 
@@ -317,7 +317,7 @@ The judgment $\Alias{\tau}{\tau'}$ records that aliasing $\tau$ is allowed and y
   {\Alias{\TSum[s]{\tau_1}{\tau_2}}{\TSum[(\mode{aliased}, a)]{\tau_1'}{\tau_2'}}}
 \end{mathpar}
 
-\paragraph{Locking}\ \\
+\section{Locking}
 
 Typing a closure of type $\TFun[f]{\tau_1}{\tau_2}$ applies a lock to the ambient context, written $\Lock[f]{\Gamma}$. 
 Here $f=(\text{areality}, \text{linearity}, \text{portability})$ tracks the function mode. 
