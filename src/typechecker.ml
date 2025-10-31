@@ -74,15 +74,15 @@ let rec mode_of_type ty =
                 (Modes.Areality.to_string storage.areality)));
       Modes.Mode.join_in combined (mode_of_storage storage)
 
-let ensure_well_formed ty = ignore (mode_of_type ty)
+let ensure_well_formed ty =
+  ignore (mode_of_type ty);
+  ty
 
 (* -------------------------------------------------------------------------- *)
 (* Subtyping                                                                   *)
 (* -------------------------------------------------------------------------- *)
 
 let rec subtype t1 t2 =
-  ensure_well_formed t1;
-  ensure_well_formed t2;
   match (t1, t2) with
   | TyUnit, TyUnit -> ()
   | TyEmpty, TyEmpty -> ()
@@ -112,6 +112,16 @@ let lookup env x =
 let default_storage_mode =
   { uniqueness = Modes.Uniqueness.default; areality = Modes.Areality.default }
 
+let make_pair_ty left storage right =
+  let ty = TyPair (left, storage, right) in
+  ignore (ensure_well_formed ty);
+  ty
+
+let make_sum_ty left storage right =
+  let ty = TySum (left, storage, right) in
+  ignore (ensure_well_formed ty);
+  ty
+
 let rec infer_expr env expr =
   match expr with
   | Var x -> lookup env x
@@ -128,9 +138,7 @@ let rec infer_expr env expr =
   | Pair (left, right) ->
       let left_ty = infer_expr env left in
       let right_ty = infer_expr env right in
-      let ty = TyPair (left_ty, default_storage_mode, right_ty) in
-      ensure_well_formed ty;
-      ty
+      make_pair_ty left_ty default_storage_mode right_ty
   | Let (x, e1, e2) ->
       let t1 = infer_expr env e1 in
       infer_expr ((x, t1) :: env) e2
@@ -145,8 +153,9 @@ let rec infer_expr env expr =
   | Match (scrutinee, x1, e1, x2, e2) ->
       let scrut_ty = infer_expr env scrutinee in
       (match scrut_ty with
-      | TySum (left_ty, _, right_ty) ->
+      | TySum (left_ty, storage, right_ty) ->
           let branch_ty = infer_expr ((x1, left_ty) :: env) e1 in
+          ignore (ensure_well_formed branch_ty);
           check_expr ((x2, right_ty) :: env) e2 branch_ty;
           branch_ty
       | _ -> raise (Error (Expected_sum scrut_ty)))
@@ -155,7 +164,7 @@ let rec infer_expr env expr =
       ty
 
 and check_expr env expr ty =
-  ensure_well_formed ty;
+  ignore (ensure_well_formed ty);
   match expr with
   | Unit -> subtype TyUnit ty
   | Absurd e -> check_expr env e TyEmpty
