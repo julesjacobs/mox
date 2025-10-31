@@ -10,11 +10,17 @@ type type_error =
 
 exception Error of type_error
 
+let equal_arrow_mode m1 m2 =
+  Modes.Areality.equal m1.Modes.Future.areality m2.Modes.Future.areality
+  && Modes.Linearity.equal m1.Modes.Future.linearity m2.Modes.Future.linearity
+  && Modes.Portability.equal m1.Modes.Future.portability m2.Modes.Future.portability
+
 let rec equal_ty t1 t2 =
   match (t1, t2) with
   | TyUnit, TyUnit -> true
   | TyEmpty, TyEmpty -> true
-  | TyArrow (a1, b1), TyArrow (a2, b2) -> equal_ty a1 a2 && equal_ty b1 b2
+  | TyArrow (a1, m1, b1), TyArrow (a2, m2, b2) ->
+      equal_ty a1 a2 && equal_arrow_mode m1 m2 && equal_ty b1 b2
   | TyPair (a1, b1), TyPair (a2, b2) -> equal_ty a1 a2 && equal_ty b1 b2
   | TySum (a1, b1), TySum (a2, b2) -> equal_ty a1 a2 && equal_ty b1 b2
   | _ -> false
@@ -55,7 +61,7 @@ let rec synth env expr =
   | App (e1, e2) ->
       let tf = synth env e1 in
       (match tf with
-      | TyArrow (targ, tres) ->
+      | TyArrow (targ, _, tres) ->
           check env e2 targ;
           tres
       | _ -> raise (Error (Expected_function tf)))
@@ -91,7 +97,7 @@ and check env expr ty =
   | Absurd e -> check env e TyEmpty
   | Fun (x, body) ->
       (match ty with
-      | TyArrow (t_arg, t_res) -> check ((x, t_arg) :: env) body t_res
+      | TyArrow (t_arg, _, t_res) -> check ((x, t_arg) :: env) body t_res
       | _ -> raise (Error (Expected_function ty)))
   | Inl e ->
       (match ty with

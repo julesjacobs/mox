@@ -65,7 +65,18 @@ mode_items:
 
 ty:
   | ty_sum { $1 }
-  | ty_sum ARROW ty { TyArrow ($1, $3) }
+  | ty_sum arrow_tail { $2 $1 }
+
+arrow_tail:
+  | ARROW ty { fun lhs -> TyArrow (lhs, Modes.Future.default, $2) }
+  | ARROW mode_list ty { fun lhs ->
+        let future, leftover = Modes.Future.extract $2 in
+        if leftover <> [] then
+          invalid_arg
+            (Printf.sprintf "Modes [%s] not allowed on functions"
+               (String.concat ", " leftover));
+        TyArrow (lhs, future, $3)
+    }
 
 ty_sum:
   | ty_sum PLUS ty_prod { TySum ($1, $3) }

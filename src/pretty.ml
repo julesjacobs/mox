@@ -20,6 +20,18 @@ let rec string_of_expr = function
 and string_of_ty = function
   | TyUnit -> "unit"
   | TyEmpty -> "empty"
-  | TyArrow (t1, t2) -> Printf.sprintf "(%s -> %s)" (string_of_ty t1) (string_of_ty t2)
+  | TyArrow (t1, modes, t2) ->
+      let parts =
+        [ Modes.Areality.to_short_string modes.Modes.Future.areality;
+          Modes.Linearity.to_short_string modes.Modes.Future.linearity;
+          Modes.Portability.to_short_string modes.Modes.Future.portability ]
+        |> List.filter (fun s -> String.trim s <> "")
+      in
+      let arrow =
+        match parts with
+        | [] -> "->"
+        | _ -> Printf.sprintf "->[%s]" (String.concat " " parts)
+      in
+      Printf.sprintf "(%s %s %s)" (string_of_ty t1) arrow (string_of_ty t2)
   | TyPair (t1, t2) -> Printf.sprintf "(%s * %s)" (string_of_ty t1) (string_of_ty t2)
   | TySum (t1, t2) -> Printf.sprintf "(%s + %s)" (string_of_ty t1) (string_of_ty t2)

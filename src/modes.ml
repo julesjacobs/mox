@@ -19,6 +19,7 @@ module Make_axis (Spec : AXIS_SPEC) = struct
 
   let all = Spec.order_to
   let default = Spec.default
+  let equal = Spec.equal
 
   let rank order value =
     let rec loop idx = function
@@ -259,6 +260,5 @@ module Mode = struct
       invalid_arg
         (Printf.sprintf "Unrecognised mode names: %s"
            (String.concat ", " remaining))
-
   let to_string t = concat [ Past.to_string t.past; Future.to_string t.future ]
 end

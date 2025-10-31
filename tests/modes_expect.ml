@@ -17,6 +17,10 @@ let print_mode mode =
 let string_of_list lst =
   "[" ^ String.concat ", " lst ^ "]"
 
+let parse_ty text =
+  let lexbuf = Lexing.from_string text in
+  Parser.ty_eof Lexer.token lexbuf
+
 let%expect_test "uniqueness extract" =
   let value, rest = Uniqueness.extract [ "unique"; "shared" ] in
   Printf.printf "value=%s rest=%s\n" (Uniqueness.to_string value) (string_of_list rest);
@@ -54,3 +58,27 @@ let%expect_test "parse leftover error" =
   | _ -> Printf.printf "unexpected success\n"
   | exception Invalid_argument msg -> Printf.printf "%s\n" msg);
   [%expect {|Unrecognised mode names: foo|}]
+
+let%expect_test "type arrow default" =
+  parse_ty "unit -> unit"
+  |> Pretty.string_of_ty
+  |> Printf.printf "%s\n";
+  [%expect {|(unit -> unit)|}]
+
+let%expect_test "type arrow custom" =
+  parse_ty "unit ->[local once portable] unit"
+  |> Pretty.string_of_ty
+  |> Printf.printf "%s\n";
+  [%expect {|(unit ->[local once portable] unit)|}]
+
+let%expect_test "type arrow portable only" =
+  parse_ty "unit ->[portable] unit"
+  |> Pretty.string_of_ty
+  |> Printf.printf "%s\n";
+  [%expect {|(unit ->[portable] unit)|}]
+
+let%expect_test "type arrow mode rejection" =
+  (match parse_ty "unit ->[shared] unit" with
+  | _ -> Printf.printf "unexpected success\n"
+  | exception Invalid_argument msg -> Printf.printf "%s\n" msg);
+  [%expect {|Modes [shared] not allowed on functions|}]
