@@ -1,0 +1,57 @@
+(* application: shared variable used in both function and argument *)
+let shared = ((unit, unit) : (unit *[unique local] unit)) in
+((fun f => f shared) : ((unit *[unique local] unit) -> unit) -> unit)
+  ((fun g => g shared) : ((unit *[unique local] unit) -> unit))
+> error: Expected a function type, found (unit *[unique local] unit)
+
+(* pair: shared variable appears in both components *)
+let shared = ((unit, unit) : (unit *[unique local] unit)) in
+(shared, shared)
+> error: Component uniqueness unique exceeds annotation aliased
+
+(* let-binding: shared variable used in initializer and body *)
+let shared = ((unit, unit) : (unit *[unique local] unit)) in
+let alias = shared in
+(shared, alias)
+> error: Component uniqueness unique exceeds annotation aliased
+
+(* let-pair: shared variable used alongside destructured pair *)
+let shared = ((unit, unit) : (unit *[unique local] unit)) in
+let pair = (shared, shared) in
+let (x, y) = pair in
+(x, y)
+> error: Component uniqueness unique exceeds annotation aliased
+
+(* match: shared variable used in both branches *)
+let shared = ((unit, unit) : (unit *[unique local] unit)) in
+match left(shared) with left(x) => x | right(y) => shared
+> error: Cannot infer the type of left; add a type annotation
+
+(* application success with aliasable shared value *)
+let shared = ((unit, unit) : (unit *[aliased local] unit)) in
+((fun f => f shared) : ((unit *[aliased local] unit) -> unit) -> unit)
+  ((fun g => g shared) : ((unit *[aliased local] unit) -> unit))
+> error: Expected a function type, found (unit *[local] unit)
+
+(* pair success with aliasable shared value *)
+let shared = ((unit, unit) : (unit *[aliased local] unit)) in
+(shared, shared)
+> error: Component areality local exceeds annotation global
+
+(* let-binding success with aliasable shared value *)
+let shared = ((unit, unit) : (unit *[aliased local] unit)) in
+let alias = shared in
+(shared, alias)
+> error: Component areality local exceeds annotation global
+
+(* let-pair success with aliasable shared value *)
+let shared = ((unit, unit) : (unit *[aliased local] unit)) in
+let pair = (shared, shared) in
+let (x, y) = pair in
+(x, y)
+> error: Component areality local exceeds annotation global
+
+(* match success with aliasable shared value *)
+let shared = ((unit, unit) : (unit *[aliased local] unit)) in
+match left(shared) with left(x) => x | right(y) => shared
+> error: Cannot infer the type of left; add a type annotation
