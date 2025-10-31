@@ -1,6 +1,7 @@
 \documentclass{article}
 
 \usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage{mathpartir}
 \mprset{flushleft}
 \newcommand{\kw}[1]{\text{\textbf{#1}}}
@@ -39,6 +40,9 @@
 \newcommand{\mode}[1]{\textsc{#1}}
 \newcommand{\subtype}{\mathrel{\sqsubseteq}}
 \newcommand{\Sub}[2]{#1 \subtype #2}
+\newcommand{\alias}{\mathrel{\rightsquigarrow}}
+\newcommand{\Alias}[2]{#1 \alias #2}
+\newcommand{\lin}[1]{\operatorname{lin}(#1)}
 
 \title{Mox Notes}
 \author{Jules Jacobs}
@@ -229,6 +233,13 @@ Typing judgments use linear contexts: $\Gamma \uplus \Delta$ denotes a partition
   {\judge{\Gamma}{e}{\tau_2}}
 \end{mathpar}
 
+\vspace{0.5em}\textit{Aliasing}
+\begin{mathpar}
+\inferrule
+  {\judge{\Gamma, x : \tau'_1, x : \tau'_1}{e}{\tau_2} \\ \Alias{\tau_1}{\tau'_1}}
+  {\judge{\Gamma, x : \tau_1}{e}{\tau_2}}
+\end{mathpar}
+
 \paragraph{Subtyping Rules}\ \\
 
 \textit{Base}
@@ -260,16 +271,42 @@ Typing judgments use linear contexts: $\Gamma \uplus \Delta$ denotes a partition
   {\Sub{\TSum[s_1]{\tau_1}{\tau_2}}{\TSum[s_2]{\tau_1'}{\tau_2'}}}
 \end{mathpar}
 
+\paragraph{Aliasing}\ \\
 
-\section{Desiderata}
+The judgment $\Alias{\tau}{\tau'}$ records that aliasing $\tau$ is allowed and yields type $\tau'$.
 
-\begin{enumerate}
-  \item Mode crossing for types like int
-  \item Submoding
-  \item Context splitting
-  \item Borrowing
-  \item Modality inference
-\end{enumerate}
+\bigskip
+
+\textit{Base}
+\begin{mathpar}
+\inferrule
+  {\ }
+  {\Alias{\TUnit}{\TUnit}}
+\and
+\inferrule
+  {\ }
+  {\Alias{\TEmpty}{\TEmpty}}
+\end{mathpar}
+
+\vspace{0.5em}\textit{Functions}
+\begin{mathpar}
+\inferrule
+  {f = (a, \mode{many}, p)}
+  {\Alias{\TFun[f]{\tau_1}{\tau_2}}{\TFun[f]{\tau_1}{\tau_2}}}
+\end{mathpar}
+
+\vspace{0.5em}\textit{Products and Sums}
+\begin{mathpar}
+\inferrule
+  {\Alias{\tau_1}{\tau_1'} \\ \Alias{\tau_2}{\tau_2'} \\ s = (u, a)}
+  {\Alias{\TPair[s]{\tau_1}{\tau_2}}{\TPair[(\mode{aliased}, a)]{\tau_1'}{\tau_2'}}}
+\and
+\inferrule
+  {\Alias{\tau_1}{\tau_1'} \\ \Alias{\tau_2}{\tau_2'} \\ s = (u, a)}
+  {\Alias{\TSum[s]{\tau_1}{\tau_2}}{\TSum[(\mode{aliased}, a)]{\tau_1'}{\tau_2'}}}
+\end{mathpar}
+
+Here $\lin(f)$ extracts the linearity component of the function mode, and $\mode{many}$ is the default (aliasable) linearity. The storage condition $s = (u, a)$ ensures that aliasing drops uniqueness to $\mode{aliased}$ while preserving the areality component~$a$.
 
 
 \end{document}
