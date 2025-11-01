@@ -14,7 +14,11 @@ let ident_start = ['a'-'z' 'A'-'Z' '_' '\'']
 let ident_continue = ident_start | ['0'-'9']
 
 rule token = parse
-  | whitespace           { token lexbuf }
+  | whitespace           {
+      let lexeme = Lexing.lexeme lexbuf in
+      String.iter (fun c -> if Char.equal c '\n' then Lexing.new_line lexbuf) lexeme;
+      token lexbuf
+    }
   | "(*"                 { comment lexbuf; token lexbuf }
   | "let"                { LET }
   | "in"                 { IN }
@@ -38,6 +42,7 @@ rule token = parse
   | "->"                 { ARROW }
   | "+"                  { PLUS }
   | "*"                  { TIMES }
+  | "?"                  { QUESTION }
   | ident_start ident_continue* as id { IDENT id }
   | eof                  { EOF }
   | _ as c               { raise (Lexing_error (Printf.sprintf "unexpected character %c at %s" c (location lexbuf))) }
@@ -45,5 +50,6 @@ rule token = parse
 and comment = parse
   | "(*"                 { comment lexbuf; comment lexbuf }
   | "*)"                 { () }
+  | '\n'                 { Lexing.new_line lexbuf; comment lexbuf }
   | eof                  { raise (Lexing_error "unterminated comment") }
   | _                    { comment lexbuf }

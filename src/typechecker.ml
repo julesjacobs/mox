@@ -79,6 +79,7 @@ let rec free_vars expr =
   match expr with
   | Var x -> StringSet.singleton x
   | Unit -> StringSet.empty
+  | Hole -> StringSet.empty
   | Absurd e -> free_vars e
   | Annot (e, _) -> free_vars e
   | Fun (x, body) -> free_vars_without body [ x ]
@@ -301,6 +302,7 @@ let rec infer_expr env expr =
   match expr with
   | Var x -> lookup env x
   | Unit -> TyUnit
+  | Hole -> raise (Error (Cannot_infer "hole"))
   | Absurd _ -> raise (Error (Cannot_infer "absurd"))
   | Fun _ -> raise (Error (Cannot_infer "function"))
   | App (fn, arg) ->
@@ -364,6 +366,7 @@ and check_expr env expr ty =
   ensure_well_formed ty;
   match expr with
   | Unit -> subtype TyUnit ty
+  | Hole -> ()
   | Absurd e -> check_expr env e TyEmpty
   | Fun (x, body) ->
       (match ty with

@@ -1,0 +1,16 @@
+(* Holes cannot be inferred *)
+?
+> error: Cannot infer the type of hole; add a type annotation
+
+(* Holes check against any type *)
+(? : unit)
+> unit
+
+(? : (unit -> unit))
+> (unit -> unit)
+
+(left(?) : (unit + empty))
+> (unit + empty)
+
+((?, unit) : (unit * unit))
+> (unit * unit)

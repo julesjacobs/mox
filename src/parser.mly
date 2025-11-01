@@ -14,7 +14,7 @@ let storage_mode_from_list names =
   { uniqueness; areality }
 %}
 
-%token LET IN FUN MATCH WITH LEFT RIGHT ABSURD UNIT EMPTY
+%token LET IN FUN MATCH WITH LEFT RIGHT ABSURD UNIT EMPTY QUESTION
 %token LPAREN RPAREN LBRACKET RBRACKET COMMA EQUAL BAR ARROW FATARROW PLUS TIMES COLON
 %token <string> IDENT
 %token EOF
@@ -54,6 +54,7 @@ expr_app:
 expr_atom:
   | IDENT { Var $1 }
   | UNIT { Unit }
+  | QUESTION { Hole }
   | ABSURD expr { Absurd $2 }
   | LEFT LPAREN expr RPAREN { Inl $3 }
   | RIGHT LPAREN expr RPAREN { Inr $3 }

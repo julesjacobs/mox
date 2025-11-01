@@ -22,6 +22,7 @@ type expr =
   | Var of ident
   | Let of ident * expr * expr
   | Unit
+  | Hole
   | Absurd of expr
   | Fun of ident * expr
   | App of expr * expr

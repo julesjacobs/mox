@@ -4,6 +4,7 @@ let rec string_of_expr = function
   | Var x -> x
   | Let (x, e1, e2) -> Printf.sprintf "(let %s = %s in %s)" x (string_of_expr e1) (string_of_expr e2)
   | Unit -> "unit"
+  | Hole -> "?"
   | Absurd e -> Printf.sprintf "(absurd %s)" (string_of_expr e)
   | Fun (x, e) -> Printf.sprintf "(fun %s => %s)" x (string_of_expr e)
   | App (e1, e2) -> Printf.sprintf "(%s %s)" (string_of_expr e1) (string_of_expr e2)
