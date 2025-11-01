@@ -19,6 +19,44 @@ exception Mode_error of string
 
 let string_of_ty = Pretty.string_of_ty
 let string_of_mode = Modes.Mode.to_string
+let string_of_future = Modes.Future.to_string
+
+type lock_failure =
+  { path : string list;
+    message : string }
+
+type tombstone =
+  { original : ty;
+    function_mode : Modes.Future.t;
+    failure : lock_failure }
+
+type binding =
+  | Available of ty
+  | Tombstone of tombstone
+
+type env = (ident * binding) list
+
+let empty_lock_failure message = { path = []; message }
+
+let push_lock_path segment failure =
+  { failure with path = segment :: failure.path }
+
+let render_lock_failure failure =
+  match List.rev failure.path with
+  | [] -> failure.message
+  | segments ->
+      Printf.sprintf "%s (via %s)" failure.message (String.concat " -> " segments)
+
+let mode_error_for_tombstone name tombstone =
+  let reason = render_lock_failure tombstone.failure in
+  let message =
+    Printf.sprintf
+      "Variable %s is unavailable inside a %s closure: %s. Captured value had \
+       type %s."
+      name (string_of_future tombstone.function_mode) reason
+      (string_of_ty tombstone.original)
+  in
+  raise (Mode_error message)
 
 let string_of_error = function
   | Unbound_variable x -> Printf.sprintf "Unbound variable %s" x
@@ -144,7 +182,8 @@ let rec subtype t1 t2 =
 
 let lookup env x =
   match List.assoc_opt x env with
-  | Some ty -> ty
+  | Some (Available ty) -> ty
+  | Some (Tombstone tombstone) -> mode_error_for_tombstone x tombstone
   | None -> raise (Error (Unbound_variable x))
 
 let default_storage_mode =
@@ -183,11 +222,80 @@ let rec alias_type ty =
 
 let alias_env_for env vars =
   List.map
-    (fun (x, ty) -> if StringSet.mem x vars then (x, alias_type ty) else (x, ty))
+    (fun (x, binding) ->
+      if StringSet.mem x vars then
+        match binding with
+        | Available ty -> (x, Available (alias_type ty))
+        | Tombstone _ -> (x, binding)
+      else (x, binding))
     env
 
 let alias_env_between env fv1 fv2 =
   alias_env_for env (StringSet.inter fv1 fv2)
+
+let linearity_dagger linearity =
+  if Modes.Linearity.leq_to linearity Modes.Linearity.default then
+    Modes.Uniqueness.default
+  else
+    Modes.Uniqueness.top_in
+
+let rec lock_type mode ty =
+  let linearity =
+    let open Modes.Future in
+    mode.linearity
+  in
+  match ty with
+  | TyUnit -> Ok TyUnit
+  | TyEmpty -> Ok TyEmpty
+  | TyArrow (_, arrow_mode, _) ->
+      if Modes.Future.leq_to mode arrow_mode then Ok ty
+      else
+        Error
+          (empty_lock_failure
+             (Printf.sprintf
+                "captured function expects mode %s, but closure runs at %s"
+                (string_of_future arrow_mode) (string_of_future mode)))
+  | TyPair (left, storage, right) ->
+      let open Result in
+      (match lock_type mode left with
+      | Ok left_locked -> (
+          match lock_type mode right with
+          | Ok right_locked ->
+              let uniqueness =
+                Modes.Uniqueness.join_to storage.uniqueness
+                  (linearity_dagger linearity)
+              in
+              let storage' = { storage with uniqueness } in
+              Ok (TyPair (left_locked, storage', right_locked))
+          | Error failure -> Error (push_lock_path "pair.right" failure))
+      | Error failure -> Error (push_lock_path "pair.left" failure))
+  | TySum (left, storage, right) ->
+      let open Result in
+      (match lock_type mode left with
+      | Ok left_locked -> (
+          match lock_type mode right with
+          | Ok right_locked ->
+              let uniqueness =
+                Modes.Uniqueness.join_to storage.uniqueness
+                  (linearity_dagger linearity)
+              in
+              let storage' = { storage with uniqueness } in
+              Ok (TySum (left_locked, storage', right_locked))
+          | Error failure -> Error (push_lock_path "sum.right" failure))
+      | Error failure -> Error (push_lock_path "sum.left" failure))
+
+let lock_env mode env =
+  List.map (fun (name, binding) ->
+      match binding with
+      | Available ty -> (
+          match lock_type mode ty with
+          | Ok locked_ty -> (name, Available locked_ty)
+          | Error failure ->
+              ( name,
+                Tombstone
+                  { original = ty; function_mode = mode; failure } ))
+      | Tombstone _ -> (name, binding))
+    env
 
 let rec infer_expr env expr =
   match expr with
@@ -217,7 +325,7 @@ let rec infer_expr env expr =
       let fv_e2 = free_vars_without e2 [ x ] in
       let env_e2 = alias_env_between env fv_e1 fv_e2 in
       let t1 = infer_expr env e1 in
-      infer_expr ((x, t1) :: env_e2) e2
+      infer_expr ((x, Available t1) :: env_e2) e2
   | LetPair (x1, x2, e1, e2) ->
       let fv_e1 = free_vars e1 in
       let fv_e2 = free_vars_without e2 [ x1; x2 ] in
@@ -225,7 +333,9 @@ let rec infer_expr env expr =
       let t = infer_expr env e1 in
       (match t with
       | TyPair (t_left, _, t_right) ->
-          infer_expr ((x2, t_right) :: (x1, t_left) :: env_e2) e2
+          infer_expr
+            ((x2, Available t_right) :: (x1, Available t_left) :: env_e2)
+            e2
       | _ -> raise (Error (Expected_pair t)))
   | Inl _ -> raise (Error (Cannot_infer "left"))
   | Inr _ -> raise (Error (Cannot_infer "right"))
@@ -236,12 +346,14 @@ let rec infer_expr env expr =
       | TySum (left_ty, storage, right_ty) ->
           let fv_e1 = free_vars_without e1 [ x1 ] in
           let env_e1 = alias_env_between env fv_scrut fv_e1 in
-          let branch_ty = infer_expr ((x1, left_ty) :: env_e1) e1 in
+          let branch_ty =
+            infer_expr ((x1, Available left_ty) :: env_e1) e1
+          in
           ensure_well_formed branch_ty;
           let used = StringSet.union fv_scrut fv_e1 in
           let fv_e2 = free_vars_without e2 [ x2 ] in
           let env_e2 = alias_env_between env used fv_e2 in
-          check_expr ((x2, right_ty) :: env_e2) e2 branch_ty;
+          check_expr ((x2, Available right_ty) :: env_e2) e2 branch_ty;
           branch_ty
       | _ -> raise (Error (Expected_sum scrut_ty)))
   | Annot (expr, ty) ->
@@ -255,7 +367,9 @@ and check_expr env expr ty =
   | Absurd e -> check_expr env e TyEmpty
   | Fun (x, body) ->
       (match ty with
-      | TyArrow (param, _, result) -> check_expr ((x, param) :: env) body result
+      | TyArrow (param, mode, result) ->
+          let locked_env = lock_env mode env in
+          check_expr ((x, Available param) :: locked_env) body result
       | _ -> raise (Error (Expected_function ty)))
   | Inl e ->
       (match ty with
@@ -279,7 +393,7 @@ and check_expr env expr ty =
       let fv_e2 = free_vars_without e2 [ x ] in
       let env_e2 = alias_env_between env fv_e1 fv_e2 in
       let t1 = infer_expr env e1 in
-      check_expr ((x, t1) :: env_e2) e2 ty
+      check_expr ((x, Available t1) :: env_e2) e2 ty
   | LetPair (x1, x2, e1, e2) ->
       let fv_e1 = free_vars e1 in
       let fv_e2 = free_vars_without e2 [ x1; x2 ] in
@@ -287,7 +401,9 @@ and check_expr env expr ty =
       let t = infer_expr env e1 in
       (match t with
       | TyPair (t_left, _, t_right) ->
-          check_expr ((x2, t_right) :: (x1, t_left) :: env_e2) e2 ty
+          check_expr
+            ((x2, Available t_right) :: (x1, Available t_left) :: env_e2)
+            e2 ty
       | _ -> raise (Error (Expected_pair t)))
   | Match (scrutinee, x1, e1, x2, e2) ->
       let fv_scrut = free_vars scrutinee in
@@ -296,11 +412,11 @@ and check_expr env expr ty =
       | TySum (left_ty, _, right_ty) ->
           let fv_e1 = free_vars_without e1 [ x1 ] in
           let env_e1 = alias_env_between env fv_scrut fv_e1 in
-          check_expr ((x1, left_ty) :: env_e1) e1 ty;
+          check_expr ((x1, Available left_ty) :: env_e1) e1 ty;
           let used = StringSet.union fv_scrut fv_e1 in
           let fv_e2 = free_vars_without e2 [ x2 ] in
           let env_e2 = alias_env_between env used fv_e2 in
-          check_expr ((x2, right_ty) :: env_e2) e2 ty
+          check_expr ((x2, Available right_ty) :: env_e2) e2 ty
       | _ -> raise (Error (Expected_sum scrut_ty)))
   | Annot (expr, ty') ->
       check_expr env expr ty';

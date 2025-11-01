@@ -1,0 +1,17 @@
+(* locking downgrades captured storage when the closure is many *)
+let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
+((fun _ => unique_pair)
+ : (unit ->[local many] (unit *[unique local] unit)))
+> error: (unit *[local] unit) is not a subtype of (unit *[unique local] unit)
+
+(* once-qualified closures can retain unique storage *)
+let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
+((fun _ => unique_pair)
+ : (unit ->[local once] (unit *[unique local] unit)))
+> (unit ->[local once] (unit *[unique local] unit))
+
+(* closures reject functions that exceed their mode budget *)
+let aliased_fun = ((fun x => x) : (unit ->[local many] unit)) in
+((fun _ => aliased_fun)
+ : (unit ->[local once] (unit ->[local many] unit)))
+> error: Variable aliased_fun is unavailable inside a local once closure: captured function expects mode local, but closure runs at local once. Captured value had type (unit ->[local] unit).
