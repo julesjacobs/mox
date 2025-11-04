@@ -1,0 +1,30 @@
+{
+  "files.associations": {
+    "*.mox": "mox"
+  },
+  "editor.tokenColorCustomizations": {
+    "textMateRules": [
+      {
+        "scope": "markup.italic.mox",
+        "settings": {
+          "fontStyle": "italic"
+        }
+      },
+      {
+        "scope": "invalid.illegal.error.mox",
+        "settings": {
+          "foreground": "#ff5f5f"
+        }
+      }
+    ]
+  },
+  "emeraldwalk.runonsave": {
+    "commands": [
+      {
+        "match": "\\.mox$",
+        "cmd": "dune exec bin/main.exe record tests/mox",
+        "autoShowOutputPanel": "always"
+      }
+    ]
+  }
+}

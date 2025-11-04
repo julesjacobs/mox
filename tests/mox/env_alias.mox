@@ -4,13 +4,33 @@ let shared = ((unit, unit) : (unit *[unique local] unit)) in
   ((fun g => g shared) : ((unit *[unique local] unit) -> unit))
 > error: (unit *[local] unit) is not a subtype of (unit *[unique local] unit)
 
+(* application: non-shared variables used in both functions *)
+let non_shared1 = ((unit, unit) : (unit *[unique local] unit)) in
+let non_shared2 = ((unit, unit) : (unit *[unique local] unit)) in
+(((fun f => f non_shared1) : ((unit *[unique local] unit) -> unit) ->[once] unit),
+ ((fun g => g non_shared2) : ((unit *[unique local] unit) -> unit) ->[once] unit))
+> ((((unit *[unique local] unit) -> unit) ->[once] unit) * (((unit *[unique local] unit) -> unit) ->[once] unit))
+
+(* application: non-shared variables used in both functions, but one is many *)
+let non_shared1 = ((unit, unit) : (unit *[unique local] unit)) in
+let non_shared2 = ((unit, unit) : (unit *[unique local] unit)) in
+(((fun f => f non_shared1) : ((unit *[unique local] unit) ->[once] unit) ->[many] unit),
+ ((fun g => g non_shared2) : ((unit *[unique local] unit) ->[once] unit) ->[once] unit))
+> error: (unit *[local] unit) is not a subtype of (unit *[unique local] unit)
+
+(* application: shared variable used in both function and argument *)
+let shared = ((unit, unit) : (unit *[unique local] unit)) in
+(((fun f => f shared) : ((unit *[unique local] unit) ->[once] unit) ->[once] unit),
+ ((fun g => g shared) : ((unit *[unique local] unit) ->[once] unit) ->[once] unit))
+> error: (unit *[local] unit) is not a subtype of (unit *[unique local] unit)
+
 (* pair: shared variable appears in both components *)
 let shared = ((unit, unit) : (unit *[unique local] unit)) in
 (shared, shared)
 > error: Mode unique contended local portable exceeds allowed once
 
 (* let-binding: shared variable used in initializer and body *)
-let shared = ((unit, unit) : (unit *[unique local] unit)) in
+let shared = ((unit, unit) : (unit *[local] unit)) in
 let alias = shared in
 (shared, alias)
 > error: Mode contended local portable exceeds allowed once

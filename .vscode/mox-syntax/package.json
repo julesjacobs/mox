@@ -1,0 +1,27 @@
+{
+  "name": "mox-syntax",
+  "displayName": "Mox Syntax Highlighting",
+  "description": "TextMate grammar for Mox test files.",
+  "version": "0.0.1",
+  "publisher": "workspace",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "mox",
+        "aliases": ["Mox"],
+        "extensions": [".mox"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "mox",
+        "scopeName": "source.mox",
+        "path": "./syntaxes/mox.tmLanguage.json"
+      }
+    ]
+  }
+}
