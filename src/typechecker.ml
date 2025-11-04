@@ -188,7 +188,7 @@ let lookup env x =
   | None -> raise (Error (Unbound_variable x))
 
 let default_storage_mode =
-  { uniqueness = Modes.Uniqueness.default; areality = Modes.Areality.default }
+  { uniqueness = Unique; areality = Modes.Areality.default }
 
 let make_pair_ty left storage right =
   let ty = TyPair (left, storage, right) in
