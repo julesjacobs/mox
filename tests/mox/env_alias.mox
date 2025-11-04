@@ -52,10 +52,10 @@ let shared = ((unit, unit) : (unit *[unique local] unit)) in
 match left(shared) with left(x) => x | right(y) => shared
 > error: Cannot infer the type of left; add a type annotation
 
-(* pair with aliasable shared value still fails: need better inference *)
-let shared = ((unit, unit) : (unit *[unique local] unit)) in
+(* pair with aliased shared value *)
+let shared = ((unit, unit) : (unit *[aliased] unit)) in
 (shared, shared)
-> error: Mode unique contended local portable exceeds allowed unique once
+> ((unit * unit) *[unique] (unit * unit))
 
 (* let-binding success with aliasable shared value *)
 let shared = ((unit, unit) : (unit *[aliased] unit)) in
