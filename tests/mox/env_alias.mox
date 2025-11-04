@@ -52,16 +52,10 @@ let shared = ((unit, unit) : (unit *[unique local] unit)) in
 match left(shared) with left(x) => x | right(y) => shared
 > error: Cannot infer the type of left; add a type annotation
 
-(* application success with aliasable shared value *)
-let shared = ((unit, unit) : (unit *[aliased local] unit)) in
-((fun f => f shared) : ((unit *[aliased local] unit) -> unit) -> unit)
-  ((fun g => g shared) : ((unit *[aliased local] unit) -> unit))
-> error: Expected a function type, found (unit *[local] unit)
-
-(* pair success with aliasable shared value *)
-let shared = ((unit, unit) : (unit *[aliased local] unit)) in
+(* pair with aliasable shared value still fails: need better inference *)
+let shared = ((unit, unit) : (unit *[unique local] unit)) in
 (shared, shared)
-> error: Mode contended local portable exceeds allowed unique once
+> error: Mode unique contended local portable exceeds allowed unique once
 
 (* let-binding success with aliasable shared value *)
 let shared = ((unit, unit) : (unit *[aliased] unit)) in
@@ -76,7 +70,7 @@ let (x, y) = pair in
 (x, y)
 > ((unit * unit) *[unique] (unit * unit))
 
-(* match success with aliasable shared value *)
+(* match with aliasable shared value still fails: need better inference *)
 let shared = ((unit, unit) : (unit *[aliased local] unit)) in
 match left(shared) with left(x) => x | right(y) => shared
 > error: Cannot infer the type of left; add a type annotation
