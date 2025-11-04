@@ -19,15 +19,20 @@ let non_shared2 = ((unit, unit) : (unit *[unique] unit)) in
 > error: (unit * unit) is not a subtype of (unit *[unique] unit)
 
 (* application: shared variable used in both function and argument *)
-let shared = ((unit, unit) : (unit *[unique local] unit)) in
-(((fun f => f shared) : ((unit *[unique local] unit) ->[once] unit) ->[once] unit),
- ((fun g => g shared) : ((unit *[unique local] unit) ->[once] unit) ->[once] unit))
-> error: (unit *[local] unit) is not a subtype of (unit *[unique local] unit)
+let shared = ((unit, unit) : (unit *[unique] unit)) in
+(((fun f => f shared) : ((unit *[unique] unit) ->[once] unit) ->[once] unit),
+ ((fun g => g shared) : ((unit *[unique] unit) ->[once] unit) ->[once] unit))
+> error: (unit * unit) is not a subtype of (unit *[unique] unit)
 
 (* pair: shared variable appears in both components *)
 let shared = ((unit, unit) : (unit *[unique local] unit)) in
-(shared, shared)
-> error: Mode unique contended local portable exceeds allowed once
+(shared, shared) : (unit *[local] unit) *[local] (unit *[local] unit)
+> ((unit *[local] unit) *[local] (unit *[local] unit))
+
+(* pair: shared variable appears in both components *)
+let shared = ((unit, unit) : (unit *[unique] unit)) in
+(shared, shared) : (unit *[aliased] unit) *[unique] (unit *[aliased] unit)
+> ((unit * unit) *[unique] (unit * unit))
 
 (* let-binding: shared variable used in initializer and body *)
 let shared = ((unit, unit) : (unit *[local] unit)) in
