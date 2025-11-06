@@ -393,8 +393,28 @@ complete.
 By contrast, $\neq$-constraints generate non-convex slices, violate Helly-2, and are
 correctly rejected by this criterion.
 
+\subsection{Many-sorted constraint families}
+
+\begin{itemize}
+  \item Sorts O
+  \item Relation families R_{A,B}, A,B in O.
+  \item Closure under *typed* operations: composition, intersection, converse, diagonal restriction.
+  \item Formulate Helly-2 slice property for many-sorted case (per sort).
+\end{itemize}
 
 \section{Solver Architecture}
+
+\subsection{Further optimizations}
+
+\begin{itemize}
+  \item Keep domain constraints (diagonally restricted relations) up to date.
+  \item Remove constraints that are redundant given the domain constraints.
+  \item Remove diagonal constraints by union-find on the variables that have to be equal.
+\end{itemize}
+
+\subsection{Incremental solving}
+
+\subsection{Generalization with levels}
 
 \section{Open Questions}
 
