@@ -57,8 +57,9 @@ Then we will develop a more powerful solver that can handle that class of constr
 
 \section{Constraint Language}
 
-As a first step, assume we have a finite domain $V$ of values, and a set of binary relations $R_i \subseteq V \times V$.
+As a first step, fix a domain $V$ of values (not necessarily finite) together with a collection of binary relations $R_i \subseteq V \times V$.
 Given a set of variables and asserted contraints between them, we want to determine if there exists a valuation of the variables that satisfies all the constraints.
+Throughout this section the relational reasoning does not depend on finiteness; we will explicitly mark the places later where finite carriers become important for algorithmic purposes.
 
 In general this is an NP-complete problem: consider $V=\{0,1,2,\dots,k\}$ and $R_1 = \{ (a,b) \mid a \neq b \} \subseteq V \times V$.
 Given a graph we can use this constraints to encode the $k$-coloring problem: we want to assign a color to each vertex such that no two adjacent vertices have the same color. The $k$-coloring problem is NP-complete, so this problem is also NP-complete.
@@ -215,7 +216,7 @@ We now characterize when elimination is complete.
 
 \subsection{Closure and slices}
 
-Fix a finite domain $V$ and a finite family of binary relations
+Fix a domain $V$ (possibly infinite) and a family of binary relations
 $\RelSet \subseteq \mathcal{P}(V \times V)$.
 The elimination algorithm only ever uses relations obtained from $\RelSet$ by:
 \begin{itemize}
@@ -226,6 +227,7 @@ The elimination algorithm only ever uses relations obtained from $\RelSet$ by:
 \end{itemize}
 Let $\Cl{\RelSet}$ be the smallest set of relations containing $\RelSet$ and closed under
 these four operations.
+When $V$ or $\RelSet$ are infinite, $\Cl{\RelSet}$ may itself be infinite; this is fine for the structural results below, and we only exploit finiteness later when we want to enumerate these relations effectively.
 
 For a relation $R \in \Cl{\RelSet}$ and an element $b \in V$ we write:
 \[
@@ -300,13 +302,17 @@ Otherwise $\{A_2,\dots,A_m\}$ is a smaller counterexample, contradicting minimal
 Thus in our setting we can detect failure of the Helly-2 slice property by a finite search
 for such bad triples among slices in $\Cl{\RelSet}$.
 
+Notice that the Helly-2 slice property and the elimination argument below only rely on these relational intersections existing; the sets involved may be infinite.
+Consequently, the structural characterization applies equally well to infinite carriers.
+We will only appeal to finiteness when we want to enumerate $\Cl{\RelSet}$ or to mechanize the Helly check.
+
 \subsection{Correctness of elimination}
 
 We now state the main correctness criterion.
 
 \begin{theorem}[Characterization of admissible constraint families]
 \label{thm:elimination-correct}
-Let $V$ be finite and $\RelSet \subseteq \mathcal{P}(V\times V)$.
+Let $V$ be a domain (possibly infinite) and $\RelSet \subseteq \mathcal{P}(V\times V)$.
 Consider the following variable-elimination algorithm:
 at each step, pick a variable $x$, and for every two neighbors
 $y_i \xleftarrow{R_i} x \xrightarrow{R_j} y_j$
@@ -374,9 +380,9 @@ constraints simultaneously, so the original instance is unsatisfiable.
 Thus elimination is not complete, contradicting~(1).
 \end{proof}
 
-\begin{corollary}[Finite check]
+\begin{corollary}[Finite enumerability check]
 \label{cor:finite-check}
-For finite $V$, the Helly-2 slice property for $\RelSet$ is decidable:
+When $V$ and $\RelSet$ are finite, the Helly-2 slice property for $\RelSet$ is decidable:
 \begin{enumerate}
   \item compute $\Cl{\RelSet}$ (finite);
   \item form all slices $R[\_,b], R[a,\_]$;
@@ -385,6 +391,8 @@ For finite $V$, the Helly-2 slice property for $\RelSet$ is decidable:
 \end{enumerate}
 If no such triple exists, variable elimination as above is sound and complete for all
 constraint graphs over $\RelSet$.
+When $V$ or $\RelSet$ are infinite the theorem still applies, but this finite search
+procedure may no longer be available.
 \end{corollary}
 
 In particular, difference constraints and the OxCaml-style modal constraints
@@ -407,8 +415,8 @@ values across sorts.
 
 
 \paragraph{Sorted carriers and typed relations.}
-Let $\mathcal{O}$ be a finite set of sorts.
-For each $A\in\mathcal{O}$, fix a finite carrier $V_A$.
+Let $\mathcal{O}$ be a set of sorts.
+For each $A\in\mathcal{O}$, fix a carrier $V_A$ (again, not necessarily finite).
 A binary relation is \emph{typed} by its source and target sorts,
 so a relation $R \in \RelSet(A,B)$ is a subset of $V_A\times V_B$.
 
@@ -465,7 +473,7 @@ If some same-sort self-loop becomes empty on the diagonal, report unsatisfiable.
 
 \begin{theorem}[Many-sorted characterization]
 \label{thm:elimination-correct-typed}
-For finite carriers $\{V_A\}_{A\in\mathcal{O}}$ and a typed family $\RelSet$, the
+For carriers $\{V_A\}_{A\in\mathcal{O}}$ (possibly infinite) and a typed family $\RelSet$, the
 typed variable-elimination algorithm above is sound and complete for all many-sorted
 constraint graphs over $\RelSet$ if and only if $\RelSet$ has the Helly-2 slice property
 by sort.
@@ -475,6 +483,8 @@ by sort.
 The argument is verbatim the single-sorted proof, carried out for each eliminated sort.
 \end{proof}
 
+A computational enumeration of $\Cl{\RelSet}$ now requires each relevant sort to have a finite carrier and only finitely many primitive relations of that type; otherwise the structural theorem still applies but the finite search of Corollary~\ref{cor:finite-check} is unavailable.
+
 \section{Solver Architecture}
 
 \subsection{Further optimizations}
@@ -483,6 +493,7 @@ The argument is verbatim the single-sorted proof, carried out for each eliminate
   \item Keep domain constraints (diagonally restricted relations) up to date.
   \item Remove constraints that are redundant given the domain constraints.
   \item Remove diagonal constraints by union-find on the variables that have to be equal.
+  \item 2-SAT
 \end{itemize}
 
 \subsection{Incremental solving}

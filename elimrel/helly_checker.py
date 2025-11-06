@@ -836,7 +836,7 @@ def _render_report(
     .relation-grid { border-collapse: collapse; font-size: 0.9em; order: 0; }
     .relation-grid th, .relation-grid td { border: 1px solid #ccc; padding: 0.25em; text-align: center; width: 1.6em; height: 1.6em; }
     .relation-grid th:first-child { text-align: right; background: #f0f0f0; width: auto; padding-right: 0.3em; }
-    .relation-grid th:not(:first-child) { background: #fafafa; writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg); transform-origin: center; white-space: nowrap; padding: 0.15em 0.2em 0.15em 0.1em; width: 1.6em; height: auto; vertical-align: bottom; text-align: left; }
+    .relation-grid th:not(:first-child) { background: #fafafa; writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg); transform-origin: center; white-space: nowrap; padding: 0.5em 0.2em 0.15em 0.1em; width: 1.6em; height: auto; vertical-align: bottom; text-align: left; }
     .relation-grid td.present { background: #d6f5d6; font-weight: 600; color: #135b13; }
     .relation-grid td.absent { background: #fbfbfb; color: #c7c7c7; }
     .relation-grid.outer-product { border: 1px dashed #bbb; opacity: 0.7; order: 3; }
