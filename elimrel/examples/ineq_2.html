@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'/><title>Helly-2 Report — helly_violation</title><style>
+<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'/><title>Helly-2 Report — ineq_2</title><style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 1.5em; font-size: 0.5em; }
     h1 { margin-bottom: 0.6em; }
     section { margin-bottom: 1.5em; }
@@ -11,19 +11,36 @@
     .relation-grid { border-collapse: collapse; font-size: 0.9em; order: 0; }
     .relation-grid th, .relation-grid td { border: 1px solid #ccc; padding: 0.25em; text-align: center; width: 1.6em; height: 1.6em; }
     .relation-grid th:first-child { text-align: right; background: #f0f0f0; width: auto; padding-right: 0.3em; }
-    .relation-grid th:not(:first-child) { background: #fafafa; writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg); transform-origin: center; white-space: nowrap; padding: 0.15em 0.2em 0.15em 0.1em; width: 1.6em; height: auto; vertical-align: bottom; text-align: left; }
+    .relation-grid th:not(:first-child) { background: #fafafa; writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg); transform-origin: center; white-space: nowrap; padding: 0.5em 0.2em 0.15em 0.1em; width: 1.6em; height: auto; vertical-align: bottom; text-align: left; }
     .relation-grid td.present { background: #d6f5d6; font-weight: 600; color: #135b13; }
     .relation-grid td.absent { background: #fbfbfb; color: #c7c7c7; }
+    .relation-grid.outer-product { border: 1px dashed #bbb; opacity: 0.7; order: 3; }
     .relation-grid.transpose { opacity: 0.5; border: 1px dashed #88a; order: 1; }
     .relation-grid.restricted { opacity: 0.5; border: 1px dashed #88a; order: 2; }
     .relation-grid.highlight { outline: 2px solid #f0a500; }
+    body.hide-outer-products .relation-grid.outer-product { display: none; }
     .predicate-list { border-collapse: collapse; font-size: 0.9em; display: inline-table; width: auto; }
     .predicate-list td { border: 1px solid #ccc; padding: 0.3em 0.6em; text-align: center; }
     .predicate-list td.present { background: #d6f5d6; font-weight: 600; color: #135b13; }
     .predicate-list td.absent { background: #fbfbfb; color: #c7c7c7; }
-    </style></head><body><h1>Helly-2 Report — helly_violation</h1><section><h2>Summary</h2><p>Helly-2 slice property holds for all sorts.</p><p>Closure size: 3 relations across 1 sort.</p></section><section><h2>Sorts</h2><table><thead><tr><th>Sort</th><th>Elements</th></tr></thead><tbody><tr><td>A</td><td>a0, a1</td></tr></tbody></table></section><section><h2>Input Predicates</h2><p>(none)</p></section><section><h2>Input Relations</h2><div class='grid'><table class="relation-grid" id="rel-input-0" title="R"><thead><tr><th></th><th>a0</th><th>a1</th></tr></thead><tbody><tr><th>a0</th><td class='absent'></td><td class='present'>•</td></tr><tr><th>a1</th><td class='present'>•</td><td class='absent'></td></tr></tbody></table></div></section><section><h2>Closure Predicates</h2><div class='predicate-grid'><table class='predicate-list' title="(R)*"><tbody><tr><td class='absent'>a0</td></tr><tr><td class='absent'>a1</td></tr></tbody></table><table class='predicate-list' title="(R)⋅(R)"><tbody><tr><td class='present'>a0</td></tr><tr><td class='present'>a1</td></tr></tbody></table></div></section><section><h2>Closure Relations</h2><p>(none)</p></section><section><h2>Slices by Sort</h2><section class='slices'><h3>A</h3><table><thead><tr><th>#</th><th>Members</th><th>Origins</th></tr></thead><tbody><tr><td>1</td><td>∅</td><td>(R)*[_, a0] : A→A<br>(R)*[_, a1] : A→A</td></tr><tr><td>2</td><td>a0</td><td>R[_, a1] : A→A<br>(R)⋅(R)[_, a0] : A→A</td></tr><tr><td>3</td><td>a1</td><td>R[_, a0] : A→A<br>(R)⋅(R)[_, a1] : A→A</td></tr></tbody></table></section></section>
+    .controls { margin-top: 1em; font-size: 1.1em; }
+    .controls input[type='checkbox'] { margin-right: 0.35em; }
+    </style></head><body class="hide-outer-products"><h1>Helly-2 Report — ineq_2</h1><section><h2>Summary</h2><p>Helly-2 slice property holds for all sorts.</p><p>Closure size: 3 relations across 1 sort.</p></section><section><h2>Sorts</h2><table><thead><tr><th>Sort</th><th>Elements</th></tr></thead><tbody><tr><td>A</td><td>a0, a1</td></tr></tbody></table></section><section><h2>Input Predicates</h2><p>(none)</p></section><section><h2>Input Relations</h2><div class='grid'><table class="relation-grid" id="rel-input-0" title="R"><thead><tr><th></th><th>a0</th><th>a1</th></tr></thead><tbody><tr><th>a0</th><td class='absent'></td><td class='present'>•</td></tr><tr><th>a1</th><td class='present'>•</td><td class='absent'></td></tr></tbody></table></div></section><section><h2>Closure Predicates</h2><div class='predicate-grid'><table class='predicate-list' title="(R)*"><tbody><tr><td class='absent'>a0</td></tr><tr><td class='absent'>a1</td></tr></tbody></table><table class='predicate-list' title="(R)⋅(R)"><tbody><tr><td class='present'>a0</td></tr><tr><td class='present'>a1</td></tr></tbody></table></div></section><section><h2>Closure Relations</h2><p>(none)</p></section><section><h2>Slices by Sort</h2><section class='slices'><h3>A</h3><table><thead><tr><th>#</th><th>Members</th><th>Origins</th></tr></thead><tbody><tr><td>1</td><td>∅</td><td>(R)*[_, a0] : A→A<br>(R)*[_, a1] : A→A</td></tr><tr><td>2</td><td>a0</td><td>R[_, a1] : A→A<br>(R)⋅(R)[_, a0] : A→A</td></tr><tr><td>3</td><td>a1</td><td>R[_, a0] : A→A<br>(R)⋅(R)[_, a1] : A→A</td></tr></tbody></table></section></section>
     <script>
     (function(){
+      var body = document.body;
+      var toggle = document.getElementById('outer-product-toggle');
+      if (toggle) {
+        var sync = function(){
+          if (toggle.checked) {
+            body.classList.remove('hide-outer-products');
+          } else {
+            body.classList.add('hide-outer-products');
+          }
+        };
+        toggle.addEventListener('change', sync);
+        sync();
+      }
       var tables = document.querySelectorAll('table.relation-grid[data-parent]');
       tables.forEach(function(tbl){
         var parentId = tbl.getAttribute('data-parent');
