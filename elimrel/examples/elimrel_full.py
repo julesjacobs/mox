@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from elimrel.helly_checker import Relation, check_helly, create_helly_report
+from elimrel.helly_checker import Predicate, Relation, check_helly, create_helly_report
 
 sorts = {
     "uniqueness": ("unique", "aliased"),
@@ -21,10 +21,21 @@ relations = [
     Relation("portability_dagger_contention", "portability", "contention", (("nonportable", "contended"), ("nonportable", "shared"), ("nonportable", "uncontended"), ("portable", "uncontended"))),
 ]
 
+predicates = [
+    Predicate(f"{sort}={value}", sort, (value,))
+    for sort, values in sorts.items()
+    for value in values
+]
+
 if __name__ == "__main__":
-    result = check_helly(sorts, relations)
+    result = check_helly(sorts, relations, predicates=predicates)
     print(result.to_text())
     report_path = Path(__file__).with_suffix(".html")
-    create_helly_report(report_path, sorts, relations, title="Helly-2 Report — elimrel full")
+    create_helly_report(
+        report_path,
+        sorts,
+        relations,
+        predicates=predicates,
+        title="Helly-2 Report — elimrel full",
+    )
     print(f"Report written to {report_path}")
-

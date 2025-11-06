@@ -30,6 +30,7 @@ Pair = Tuple[str, str]
 
 __all__ = [
     "Relation",
+    "Predicate",
     "SliceWitness",
     "HellyViolation",
     "HellyResult",
@@ -50,6 +51,15 @@ class Relation:
     source: str
     target: str
     pairs: Sequence[Pair]
+
+
+@dataclass(frozen=True)
+class Predicate:
+    """Named unary predicate on a sort."""
+
+    name: str
+    sort: str
+    members: Sequence[str]
 
 
 @dataclass(frozen=True)
@@ -97,8 +107,8 @@ class HellyResult:
 def _wrap_label(label: str) -> str:
     if not label:
         return "(?)"
-    if label.startswith("(") and label.endswith(")") and len(label) >= 2:
-        return label
+    # if label.startswith("(") and label.endswith(")") and len(label) >= 2:
+        # return label
     return f"({label})"
 
 
@@ -127,7 +137,7 @@ class _TypedRelation:
         if self.source != other.source or self.target != other.target:
             raise ValueError("intersection requires like-typed relations")
         inter = self.pairs & other.pairs
-        new_label = f"{_wrap_label(self.label)}∩{_wrap_label(other.label)}"
+        new_label = f"{self.label}∩{other.label}"
         return _TypedRelation(self.source, self.target, inter, new_label)
 
     def compose(self, other: "_TypedRelation") -> "_TypedRelation":
@@ -144,16 +154,20 @@ class _TypedRelation:
 def check_helly(
     sorts: Mapping[str, Sequence[str]],
     relations: Iterable[Relation | Tuple[str, str, str, Iterable[Pair]]],
+    predicates: Optional[Iterable[Predicate]] = None,
 ) -> HellyResult:
-    _, _, _, _, result = _analyze(sorts, relations)
+    *_, result = _analyze(sorts, relations, predicates)
     return result
 
 
 def _analyze(
     sorts: Mapping[str, Sequence[str]],
     relations: Iterable[Relation | Tuple[str, str, str, Iterable[Pair]]],
+    predicates: Optional[Iterable[Predicate]] = None,
 ) -> Tuple[
     dict[str, Tuple[str, ...]],
+    Tuple[_TypedRelation, ...],
+    Tuple[_TypedRelation, ...],
     Tuple[_TypedRelation, ...],
     Tuple[_TypedRelation, ...],
     "_SliceRegistry",
@@ -163,16 +177,39 @@ def _analyze(
     typed_relations = tuple(_normalize_relation(carriers, rel) for rel in relations)
     if not typed_relations:
         raise HellyCheckError("at least one relation is required")
-    closure = _compute_closure(carriers, typed_relations)
+    predicates = tuple(predicates or ())
+    typed_predicates = tuple(_normalize_predicate(carriers, pred) for pred in predicates)
+    initial = typed_relations + typed_predicates
+    closure = _compute_closure(carriers, initial)
     registry = _build_slice_registry(carriers, closure)
     violations = _find_violations(registry)
+    relation_keys = {(rel.source, rel.target, rel.pairs) for rel in typed_relations}
+    predicate_keys = {(rel.source, rel.target, rel.pairs) for rel in typed_predicates}
+    closure_relations = tuple(
+        rel
+        for rel in closure
+        if not _is_predicate(rel) and (rel.source, rel.target, rel.pairs) not in relation_keys
+    )
+    closure_predicates = tuple(
+        rel
+        for rel in closure
+        if _is_predicate(rel) and (rel.source, rel.target, rel.pairs) not in predicate_keys
+    )
     result = HellyResult(
         ok=not violations,
         closure_size=len(closure),
         num_sorts=len(carriers),
         violations=violations,
     )
-    return carriers, typed_relations, closure, registry, result
+    return (
+        carriers,
+        typed_relations,
+        typed_predicates,
+        closure_relations,
+        closure_predicates,
+        registry,
+        result,
+    )
 
 
 def _normalize_sorts(sorts: Mapping[str, Sequence[str]]) -> dict[str, Tuple[str, ...]]:
@@ -233,6 +270,24 @@ def _normalize_relation(
         pairs.add((a, b))
 
     return _TypedRelation(source, target, frozenset(pairs), name)
+
+
+def _normalize_predicate(
+    carriers: Mapping[str, Tuple[str, ...]],
+    predicate: Predicate,
+) -> _TypedRelation:
+    sort = predicate.sort
+    if sort not in carriers:
+        raise HellyCheckError(f"predicate {predicate.name!r} references unknown sort {sort!r}")
+    carrier_values = set(carriers[sort])
+    members: set[Pair] = set()
+    for value in predicate.members:
+        if value not in carrier_values:
+            raise HellyCheckError(
+                f"value {value!r} in predicate {predicate.name!r} not present in carrier V_{sort}"
+            )
+        members.add((value, value))
+    return _TypedRelation(sort, sort, frozenset(members), predicate.name)
 
 
 RelationKey = Tuple[str, str, frozenset[Pair]]
@@ -378,15 +433,48 @@ def _find_violations(registry: _SliceRegistry) -> Tuple[HellyViolation, ...]:
     return tuple(violations)
 
 
+def _is_predicate(rel: _TypedRelation) -> bool:
+    if rel.source != rel.target:
+        return False
+    return all(a == b for a, b in rel.pairs)
+
+
+def _is_outer_product(rel: _TypedRelation) -> bool:
+    if not rel.pairs:
+        return True
+    rows = {a for (a, _) in rel.pairs}
+    cols = {b for (_, b) in rel.pairs}
+    product = {(a, b) for a in rows for b in cols}
+    return rel.pairs == product
+
+
 def create_helly_report(
     path: Union[str, Path],
     sorts: Mapping[str, Sequence[str]],
     relations: Iterable[Relation | Tuple[str, str, str, Iterable[Pair]]],
+    predicates: Optional[Iterable[Predicate]] = None,
     *,
     title: str = "Helly-2 Report",
 ) -> HellyResult:
-    carriers, typed_inputs, closure, registry, result = _analyze(sorts, relations)
-    html = _render_report(title, carriers, typed_inputs, closure, registry, result)
+    (
+        carriers,
+        input_relations,
+        input_predicates,
+        closure_relations,
+        closure_predicates,
+        registry,
+        result,
+    ) = _analyze(sorts, relations, predicates)
+    html = _render_report(
+        title,
+        carriers,
+        input_relations,
+        input_predicates,
+        closure_relations,
+        closure_predicates,
+        registry,
+        result,
+    )
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(html, encoding="utf-8")
@@ -407,6 +495,8 @@ def _render_pairs_html(pairs: Iterable[Pair]) -> str:
 def _relation_matrix_html(
     rel: _TypedRelation,
     carriers: Mapping[str, Sequence[str]],
+    *,
+    is_transpose: bool = False,
 ) -> str:
     rows = carriers[rel.source]
     cols = carriers[rel.target]
@@ -434,14 +524,42 @@ def _relation_matrix_html(
         f"<tbody>{''.join(body_rows)}</tbody>"
         "</table>"
     )
-    return table
+    extra_class = " transpose" if is_transpose else ""
+    return (
+        f"<table class='relation-grid{extra_class}'>"
+        f"<caption>{caption}</caption>"
+        f"<thead><tr><th></th>{header_cells}</tr></thead>"
+        f"<tbody>{''.join(body_rows)}</tbody>"
+        "</table>"
+    )
+
+
+def _predicate_table_html(
+    rel: _TypedRelation,
+    carriers: Mapping[str, Sequence[str]],
+) -> str:
+    values = carriers[rel.source]
+    members = {a for a, b in rel.pairs if a == b}
+    cells = "".join(
+        f"<td class='{'present' if value in members else 'absent'}'>{escape(value)}</td>"
+        for value in values
+    )
+    caption = escape(_display_label(rel.label))
+    return (
+        "<table class='predicate-list'>"
+        f"<caption>{caption}</caption>"
+        f"<tbody><tr>{cells}</tr></tbody>"
+        "</table>"
+    )
 
 
 def _render_report(
     title: str,
     carriers: Mapping[str, Sequence[str]],
     inputs: Sequence[_TypedRelation],
-    closure: Sequence[_TypedRelation],
+    input_predicates: Sequence[_TypedRelation],
+    closure_relations: Sequence[_TypedRelation],
+    closure_predicates: Sequence[_TypedRelation],
     registry: "_SliceRegistry",
     result: HellyResult,
 ) -> str:
@@ -488,28 +606,66 @@ def _render_report(
         f"<tbody>{sort_rows}</tbody></table>",
     )
 
-    input_tables = [
-        _relation_matrix_html(rel, carriers)
-        for rel in sorted(inputs, key=lambda r: (r.source, r.target, _display_label(r.label)))
-    ]
+    filtered_inputs = []
+    seen_relations: set[RelationKey] = set()
+    input_tables = []
+    for rel in sorted(inputs, key=lambda r: (r.source, r.target, _display_label(r.label))):
+        if _is_outer_product(rel):
+            continue
+        key = (rel.source, rel.target, rel.pairs)
+        transpose_key = (
+            rel.target,
+            rel.source,
+            frozenset((b, a) for (a, b) in rel.pairs),
+        )
+        is_transpose = transpose_key in seen_relations
+        filtered_inputs.append(rel)
+        seen_relations.add(key)
+        input_tables.append(
+            _relation_matrix_html(rel, carriers, is_transpose=is_transpose)
+        )
     inputs_section = section(
         "Input Relations",
         f"<div class='grid'>{''.join(input_tables)}</div>" if input_tables else "<p>(none)</p>",
     )
 
-    input_keys = {
-        (rel.source, rel.target, rel.pairs)
-        for rel in inputs
-    }
-
-    closure_tables = [
-        _relation_matrix_html(rel, carriers)
-        for rel in sorted(closure, key=lambda r: (r.source, r.target, _display_label(r.label)))
-        if (rel.source, rel.target, rel.pairs) not in input_keys
+    input_pred_tables = [
+        _predicate_table_html(rel, carriers)
+        for rel in sorted(input_predicates, key=lambda r: (r.source, _display_label(r.label)))
     ]
+    predicate_section = section(
+        "Input Predicates",
+        f"<div class='grid'>{''.join(input_pred_tables)}</div>" if input_pred_tables else "<p>(none)</p>",
+    )
+
+    closure_tables = []
+    closure_seen = seen_relations.copy()
+    for rel in sorted(closure_relations, key=lambda r: (r.source, r.target, _display_label(r.label))):
+        if _is_outer_product(rel):
+            continue
+        key = (rel.source, rel.target, rel.pairs)
+        transpose_key = (
+            rel.target,
+            rel.source,
+            frozenset((b, a) for (a, b) in rel.pairs),
+        )
+        is_transpose = transpose_key in closure_seen
+        closure_seen.add(key)
+        closure_tables.append(
+            _relation_matrix_html(rel, carriers, is_transpose=is_transpose)
+        )
     closure_section = section(
         "Closure Relations",
         f"<div class='grid'>{''.join(closure_tables)}</div>" if closure_tables else "<p>(none)</p>",
+    )
+
+    closure_pred_tables = [
+        _predicate_table_html(rel, carriers)
+        for rel in sorted(closure_predicates, key=lambda r: (r.source, _display_label(r.label)))
+    ]
+    closure_pred_section = section(
+        "Closure Predicates",
+        f"<div class='grid'>{''.join(closure_pred_tables)}</div>" if closure_pred_tables else "<p>(none)</p>",
     )
 
     slice_sections = []
@@ -554,6 +710,13 @@ def _render_report(
     .relation-grid th:not(:first-child) { background: #fafafa; }
     .relation-grid td.present { background: #d6f5d6; font-weight: 600; color: #135b13; }
     .relation-grid td.absent { background: #fbfbfb; color: #c7c7c7; }
+    .relation-grid.transpose { opacity: 0.5; border: 1px dashed #88a; }
+    .relation-grid.transpose caption { color: #445; }
+    .predicate-list { border-collapse: collapse; font-size: 0.9em; }
+    .predicate-list caption { caption-side: top; text-align: left; font-weight: 600; margin-bottom: 0.35em; }
+    .predicate-list td { border: 1px solid #ccc; padding: 0.3em 0.6em; text-align: center; }
+    .predicate-list td.present { background: #d6f5d6; font-weight: 600; color: #135b13; }
+    .predicate-list td.absent { background: #fbfbfb; color: #c7c7c7; }
     """
 
     html = (
@@ -569,6 +732,8 @@ def _render_report(
         f"{summary_section}"
         f"{sorts_section}"
         f"{inputs_section}"
+        f"{predicate_section}"
+        f"{closure_pred_section}"
         f"{closure_section}"
         f"{slices_section}"
         "</body>"
@@ -577,20 +742,26 @@ def _render_report(
     return html
 
 
-def _load_module_family(module_name: str) -> Tuple[Mapping[str, Sequence[str]], Iterable]:
+def _load_module_family(module_name: str) -> Tuple[Mapping[str, Sequence[str]], Iterable, Optional[Iterable]]:
     module = importlib.import_module(module_name)
     if hasattr(module, "build"):
         data = module.build()  # type: ignore[attr-defined]
-        if isinstance(data, tuple) and len(data) == 2:
-            return data  # type: ignore[return-value]
-        raise HellyCheckError("build() must return (sorts, relations)")
+        if isinstance(data, tuple):
+            if len(data) == 2:
+                sorts, relations = data
+                return sorts, relations, None
+            if len(data) == 3:
+                sorts, relations, predicates = data
+                return sorts, relations, predicates
+        raise HellyCheckError("build() must return (sorts, relations[, predicates])")
     sorts = getattr(module, "sorts", None)
     relations = getattr(module, "relations", None)
+    predicates = getattr(module, "predicates", None)
     if sorts is None or relations is None:
         raise HellyCheckError(
             f"module {module_name!r} must define `sorts` and `relations`, or a build() function"
         )
-    return sorts, relations
+    return sorts, relations, predicates
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
@@ -609,16 +780,17 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return 0
 
     try:
-        sorts, relations = _load_module_family(args.module)
+        sorts, relations, predicates = _load_module_family(args.module)
         if args.report:
             result = create_helly_report(
                 args.report,
                 sorts,
                 relations,
+                predicates=predicates,
                 title=f"Helly-2 Report — {args.module}",
             )
         else:
-            result = check_helly(sorts, relations)
+            result = check_helly(sorts, relations, predicates=predicates)
     except (HellyCheckError, ModuleNotFoundError) as exc:
         print(f"Error: {exc}", flush=True)
         return 2
