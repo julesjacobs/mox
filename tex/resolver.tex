@@ -2,13 +2,21 @@
 
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{amsthm}
 \usepackage{mathpartir}
 \usepackage{fontawesome5}
 \usepackage{xcolor}
 \usepackage{tikz}
+\usepackage{amsmath}
+
 \usetikzlibrary{arrows.meta,positioning}
 \tikzset{graphnode/.style={draw,circle,inner sep=1.5pt,minimum size=18pt}}
 \mprset{flushleft}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
 
 \newcommand{\kw}[1]{\text{\textbf{#1}}}
 \newcommand{\judge}[3]{#1 \vdash #2 : #3}
@@ -162,53 +170,232 @@ Let's first analyze the problem more precisely. Given a domain $V$ and a family 
 \end{itemize}
 
 We therefore first close $\RelSet$ under these three operations. If the domain $V$ is finite, the resulting set of relations is finite.
+We can picture the relations before and after elimination of a variable as follows:
 
-Without loss of generality, we can picture the relations adjacent to a particular variable $x$ as follows:
-
-\[
-  \begin{tikzpicture}[>=Latex]
-    \node[graphnode] (xcore) at (0,0) {$x$};
-
+\begin{tikzpicture}[>=Latex]
+  \begin{scope}[xshift=-3.5cm]
+    \node[graphnode] (xbefore) at (0,0) {$x$};
     \foreach \idx/\angle in {1/90,2/18,3/-54,4/-126,5/162} {
-      \node[graphnode] (y\idx) at (\angle:3) {$y_{\idx}$};
-      \draw[->] (xcore) -- node[pos=0.55,above,sloped] {$R_{\idx}$} (y\idx);
+      \node[graphnode] (yB\idx) at (\angle:2.3) {$y_{\idx}$};
+      \draw[->] (xbefore) -- node[pos=0.55,above,sloped] {$R_{\idx}$} (yB\idx);
+    }
+    \draw[->] (xbefore) .. controls (-0.35,-0.8) and (0.35,-0.8) .. node[pos=0.5,below] {$R_{0}$} (xbefore);
+    \node[font=\small] at (0,-3) {Before elimination};
+  \end{scope}
+
+  \node at (0.3,-0.5) {$\Longrightarrow$};
+
+  \begin{scope}[xshift=4.2cm]
+    \foreach \idx/\angle in {1/90,2/18,3/-54,4/-126,5/162} {
+      \node[graphnode] (yA\idx) at (\angle:2.3) {$y_{\idx}$};
+      \draw[->] (yA\idx) .. controls +({\angle+30}:0.8) and +({\angle-30}:0.8) .. (yA\idx);
+      \path (yA\idx) ++({\angle}:0.9) node[font=\scriptsize] {$R_{\idx\idx}$};
     }
 
-    \draw[->] (xcore) .. controls (-0.45,-0.9) and (0.45,-0.9) .. node[pos=0.5,below] {$R_{0}$} (xcore);
-  \end{tikzpicture}
+    \foreach \i/\j in {5/4,5/3,5/2,5/1,4/3,4/2,4/1,3/2,3/1,2/1} {
+      \draw[->] (yA\j) -- node[pos=0.5,above,font=\scriptsize,sloped] {$R_{\j\i}$} (yA\i);
+    }
+
+    \node[font=\small] at (0,-3) {After elimination};
+  \end{scope}
+\end{tikzpicture}
+
+Eliminating $x$ yields edges $R_{ij} = R_{i}^{\top} R_{0}^{\ast} R_{j}$ directed from $y_j$ to $y_i$ for all $i \geq j$, including self-loops $R_{ii}$.
+If there were existing relations between the $y_i$ then we intersect them with these.
+
+\textbf{The key question is: for which families of relations $\RelSet$ does this algorithm work?}
+
+\paragraph{Answer.}
+Intuitively, the elimination step is sound if every time we eliminate a variable $x$, the
+constraints we generate between its neighbors are ``complete'': any solution of the
+projected constraints on the neighbors can be extended to a value of $x$.
+The obstruction is exactly the phenomenon we saw with $\neq$-constraints: locally
+consistent projections need not extend.
+
+We now characterize when elimination is complete.
+
+\subsection{Closure and slices}
+
+Fix a finite domain $V$ and a finite family of binary relations
+$\RelSet \subseteq \mathcal{P}(V \times V)$.
+The elimination algorithm only ever uses relations obtained from $\RelSet$ by:
+\begin{itemize}
+  \item composition: $RS = \{(a,c) \mid \exists b.\ (a,b)\in R \land (b,c)\in S\}$,
+  \item intersection: $R \cap S$,
+  \item converse: $R^{\top} = \{(b,a) \mid (a,b)\in R\}$,
+  \item restriction to the diagonal (from self-loops): $R^{\ast} = \{(a,a) \mid (a,a)\in R\}$.
+\end{itemize}
+\newcommand{\Cl}{\mathsf{Cl}}
+Let $\Cl(\RelSet)$ be the smallest set of relations containing $\RelSet$ and closed under
+these four operations.
+
+For a relation $R \in \Cl(\RelSet)$ and an element $b \in V$ we write:
+\[
+  R[\_,b] \;=\; \{ a \in V \mid (a,b)\in R \}
+  \qquad\text{and}\qquad
+  R[a,\_] \;=\; \{ b \in V \mid (a,b)\in R \}
+\]
+for its \emph{column} and \emph{row} slices.
+These are exactly the unary constraints on $x$ induced by fixing the other endpoint.
+
+Let $\mathcal{F}$ be the family of all such slices:
+\[
+  \mathcal{F}
+  \;=\;
+  \{\, R[\_,b], R[a,\_] \mid R \in \Cl(\RelSet),\ a,b\in V \,\}
+  \;\subseteq\; \mathcal{P}(V).
 \]
 
-\begin{figure}[ht]
-  \centering
-  \begin{tikzpicture}[>=Latex]
-    \begin{scope}[xshift=-3.5cm]
-      \node[graphnode] (xbefore) at (0,0) {$x$};
-      \foreach \idx/\angle in {1/90,2/18,3/-54,4/-126,5/162} {
-        \node[graphnode] (yB\idx) at (\angle:2.3) {$y_{\idx}$};
-        \draw[->] (xbefore) -- node[pos=0.55,above,sloped] {$R_{\idx}$} (yB\idx);
-      }
-      \draw[->] (xbefore) .. controls (-0.35,-0.8) and (0.35,-0.8) .. node[pos=0.5,below] {$R_{0}$} (xbefore);
-      \node[font=\small] at (0,-2.4) {Before elimination};
-    \end{scope}
+Because $\Cl(\RelSet)$ is closed under intersection, so is $\mathcal{F}$:
+for any $A,B\in\mathcal{F}$ there exists $C\in\mathcal{F}$ with $C = A\cap B$.
+This intersection-closure is crucial below.
 
-    \node at (0.3,-0.5) {$\Longrightarrow$};
+\subsection{A Helly-style condition}
 
-    \begin{scope}[xshift=4.2cm]
-      \foreach \idx/\angle in {1/90,2/18,3/-54,4/-126,5/162} {
-        \node[graphnode] (yA\idx) at (\angle:2.3) {$y_{\idx}$};
-        \draw[->] (yA\idx) .. controls +({\angle+30}:0.8) and +({\angle-30}:0.8) .. (yA\idx);
-        \path (yA\idx) ++({\angle}:0.9) node[font=\scriptsize] {$R_{\idx\idx}$};
-      }
+The key combinatorial property is a Helly-type condition on $\mathcal{F}$.
 
-      \foreach \i/\j in {5/4,5/3,5/2,5/1,4/3,4/2,4/1,3/2,3/1,2/1} {
-        \draw[->] (yA\j) -- node[pos=0.5,above,font=\scriptsize,sloped] {$R_{\j\i}$} (yA\i);
-      }
+\begin{definition}[Helly-2 for slices]
+We say that $\RelSet$ has the \emph{Helly-2 slice property} if the following holds:
 
-      \node[font=\small] at (0,-2.4) {After elimination};
-    \end{scope}
-  \end{tikzpicture}
-  \caption{Eliminating $x$ in the radial layout yields edges $R_{ij} = R_{i}^{\top} R_{0}^{\ast} R_{j}$ directed from $y_j$ to $y_i$ for all $i \geq j$, including self-loops $R_{ii}$.}
-\end{figure}
+For every finite subfamily $\{F_1,\dots,F_k\}\subseteq\mathcal{F}$,
+if all pairwise intersections are non-empty,
+\[
+  F_i \cap F_j \neq \varnothing \quad\text{for all } i\neq j,
+\]
+then the total intersection is non-empty,
+\[
+  \bigcap_{i=1}^k F_i \neq \varnothing.
+\]
+\end{definition}
+
+Because $\mathcal{F}$ is intersection-closed, this is equivalent to the absence of a
+\emph{bad triple}:
+
+\begin{lemma}[Triples suffice for intersection-closed families]
+\label{lem:helly-triples}
+Assume $\mathcal{F}$ is closed under intersection.
+Then $\mathcal{F}$ has the Helly-2 slice property if and only if there do not exist
+$A,B,C \in \mathcal{F}$ such that
+\[
+  A\cap B \neq \varnothing,\quad
+  B\cap C \neq \varnothing,\quad
+  C\cap A \neq \varnothing,\quad
+  A\cap B\cap C = \varnothing.
+\]
+\end{lemma}
+
+\begin{proof}
+($\Rightarrow$) Immediate: such a triple would violate Helly-2.
+
+($\Leftarrow$)
+Suppose Helly-2 fails. Pick a counterexample
+$\{F_1,\dots,F_m\}\subseteq\mathcal{F}$ of minimal size:
+all pairs intersect, but $\bigcap_i F_i = \varnothing$.
+Since $\mathcal{F}$ is intersection-closed, for each $i\ge2$ the set
+$A_i := F_1\cap F_i$ lies in $\mathcal{F}$, is non-empty, and
+$\bigcap_{i=2}^m A_i = \bigcap_{i=1}^m F_i = \varnothing$.
+If some $A_i\cap A_j$ were empty, then
+$F_1,F_i,F_j$ would form a bad triple.
+Otherwise $\{A_2,\dots,A_m\}$ is a smaller counterexample, contradicting minimality.
+\end{proof}
+
+Thus in our setting we can detect failure of the Helly-2 slice property by a finite search
+for such bad triples among slices in $\Cl(\RelSet)$.
+
+\subsection{Correctness of elimination}
+
+We now state the main correctness criterion.
+
+\begin{theorem}[Characterization of admissible constraint families]
+\label{thm:elimination-correct}
+Let $V$ be finite and $\RelSet \subseteq \mathcal{P}(V\times V)$.
+Consider the following variable-elimination algorithm:
+at each step, pick a variable $x$, and for every two neighbors
+$y_i \xleftarrow{R_i} x \xrightarrow{R_j} y_j$
+insert the composed edge
+\(
+  y_i \xleftarrow{R_i R_0^\ast R_j} y_j
+\)
+(where $R_0^\ast$ is the current self-loop on $x$, possibly $\mathrm{Id}$),
+intersecting with any existing edge between $y_i$ and $y_j$,
+then delete $x$.
+If at any point a self-loop on some variable becomes empty on the diagonal
+(i.e. forbids all $(a,a)$), report unsatisfiable.
+
+Then the following are equivalent:
+\begin{enumerate}
+  \item For every finite constraint graph over $\RelSet$, this elimination algorithm
+        decides satisfiability correctly: the final instance is satisfiable
+        iff the original instance is satisfiable.
+  \item $\RelSet$ has the Helly-2 slice property.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+$(2) \Rightarrow (1)$ (\emph{completeness of elimination}).
+It is enough to show that a \emph{single} elimination step is complete, and then argue by
+induction on the number of variables.
+
+Consider eliminating $x$ from its star.
+Fix an assignment to the neighbors $\{y_i\}$ that satisfies all constraints
+generated by the algorithm between the $y_i$.
+For each incident edge, this assignment induces a slice
+$S_i \in \mathcal{F}$ of admissible values for $x$
+(e.g., for $y_i \xrightarrow{R_i} x$ with $y_i$ fixed to $b_i$ we get
+$S_i = R_i[\_,b_i]$).
+By construction, every binary constraint added between $y_i$ and $y_j$ enforces that
+$S_i$ and $S_j$ intersect: if they did not, the corresponding composed relation would
+have removed the chosen pair $(b_i,b_j)$.
+Hence the family $\{S_i\}$ is pairwise-intersecting.
+By the Helly-2 slice property,
+\(
+  \bigcap_i S_i \neq \varnothing.
+\)
+Picking any $a$ in this intersection and setting $x:=a$ extends the neighbor assignment to
+a full solution of the original constraints around $x$.
+Inductively, every model of the final instance lifts to a model of the original one.
+
+Soundness of the algorithm (it never introduces spurious solutions) holds because every
+new edge relation is logically implied by the existence of an intermediate $x$ satisfying
+its incident constraints.
+
+$(1) \Rightarrow (2)$ (\emph{necessity}).
+Assume the Helly-2 slice property fails.
+By Lemma~\ref{lem:helly-triples} and intersection-closure, there exist
+$S_1,S_2,S_3 \in \mathcal{F}$
+with all pairwise intersections non-empty but empty triple intersection.
+By definition of $\mathcal{F}$, we can realize each $S_i$ as the admissible values for
+some variable $x$ given a fixed neighbor $y_i$ and a relation $R_i \in \Cl(\RelSet)$.
+We construct a constraint star with center $x$ and leaves $y_1,y_2,y_3$ so that, for the
+chosen values of the $y_i$, the corresponding slices are precisely $S_i$.
+By pairwise intersection, every pair of leaves admits a value of $x$;
+hence the elimination algorithm, which only asserts pairwise compositions,
+accepts this partial assignment to $y_1,y_2,y_3$.
+But by emptiness of $S_1\cap S_2\cap S_3$, no value of $x$ satisfies all three
+constraints simultaneously, so the original instance is unsatisfiable.
+Thus elimination is not complete, contradicting~(1).
+\end{proof}
+
+\begin{corollary}[Finite check]
+\label{cor:finite-check}
+For finite $V$, the Helly-2 slice property for $\RelSet$ is decidable:
+\begin{enumerate}
+  \item compute $\Cl(\RelSet)$ (finite);
+  \item form all slices $R[\_,b], R[a,\_]$;
+  \item check that no triple of slices has non-empty pairwise intersections and empty
+        triple intersection.
+\end{enumerate}
+If no such triple exists, variable elimination as above is sound and complete for all
+constraint graphs over $\RelSet$.
+\end{corollary}
+
+In particular, difference constraints and the OxCaml-style modal constraints
+$x \leq G(y)$ with adjoints fall into this framework:
+their induced slices are (discrete) intervals, which satisfy Helly-2, so elimination is
+complete.
+By contrast, $\neq$-constraints generate non-convex slices, violate Helly-2, and are
+correctly rejected by this criterion.
+
 
 \section{Solver Architecture}
 
