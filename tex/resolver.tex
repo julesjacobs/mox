@@ -65,7 +65,7 @@ Consider a variable $x$ with:
 \end{itemize}
 When eliminating $x$, we assert every transitive constraint $R_{i_p + j_q}(a_p,b_q)$ for $p \in \{1,2,3\}$ and $q \in \{1,2\}$:
 
-\begin{figure}[h]
+\begin{figure}[ht]
   \centering
   \begin{tikzpicture}[>=Latex]
     \begin{scope}[xshift=-2.5cm]
@@ -119,7 +119,7 @@ I claim that if there is a solution for the neighboring variables that satisfies
 
 The key blocker for $k$-coloring is that this property does not hold for inequality constraints. Suppose for example we have a vertex $x$ and $k+1$ neighbors with inequality constraints. The transitive constraints are trivial if $k \geq 3$, because if we have $a \neq x \neq b$, then for a given value of $a$, all values of $b$ are still possible, by choosing a particular value for $x$. Thus, the strategy of variable elimination does not work for $k$-coloring, for $k \geq 3$: for $\neq$ constraints, eliminating $x$ produces no useful transitives; every neighbour pair remains unconstrained:
 
-\begin{figure}[h]
+\begin{figure}[ht]
   \centering
   \begin{tikzpicture}[>=Latex]
     \begin{scope}[xshift=-2.5cm]
@@ -149,6 +149,66 @@ The OxCaml mode solver has constraints of the form $x \leq G(y)$ where $G$ are m
 \subsection{Which constraints can be solved by elimination?}
 
 For a set of constraints to be solvable by elimination, we need that the original problem has a solution iff the transformed problem has a solution. We will now analyze precisely when this property holds, and provide an easily checkable criterion for it.
+
+\newcommand{\RelSet}{\mathsf{Rel}}
+Let's first analyze the problem more precisely. Given a domain $V$ and a family of relations $\RelSet \subseteq \mathcal{P}(V \times V)$, the elimination algorithm may construct new relations in the following four ways:
+
+\begin{itemize}
+  \item It composes two relations $R,S \in \RelSet$ to produce $$RS = \{ (a,b) \mid \exists c.\ (a,c) \in R \land (c,b) \in S \}$$
+  \item It intersects two relations $R,S \in \RelSet$ when it merges two parallel edges $$R \cap S = \{ (a,b) \mid (a,b) \in R \land (a,b) \in S \}$$
+  \item It reverses the direction of a relation $R \in \RelSet$ to produce $$R^T = \{ (b,a) \mid (a,b) \in R \}$$
+  \item We strengthen a relation $R \in \RelSet$ asserted between a variable and itself
+  $$R^\ast = \{ (a,a) \mid (a,a) \in R \}$$
+\end{itemize}
+
+We therefore first close $\RelSet$ under these three operations. If the domain $V$ is finite, the resulting set of relations is finite.
+
+Without loss of generality, we can picture the relations adjacent to a particular variable $x$ as follows:
+
+\[
+  \begin{tikzpicture}[>=Latex]
+    \node[graphnode] (xcore) at (0,0) {$x$};
+
+    \foreach \idx/\angle in {1/90,2/18,3/-54,4/-126,5/162} {
+      \node[graphnode] (y\idx) at (\angle:3) {$y_{\idx}$};
+      \draw[->] (xcore) -- node[pos=0.55,above,sloped] {$R_{\idx}$} (y\idx);
+    }
+
+    \draw[->] (xcore) .. controls (-0.45,-0.9) and (0.45,-0.9) .. node[pos=0.5,below] {$R_{0}$} (xcore);
+  \end{tikzpicture}
+\]
+
+\begin{figure}[ht]
+  \centering
+  \begin{tikzpicture}[>=Latex]
+    \begin{scope}[xshift=-3.5cm]
+      \node[graphnode] (xbefore) at (0,0) {$x$};
+      \foreach \idx/\angle in {1/90,2/18,3/-54,4/-126,5/162} {
+        \node[graphnode] (yB\idx) at (\angle:2.3) {$y_{\idx}$};
+        \draw[->] (xbefore) -- node[pos=0.55,above,sloped] {$R_{\idx}$} (yB\idx);
+      }
+      \draw[->] (xbefore) .. controls (-0.35,-0.8) and (0.35,-0.8) .. node[pos=0.5,below] {$R_{0}$} (xbefore);
+      \node[font=\small] at (0,-2.4) {Before elimination};
+    \end{scope}
+
+    \node at (0.3,-0.5) {$\Longrightarrow$};
+
+    \begin{scope}[xshift=4.2cm]
+      \foreach \idx/\angle in {1/90,2/18,3/-54,4/-126,5/162} {
+        \node[graphnode] (yA\idx) at (\angle:2.3) {$y_{\idx}$};
+        \draw[->] (yA\idx) .. controls +({\angle+30}:0.8) and +({\angle-30}:0.8) .. (yA\idx);
+        \path (yA\idx) ++({\angle}:0.9) node[font=\scriptsize] {$R_{\idx\idx}$};
+      }
+
+      \foreach \i/\j in {5/4,5/3,5/2,5/1,4/3,4/2,4/1,3/2,3/1,2/1} {
+        \draw[->] (yA\j) -- node[pos=0.5,above,font=\scriptsize,sloped] {$R_{\j\i}$} (yA\i);
+      }
+
+      \node[font=\small] at (0,-2.4) {After elimination};
+    \end{scope}
+  \end{tikzpicture}
+  \caption{Eliminating $x$ in the radial layout yields edges $R_{ij} = R_{i}^{\top} R_{0}^{\ast} R_{j}$ directed from $y_j$ to $y_i$ for all $i \geq j$, including self-loops $R_{ii}$.}
+\end{figure}
 
 \section{Solver Architecture}
 
