@@ -7,6 +7,7 @@
 \usepackage{xcolor}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning}
+\tikzset{graphnode/.style={draw,circle,inner sep=1.5pt,minimum size=18pt}}
 \mprset{flushleft}
 
 \newcommand{\kw}[1]{\text{\textbf{#1}}}
@@ -68,12 +69,12 @@ When eliminating $x$, we assert every transitive constraint $R_{i_p + j_q}(a_p,b
   \centering
   \begin{tikzpicture}[>=Latex]
     \begin{scope}[xshift=-2.5cm]
-      \node[draw,circle,inner sep=1.5pt] (a1) at (0,0.9) {$a_1$};
-      \node[draw,circle,inner sep=1.5pt] (a2) at (0,0) {$a_2$};
-      \node[draw,circle,inner sep=1.5pt] (a3) at (0,-0.9) {$a_3$};
-      \node[draw,circle,inner sep=1.5pt] (x)  at (2,0) {$x$};
-      \node[draw,circle,inner sep=1.5pt] (b1) at (4,0.9) {$b_1$};
-      \node[draw,circle,inner sep=1.5pt] (b2) at (4,-0.9) {$b_2$};
+      \node[graphnode] (a1) at (0,0.9) {$a_1$};
+      \node[graphnode] (a2) at (0,0) {$a_2$};
+      \node[graphnode] (a3) at (0,-0.9) {$a_3$};
+      \node[graphnode] (x)  at (2,0) {$x$};
+      \node[graphnode] (b1) at (4,0.9) {$b_1$};
+      \node[graphnode] (b2) at (4,-0.9) {$b_2$};
 
       \draw[->] (a1) -- node[pos=0.35,above,sloped] {$+i_1$} (x);
       \draw[->] (a2) -- node[pos=0.35,above] {$+i_2$} (x);
@@ -88,11 +89,11 @@ When eliminating $x$, we assert every transitive constraint $R_{i_p + j_q}(a_p,b
     \node at (3.2,0) {$\Longrightarrow$};
 
     \begin{scope}[xshift=5cm]
-      \node[draw,circle,inner sep=1.5pt] (a1p) at (0,0.9) {$a_1$};
-      \node[draw,circle,inner sep=1.5pt] (a2p) at (0,0) {$a_2$};
-      \node[draw,circle,inner sep=1.5pt] (a3p) at (0,-0.9) {$a_3$};
-      \node[draw,circle,inner sep=1.5pt] (b1p) at (4,0.9) {$b_1$};
-      \node[draw,circle,inner sep=1.5pt] (b2p) at (4,-0.9) {$b_2$};
+      \node[graphnode] (a1p) at (0,0.9) {$a_1$};
+      \node[graphnode] (a2p) at (0,0) {$a_2$};
+      \node[graphnode] (a3p) at (0,-0.9) {$a_3$};
+      \node[graphnode] (b1p) at (4,0.9) {$b_1$};
+      \node[graphnode] (b2p) at (4,-0.9) {$b_2$};
 
       \draw[dashed,->,black!60] (a1p) to[out=10,in=170] 
         node[pos=0.5,sloped,above,font=\scriptsize] {$+i_1{+}j_1$} (b1p);
@@ -122,9 +123,9 @@ The key blocker for $k$-coloring is that this property does not hold for inequal
   \centering
   \begin{tikzpicture}[>=Latex]
     \begin{scope}[xshift=-2.5cm]
-      \node[draw,circle,inner sep=1.5pt] (x2) at (0,0) {$x$};
+      \node[graphnode] (x2) at (0,0) {$x$};
       \foreach \angle/\name in {90/c_1,25/c_2,-35/c_3,-130/c_4,155/c_5} {
-        \node[draw,circle,inner sep=1.5pt] (\name) at (\angle:1.8) {$\name$};
+        \node[graphnode] (\name) at (\angle:1.8) {$\name$};
         \draw[-] (x2) -- node[midway,sloped,above] {$\neq$} (\name);
       }
       \node[font=\small,align=center] at (0,-2.2) {Before elimination};
@@ -133,9 +134,9 @@ The key blocker for $k$-coloring is that this property does not hold for inequal
     \node at (1,0) {$\Longrightarrow$};
 
     \begin{scope}[xshift=5cm]
-      \node[draw,circle,inner sep=1.5pt,opacity=0] (x3) at (0,0) {$x$};
+      \node[graphnode,opacity=0] (x3) at (0,0) {$x$};
       \foreach \angle/\name in {90/c_1,25/c_2,-35/c_3,-130/c_4,155/c_5} {
-        \node[draw,circle,inner sep=1.5pt] (\name p) at (\angle:1.8) {$\name$};
+        \node[graphnode] (\name p) at (\angle:1.8) {$\name$};
       }
       \node[font=\small,color=black!60] at (0,0) {(no new constraints)};
       \node[font=\small,align=center] at (0,-2.2) {After elimination};
@@ -144,6 +145,10 @@ The key blocker for $k$-coloring is that this property does not hold for inequal
 \end{figure}
 
 The OxCaml mode solver has constraints of the form $x \leq G(y)$ where $G$ are modalities with left adjoints. Like the interval constraints we considered above, these constraints can be solved in polynomial time using variable elimination, and for the same reason.
+
+\subsection{Which constraints can be solved by elimination?}
+
+For a set of constraints to be solvable by elimination, we need that the original problem has a solution iff the transformed problem has a solution. We will now analyze precisely when this property holds, and provide an easily checkable criterion for it.
 
 \section{Solver Architecture}
 
