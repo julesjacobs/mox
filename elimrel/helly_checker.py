@@ -455,6 +455,7 @@ def create_helly_report(
     predicates: Optional[Iterable[Predicate]] = None,
     *,
     title: str = "Helly-2 Report",
+    include_outer_products: bool = False,
 ) -> HellyResult:
     (
         carriers,
@@ -474,6 +475,7 @@ def create_helly_report(
         closure_predicates,
         registry,
         result,
+        hide_outer_products=not include_outer_products,
     )
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -497,6 +499,10 @@ def _relation_matrix_html(
     carriers: Mapping[str, Sequence[str]],
     *,
     is_transpose: bool = False,
+    is_restricted: bool = False,
+    element_id: Optional[str] = None,
+    parent_id: Optional[str] = None,
+    is_outer_product: bool = False,
 ) -> str:
     rows = carriers[rel.source]
     cols = carriers[rel.target]
@@ -516,18 +522,25 @@ def _relation_matrix_html(
             "</tr>"
         )
     header_cells = "".join(f"<th>{escape(col)}</th>" for col in cols)
-    caption = escape(_display_label(rel.label))
-    table = (
-        "<table class='relation-grid'>"
-        f"<caption>{caption}</caption>"
-        f"<thead><tr><th></th>{header_cells}</tr></thead>"
-        f"<tbody>{''.join(body_rows)}</tbody>"
-        "</table>"
-    )
-    extra_class = " transpose" if is_transpose else ""
+    classes = ["relation-grid"]
+    if is_transpose:
+        classes.append("transpose")
+    if is_restricted:
+        classes.append("restricted")
+    if is_outer_product:
+        classes.append("outer-product")
+
+    attributes = [f"class=\"{' '.join(classes)}\""]
+    if element_id:
+        attributes.append(f"id=\"{element_id}\"")
+    if parent_id:
+        attributes.append(f"data-parent=\"{parent_id}\"")
+    if is_outer_product:
+        attributes.append("data-outer-product=\"true\"")
+    attributes.append(f"title=\"{escape(_display_label(rel.label))}\"")
+
     return (
-        f"<table class='relation-grid{extra_class}'>"
-        f"<caption>{caption}</caption>"
+        f"<table {' '.join(attributes)}>"
         f"<thead><tr><th></th>{header_cells}</tr></thead>"
         f"<tbody>{''.join(body_rows)}</tbody>"
         "</table>"
@@ -540,15 +553,14 @@ def _predicate_table_html(
 ) -> str:
     values = carriers[rel.source]
     members = {a for a, b in rel.pairs if a == b}
-    cells = "".join(
-        f"<td class='{'present' if value in members else 'absent'}'>{escape(value)}</td>"
-        for value in values
-    )
-    caption = escape(_display_label(rel.label))
     return (
-        "<table class='predicate-list'>"
-        f"<caption>{caption}</caption>"
-        f"<tbody><tr>{cells}</tr></tbody>"
+        f"<table class='predicate-list' title=\"{escape(_display_label(rel.label))}\">"
+        "<tbody>"
+        + "".join(
+            f"<tr><td class='{'present' if value in members else 'absent'}'>{escape(value)}</td></tr>"
+            for value in values
+        )
+        + "</tbody>"
         "</table>"
     )
 
@@ -562,6 +574,8 @@ def _render_report(
     closure_predicates: Sequence[_TypedRelation],
     registry: "_SliceRegistry",
     result: HellyResult,
+    *,
+    hide_outer_products: bool = True,
 ) -> str:
     def section(header: str, body: str) -> str:
         return f"<section><h2>{escape(header)}</h2>{body}</section>"
@@ -594,8 +608,6 @@ def _render_report(
                 "</div>"
             )
 
-    summary_section = section("Summary", "".join(summary_lines))
-
     sort_rows = "".join(
         f"<tr><td>{escape(sort)}</td><td>{', '.join(escape(v) for v in values)}</td></tr>"
         for sort, values in sorted(carriers.items(), key=lambda item: item[0])
@@ -606,27 +618,107 @@ def _render_report(
         f"<tbody>{sort_rows}</tbody></table>",
     )
 
-    filtered_inputs = []
-    seen_relations: set[RelationKey] = set()
-    input_tables = []
-    for rel in sorted(inputs, key=lambda r: (r.source, r.target, _display_label(r.label))):
-        if _is_outer_product(rel):
+    carrier_sets = {sort: set(values) for sort, values in carriers.items()}
+
+    predicate_lookup: dict[str, dict[frozenset[str], str]] = {}
+    for pred in (*input_predicates, *closure_predicates):
+        members = frozenset(a for (a, b) in pred.pairs if a == b)
+        if not members:
             continue
+        entry = predicate_lookup.setdefault(pred.source, {})
+        label = _display_label(pred.label)
+        existing = entry.get(members)
+        if existing is None or len(label) < len(existing):
+            entry[members] = label
+
+    def describe_predicate_restriction(
+        rel: _TypedRelation,
+        previous: Sequence[Tuple[RelationKey, _TypedRelation, str]],
+    ) -> Optional[Tuple[str, str]]:
+        row_set = {a for (a, _) in rel.pairs}
+        col_set = {b for (_, b) in rel.pairs}
+
+        source_full = row_set == carrier_sets[rel.source]
+        target_full = col_set == carrier_sets[rel.target]
+
+        row_label = None
+        if not source_full:
+            row_label = predicate_lookup.get(rel.source, {}).get(frozenset(row_set))
+        col_label = None
+        if not target_full:
+            col_label = predicate_lookup.get(rel.target, {}).get(frozenset(col_set))
+
+        if not row_label and not col_label:
+            return None
+
+        for _, base, base_id in previous:
+            if base.source != rel.source or base.target != rel.target:
+                continue
+            restricted = {
+                (a, b)
+                for (a, b) in base.pairs
+                if (row_label is None or a in row_set)
+                and (col_label is None or b in col_set)
+            }
+            if restricted == rel.pairs:
+                parts = []
+                if row_label:
+                    parts.append(f"{row_label} on source")
+                if col_label:
+                    parts.append(f"{col_label} on target")
+                label_text = f"restricted from {_display_label(base.label)}"
+                if parts:
+                    label_text += f" ({'; '.join(parts)})"
+                return label_text, base_id
+        return None
+
+    has_outer_products = False
+    relation_entries: list[Tuple[RelationKey, _TypedRelation, str]] = []
+    transpose_keys: set[RelationKey] = set()
+    input_tables_bucket: list[Tuple[int, int, str]] = []
+    idx_counter = 0
+    for rel in sorted(inputs, key=lambda r: (r.source, r.target, _display_label(r.label))):
+        is_outer = _is_outer_product(rel)
+        if is_outer:
+            has_outer_products = True
         key = (rel.source, rel.target, rel.pairs)
         transpose_key = (
             rel.target,
             rel.source,
             frozenset((b, a) for (a, b) in rel.pairs),
         )
-        is_transpose = transpose_key in seen_relations
-        filtered_inputs.append(rel)
-        seen_relations.add(key)
-        input_tables.append(
-            _relation_matrix_html(rel, carriers, is_transpose=is_transpose)
+        is_transpose = transpose_key in transpose_keys
+        parent_id = describe_predicate_restriction(rel, relation_entries)
+        element_id = f"rel-input-{len(relation_entries)}"
+        relation_entries.append((key, rel, element_id))
+        transpose_keys.add(key)
+        table_html = _relation_matrix_html(
+            rel,
+            carriers,
+            is_transpose=is_transpose,
+            is_restricted=parent_id is not None,
+            element_id=element_id,
+            parent_id=parent_id,
+            is_outer_product=is_outer,
         )
+        weight = 0
+        if is_transpose:
+            weight = max(weight, 1)
+        if parent_id is not None:
+            weight = max(weight, 2)
+        if is_outer:
+            weight = max(weight, 3)
+        input_tables_bucket.append((weight, idx_counter, table_html))
+        idx_counter += 1
+    input_grids: list[str] = []
+    if input_tables_bucket:
+        ordered_tables = [
+            html for _, _, html in sorted(input_tables_bucket, key=lambda item: (item[0], item[1]))
+        ]
+        input_grids.append(f"<div class='grid'>{''.join(ordered_tables)}</div>")
     inputs_section = section(
         "Input Relations",
-        f"<div class='grid'>{''.join(input_tables)}</div>" if input_tables else "<p>(none)</p>",
+        "".join(input_grids) if input_grids else "<p>(none)</p>",
     )
 
     input_pred_tables = [
@@ -635,28 +727,55 @@ def _render_report(
     ]
     predicate_section = section(
         "Input Predicates",
-        f"<div class='grid'>{''.join(input_pred_tables)}</div>" if input_pred_tables else "<p>(none)</p>",
+        f"<div class='predicate-grid'>{''.join(input_pred_tables)}</div>" if input_pred_tables else "<p>(none)</p>",
     )
 
-    closure_tables = []
-    closure_seen = seen_relations.copy()
+    closure_tables_bucket: list[Tuple[int, int, str]] = []
+    closure_entries = relation_entries.copy()
+    closure_transpose = transpose_keys.copy()
+    closure_idx = 0
     for rel in sorted(closure_relations, key=lambda r: (r.source, r.target, _display_label(r.label))):
-        if _is_outer_product(rel):
-            continue
+        is_outer = _is_outer_product(rel)
+        if is_outer:
+            has_outer_products = True
         key = (rel.source, rel.target, rel.pairs)
         transpose_key = (
             rel.target,
             rel.source,
             frozenset((b, a) for (a, b) in rel.pairs),
         )
-        is_transpose = transpose_key in closure_seen
-        closure_seen.add(key)
-        closure_tables.append(
-            _relation_matrix_html(rel, carriers, is_transpose=is_transpose)
+        is_transpose = transpose_key in closure_transpose
+        parent_id = describe_predicate_restriction(rel, closure_entries)
+        element_id = f"rel-closure-{len(closure_entries)}"
+        closure_entries.append((key, rel, element_id))
+        closure_transpose.add(key)
+        table_html = _relation_matrix_html(
+            rel,
+            carriers,
+            is_transpose=is_transpose,
+            is_restricted=parent_id is not None,
+            element_id=element_id,
+            parent_id=parent_id,
+            is_outer_product=is_outer,
         )
+        weight = 0
+        if is_transpose:
+            weight = max(weight, 1)
+        if parent_id is not None:
+            weight = max(weight, 2)
+        if is_outer:
+            weight = max(weight, 3)
+        closure_tables_bucket.append((weight, closure_idx, table_html))
+        closure_idx += 1
+    closure_grids: list[str] = []
+    if closure_tables_bucket:
+        ordered_tables = [
+            html for _, _, html in sorted(closure_tables_bucket, key=lambda item: (item[0], item[1]))
+        ]
+        closure_grids.append(f"<div class='grid'>{''.join(ordered_tables)}</div>")
     closure_section = section(
         "Closure Relations",
-        f"<div class='grid'>{''.join(closure_tables)}</div>" if closure_tables else "<p>(none)</p>",
+        "".join(closure_grids) if closure_grids else "<p>(none)</p>",
     )
 
     closure_pred_tables = [
@@ -665,7 +784,7 @@ def _render_report(
     ]
     closure_pred_section = section(
         "Closure Predicates",
-        f"<div class='grid'>{''.join(closure_pred_tables)}</div>" if closure_pred_tables else "<p>(none)</p>",
+        f"<div class='predicate-grid'>{''.join(closure_pred_tables)}</div>" if closure_pred_tables else "<p>(none)</p>",
     )
 
     slice_sections = []
@@ -694,30 +813,78 @@ def _render_report(
         "".join(slice_sections),
     )
 
+    if has_outer_products:
+        checked_attr = "" if hide_outer_products else " checked"
+        summary_lines.append(
+            "<div class='controls'>"
+            f"<label><input type='checkbox' id='outer-product-toggle'{checked_attr}> Show outer-product relations</label>"
+            "</div>"
+        )
+
+    summary_section = section("Summary", "".join(summary_lines))
+
     style = """
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 2em; }
-    h1 { margin-bottom: 0.5em; }
-    section { margin-bottom: 2em; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 1.5em; font-size: 0.5em; }
+    h1 { margin-bottom: 0.6em; }
+    section { margin-bottom: 1.5em; }
     table { border-collapse: collapse; margin-top: 0.5em; }
     th, td { border: 1px solid #ccc; padding: 0.4em 0.6em; text-align: left; vertical-align: top; }
     th { background-color: #f5f5f5; }
     .violation { border: 1px solid #f2a; padding: 0.75em; background: #fff5fb; margin-top: 1em; }
     .grid { display: flex; flex-wrap: wrap; gap: 1.2em; align-items: flex-start; }
-    .relation-grid { border-collapse: collapse; font-size: 0.9em; }
-    .relation-grid caption { caption-side: top; text-align: left; font-weight: 600; margin-bottom: 0.35em; }
-    .relation-grid th, .relation-grid td { border: 1px solid #ccc; padding: 0.3em 0.45em; text-align: center; }
-    .relation-grid th:first-child { text-align: left; background: #f0f0f0; }
-    .relation-grid th:not(:first-child) { background: #fafafa; }
+    .predicate-grid { display: flex; flex-wrap: wrap; gap: 1.2em; align-items: flex-start; }
+    .relation-grid { border-collapse: collapse; font-size: 0.9em; order: 0; }
+    .relation-grid th, .relation-grid td { border: 1px solid #ccc; padding: 0.25em; text-align: center; width: 1.6em; height: 1.6em; }
+    .relation-grid th:first-child { text-align: right; background: #f0f0f0; width: auto; padding-right: 0.3em; }
+    .relation-grid th:not(:first-child) { background: #fafafa; writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg); transform-origin: center; white-space: nowrap; padding: 0.15em 0.2em 0.15em 0.1em; width: 1.6em; height: auto; vertical-align: bottom; text-align: left; }
     .relation-grid td.present { background: #d6f5d6; font-weight: 600; color: #135b13; }
     .relation-grid td.absent { background: #fbfbfb; color: #c7c7c7; }
-    .relation-grid.transpose { opacity: 0.5; border: 1px dashed #88a; }
-    .relation-grid.transpose caption { color: #445; }
-    .predicate-list { border-collapse: collapse; font-size: 0.9em; }
-    .predicate-list caption { caption-side: top; text-align: left; font-weight: 600; margin-bottom: 0.35em; }
+    .relation-grid.outer-product { border: 1px dashed #bbb; opacity: 0.7; order: 3; }
+    .relation-grid.transpose { opacity: 0.5; border: 1px dashed #88a; order: 1; }
+    .relation-grid.restricted { opacity: 0.5; border: 1px dashed #88a; order: 2; }
+    .relation-grid.highlight { outline: 2px solid #f0a500; }
+    body.hide-outer-products .relation-grid.outer-product { display: none; }
+    .predicate-list { border-collapse: collapse; font-size: 0.9em; display: inline-table; width: auto; }
     .predicate-list td { border: 1px solid #ccc; padding: 0.3em 0.6em; text-align: center; }
     .predicate-list td.present { background: #d6f5d6; font-weight: 600; color: #135b13; }
     .predicate-list td.absent { background: #fbfbfb; color: #c7c7c7; }
+    .controls { margin-top: 1em; font-size: 1.1em; }
+    .controls input[type='checkbox'] { margin-right: 0.35em; }
     """
+
+    script = """
+    <script>
+    (function(){
+      var body = document.body;
+      var toggle = document.getElementById('outer-product-toggle');
+      if (toggle) {
+        var sync = function(){
+          if (toggle.checked) {
+            body.classList.remove('hide-outer-products');
+          } else {
+            body.classList.add('hide-outer-products');
+          }
+        };
+        toggle.addEventListener('change', sync);
+        sync();
+      }
+      var tables = document.querySelectorAll('table.relation-grid[data-parent]');
+      tables.forEach(function(tbl){
+        var parentId = tbl.getAttribute('data-parent');
+        if (!parentId) return;
+        var parent = document.getElementById(parentId);
+        if (!parent) return;
+        tbl.addEventListener('mouseenter', function(){ parent.classList.add('highlight'); });
+        tbl.addEventListener('mouseleave', function(){ parent.classList.remove('highlight'); });
+      });
+    })();
+    </script>
+    """
+
+    body_classes: list[str] = []
+    if hide_outer_products:
+        body_classes.append("hide-outer-products")
+    body_attr = f" class=\"{' '.join(body_classes)}\"" if body_classes else ""
 
     html = (
         "<!DOCTYPE html>"
@@ -727,15 +894,16 @@ def _render_report(
         f"<title>{escape(title)}</title>"
         f"<style>{style}</style>"
         "</head>"
-        "<body>"
+        f"<body{body_attr}>"
         f"<h1>{escape(title)}</h1>"
         f"{summary_section}"
         f"{sorts_section}"
-        f"{inputs_section}"
         f"{predicate_section}"
+        f"{inputs_section}"
         f"{closure_pred_section}"
         f"{closure_section}"
         f"{slices_section}"
+        f"{script}"
         "</body>"
         "</html>"
     )
@@ -773,6 +941,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         "--report",
         help="Write an HTML report to the given path.",
     )
+    parser.add_argument(
+        "--include-outer-products",
+        action="store_true",
+        help="Show relations whose matrices are full outer products (normally hidden).",
+    )
     args = parser.parse_args(argv)
 
     if not args.module:
@@ -788,6 +961,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 relations,
                 predicates=predicates,
                 title=f"Helly-2 Report — {args.module}",
+                include_outer_products=args.include_outer_products,
             )
         else:
             result = check_helly(sorts, relations, predicates=predicates)

@@ -1,3 +1,4 @@
+import argparse
 from pathlib import Path
 
 from elimrel.helly_checker import Predicate, Relation, check_helly, create_helly_report
@@ -28,6 +29,16 @@ predicates = [
 ]
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Run the elimrel full Helly-2 check and emit an HTML report."
+    )
+    parser.add_argument(
+        "--include-outer-products",
+        action="store_true",
+        help="Show relations whose matrices are full outer products (normally hidden).",
+    )
+    args = parser.parse_args()
+
     result = check_helly(sorts, relations, predicates=predicates)
     print(result.to_text())
     report_path = Path(__file__).with_suffix(".html")
@@ -37,5 +48,6 @@ if __name__ == "__main__":
         relations,
         predicates=predicates,
         title="Helly-2 Report — elimrel full",
+        include_outer_products=args.include_outer_products,
     )
     print(f"Report written to {report_path}")
