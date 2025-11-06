@@ -145,14 +145,20 @@ def check_helly(
     sorts: Mapping[str, Sequence[str]],
     relations: Iterable[Relation | Tuple[str, str, str, Iterable[Pair]]],
 ) -> HellyResult:
-    _, _, _, result = _analyze(sorts, relations)
+    _, _, _, _, result = _analyze(sorts, relations)
     return result
 
 
 def _analyze(
     sorts: Mapping[str, Sequence[str]],
     relations: Iterable[Relation | Tuple[str, str, str, Iterable[Pair]]],
-) -> Tuple[dict[str, Tuple[str, ...]], Tuple[_TypedRelation, ...], Tuple[_TypedRelation, ...], HellyResult]:
+) -> Tuple[
+    dict[str, Tuple[str, ...]],
+    Tuple[_TypedRelation, ...],
+    Tuple[_TypedRelation, ...],
+    "_SliceRegistry",
+    HellyResult,
+]:
     carriers = _normalize_sorts(sorts)
     typed_relations = tuple(_normalize_relation(carriers, rel) for rel in relations)
     if not typed_relations:
@@ -166,7 +172,7 @@ def _analyze(
         num_sorts=len(carriers),
         violations=violations,
     )
-    return carriers, typed_relations, closure, result
+    return carriers, typed_relations, closure, registry, result
 
 
 def _normalize_sorts(sorts: Mapping[str, Sequence[str]]) -> dict[str, Tuple[str, ...]]:
@@ -379,8 +385,8 @@ def create_helly_report(
     *,
     title: str = "Helly-2 Report",
 ) -> HellyResult:
-    carriers, typed_inputs, closure, result = _analyze(sorts, relations)
-    html = _render_report(title, carriers, typed_inputs, closure, result)
+    carriers, typed_inputs, closure, registry, result = _analyze(sorts, relations)
+    html = _render_report(title, carriers, typed_inputs, closure, registry, result)
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(html, encoding="utf-8")
@@ -398,11 +404,45 @@ def _render_pairs_html(pairs: Iterable[Pair]) -> str:
     return formatted or "∅"
 
 
+def _relation_matrix_html(
+    rel: _TypedRelation,
+    carriers: Mapping[str, Sequence[str]],
+) -> str:
+    rows = carriers[rel.source]
+    cols = carriers[rel.target]
+    body_rows = []
+    pair_set = rel.pairs
+    for row in rows:
+        cells = []
+        for col in cols:
+            present = (row, col) in pair_set
+            css_class = "present" if present else "absent"
+            symbol = "•" if present else ""
+            cells.append(f"<td class='{css_class}'>{symbol}</td>")
+        body_rows.append(
+            "<tr>"
+            f"<th>{escape(row)}</th>"
+            f"{''.join(cells)}"
+            "</tr>"
+        )
+    header_cells = "".join(f"<th>{escape(col)}</th>" for col in cols)
+    caption = escape(_display_label(rel.label))
+    table = (
+        "<table class='relation-grid'>"
+        f"<caption>{caption}</caption>"
+        f"<thead><tr><th></th>{header_cells}</tr></thead>"
+        f"<tbody>{''.join(body_rows)}</tbody>"
+        "</table>"
+    )
+    return table
+
+
 def _render_report(
     title: str,
     carriers: Mapping[str, Sequence[str]],
     inputs: Sequence[_TypedRelation],
     closure: Sequence[_TypedRelation],
+    registry: "_SliceRegistry",
     result: HellyResult,
 ) -> str:
     def section(header: str, body: str) -> str:
@@ -448,44 +488,72 @@ def _render_report(
         f"<tbody>{sort_rows}</tbody></table>",
     )
 
-    input_rows = "".join(
-        "<tr>"
-        f"<td>{escape(_display_label(rel.label))}</td>"
-        f"<td>{escape(rel.source)}</td>"
-        f"<td>{escape(rel.target)}</td>"
-        f"<td>{_render_pairs_html(rel.pairs)}</td>"
-        "</tr>"
+    input_tables = [
+        _relation_matrix_html(rel, carriers)
         for rel in sorted(inputs, key=lambda r: (r.source, r.target, _display_label(r.label)))
-    )
+    ]
     inputs_section = section(
         "Input Relations",
-        "<table><thead><tr><th>Name</th><th>Source</th><th>Target</th><th>Pairs</th></tr></thead>"
-        f"<tbody>{input_rows}</tbody></table>",
+        f"<div class='grid'>{''.join(input_tables)}</div>" if input_tables else "<p>(none)</p>",
     )
 
-    closure_rows = "".join(
-        "<tr>"
-        f"<td>{escape(_display_label(rel.label))}</td>"
-        f"<td>{escape(rel.source)}</td>"
-        f"<td>{escape(rel.target)}</td>"
-        f"<td>{_render_pairs_html(rel.pairs)}</td>"
-        "</tr>"
+    input_keys = {
+        (rel.source, rel.target, rel.pairs)
+        for rel in inputs
+    }
+
+    closure_tables = [
+        _relation_matrix_html(rel, carriers)
         for rel in sorted(closure, key=lambda r: (r.source, r.target, _display_label(r.label)))
-    )
+        if (rel.source, rel.target, rel.pairs) not in input_keys
+    ]
     closure_section = section(
         "Closure Relations",
-        "<table><thead><tr><th>Label</th><th>Source</th><th>Target</th><th>Pairs</th></tr></thead>"
-        f"<tbody>{closure_rows}</tbody></table>",
+        f"<div class='grid'>{''.join(closure_tables)}</div>" if closure_tables else "<p>(none)</p>",
+    )
+
+    slice_sections = []
+    for sort in sorted(registry.sorts()):
+        slices = sorted(
+            registry.slices(sort),
+            key=lambda w: (len(w.members), w.members),
+        )
+        slice_rows = "".join(
+            "<tr>"
+            f"<td>{idx}</td>"
+            f"<td>{', '.join(escape(m) for m in witness.members) or '∅'}</td>"
+            f"<td>{'<br>'.join(escape(origin) for origin in witness.origins)}</td>"
+            "</tr>"
+            for idx, witness in enumerate(slices, start=1)
+        )
+        rows_html = slice_rows or '<tr><td colspan="3">(no slices)</td></tr>'
+        slice_sections.append(
+            f"<section class='slices'><h3>{escape(sort)}</h3>"
+            "<table><thead><tr><th>#</th><th>Members</th><th>Origins</th></tr></thead>"
+            f"<tbody>{rows_html}</tbody></table>"
+            "</section>"
+        )
+    slices_section = section(
+        "Slices by Sort",
+        "".join(slice_sections),
     )
 
     style = """
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 2em; }
     h1 { margin-bottom: 0.5em; }
     section { margin-bottom: 2em; }
-    table { border-collapse: collapse; width: 100%; margin-top: 0.5em; }
+    table { border-collapse: collapse; margin-top: 0.5em; }
     th, td { border: 1px solid #ccc; padding: 0.4em 0.6em; text-align: left; vertical-align: top; }
     th { background-color: #f5f5f5; }
     .violation { border: 1px solid #f2a; padding: 0.75em; background: #fff5fb; margin-top: 1em; }
+    .grid { display: flex; flex-wrap: wrap; gap: 1.2em; align-items: flex-start; }
+    .relation-grid { border-collapse: collapse; font-size: 0.9em; }
+    .relation-grid caption { caption-side: top; text-align: left; font-weight: 600; margin-bottom: 0.35em; }
+    .relation-grid th, .relation-grid td { border: 1px solid #ccc; padding: 0.3em 0.45em; text-align: center; }
+    .relation-grid th:first-child { text-align: left; background: #f0f0f0; }
+    .relation-grid th:not(:first-child) { background: #fafafa; }
+    .relation-grid td.present { background: #d6f5d6; font-weight: 600; color: #135b13; }
+    .relation-grid td.absent { background: #fbfbfb; color: #c7c7c7; }
     """
 
     html = (
@@ -502,6 +570,7 @@ def _render_report(
         f"{sorts_section}"
         f"{inputs_section}"
         f"{closure_section}"
+        f"{slices_section}"
         "</body>"
         "</html>"
     )

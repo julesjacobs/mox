@@ -18,6 +18,7 @@
 *.synctex.gz
 *.toc
 *.vrb
+*.pyc
 
 # Generated PDFs
 # *.pdf
