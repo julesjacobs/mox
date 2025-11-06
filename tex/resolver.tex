@@ -59,7 +59,7 @@ Then we will develop a more powerful solver that can handle that class of constr
 As a first step, assume we have a finite domain $V$ of values, and a set of binary relations $R_i \subseteq V \times V$.
 Given a set of variables and asserted contraints between them, we want to determine if there exists a valuation of the variables that satisfies all the constraints.
 
-In general this is a NP-complete problem: consider $V=\{0,1,2,\dots,k\}$ and $R_1 = \{ (a,b) \mid a \neq b \} \subseteq V \times V$.
+In general this is an NP-complete problem: consider $V=\{0,1,2,\dots,k\}$ and $R_1 = \{ (a,b) \mid a \neq b \} \subseteq V \times V$.
 Given a graph we can use this constraints to encode the $k$-coloring problem: we want to assign a color to each vertex such that no two adjacent vertices have the same color. The $k$-coloring problem is NP-complete, so this problem is also NP-complete.
 
 However, certain classes of constraints can be solved in polynomial time. Consider the set of constraints $R_i = \{ (a,b) \mid b \geq a + i \} \subseteq V \times V$. Given a graph of variables and constraints, we can solve this problem in polynomial time using the Floyd-Warshall algorithm.
@@ -124,6 +124,8 @@ When eliminating $x$, we assert every transitive constraint $R_{i_p + j_q}(a_p,b
       \node[font=\small,align=center] at (2,-2) {After elimination};
     \end{scope}
   \end{tikzpicture}
+  \caption{Difference constraints generate informative transitives.}
+  \label{fig:diff-vs-neq}
 \end{figure}
 
 I claim that if there is a solution for the neighboring variables that satisfies all of those transitive constraints, then there is a solution for $x$ that satisfies the original constraints: we can simply set $x$ to any value in the interval $\max(a_1 + i_1, a_2 + i_2, a_3 + i_3) \leq x \leq \min(b_1 + j_1, b_2 + j_2)$. This interval is guaranteed to be non-empty if the transitive constraints hold.
@@ -153,6 +155,8 @@ The key blocker for $k$-coloring is that this property does not hold for inequal
       \node[font=\small,align=center] at (0,-2.2) {After elimination};
     \end{scope}
   \end{tikzpicture}
+  \caption{Inequality constraints add no new relations between neighbours.}
+  \label{fig:neq-elim}
 \end{figure}
 
 The OxCaml mode solver has constraints of the form $x \leq G(y)$ where $G$ are modalities with left adjoints. Like the interval constraints we considered above, these constraints can be solved in polynomial time using variable elimination, and for the same reason.
