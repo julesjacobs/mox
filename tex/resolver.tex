@@ -33,7 +33,8 @@
 \newcommand{\Solve}[1]{\mathsf{solve}(#1)}
 \newcommand{\Constraint}[1]{\mathcal{C}\!\left(#1\right)}
 \newcommand{\RelSet}{\mathsf{Rel}}
-\newcommand{\Cl}{\mathsf{Cl}}
+% Closure notation: use an overline, e.g., \Cl{\RelSet}
+\newcommand{\Cl}[1]{\overline{#1}}
 
 \newcommand{\todo}[1]{\textcolor{red}{\textbf{TODO:} #1}}
 
@@ -223,10 +224,10 @@ The elimination algorithm only ever uses relations obtained from $\RelSet$ by:
   \item converse: $R^{\top} = \{(b,a) \mid (a,b)\in R\}$,
   \item restriction to the diagonal (from self-loops): $R^{\ast} = \{(a,a) \mid (a,a)\in R\}$.
 \end{itemize}
-Let $\Cl(\RelSet)$ be the smallest set of relations containing $\RelSet$ and closed under
+Let $\Cl{\RelSet}$ be the smallest set of relations containing $\RelSet$ and closed under
 these four operations.
 
-For a relation $R \in \Cl(\RelSet)$ and an element $b \in V$ we write:
+For a relation $R \in \Cl{\RelSet}$ and an element $b \in V$ we write:
 \[
   R[\_,b] \;=\; \{ a \in V \mid (a,b)\in R \}
   \qquad\text{and}\qquad
@@ -239,11 +240,11 @@ Let $\mathcal{F}$ be the family of all such slices:
 \[
   \mathcal{F}
   \;=\;
-  \{\, R[\_,b], R[a,\_] \mid R \in \Cl(\RelSet),\ a,b\in V \,\}
+  \{\, R[\_,b], R[a,\_] \mid R \in \Cl{\RelSet},\ a,b\in V \,\}
   \;\subseteq\; \mathcal{P}(V).
 \]
 
-Because $\Cl(\RelSet)$ is closed under intersection, so is $\mathcal{F}$:
+Because $\Cl{\RelSet}$ is closed under intersection, so is $\mathcal{F}$:
 for any $A,B\in\mathcal{F}$ there exists $C\in\mathcal{F}$ with $C = A\cap B$.
 This intersection-closure is crucial below.
 
@@ -297,7 +298,7 @@ Otherwise $\{A_2,\dots,A_m\}$ is a smaller counterexample, contradicting minimal
 \end{proof}
 
 Thus in our setting we can detect failure of the Helly-2 slice property by a finite search
-for such bad triples among slices in $\Cl(\RelSet)$.
+for such bad triples among slices in $\Cl{\RelSet}$.
 
 \subsection{Correctness of elimination}
 
@@ -362,7 +363,7 @@ By Lemma~\ref{lem:helly-triples} and intersection-closure, there exist
 $S_1,S_2,S_3 \in \mathcal{F}$
 with all pairwise intersections non-empty but empty triple intersection.
 By definition of $\mathcal{F}$, we can realize each $S_i$ as the admissible values for
-some variable $x$ given a fixed neighbor $y_i$ and a relation $R_i \in \Cl(\RelSet)$.
+some variable $x$ given a fixed neighbor $y_i$ and a relation $R_i \in \Cl{\RelSet}$.
 We construct a constraint star with center $x$ and leaves $y_1,y_2,y_3$ so that, for the
 chosen values of the $y_i$, the corresponding slices are precisely $S_i$.
 By pairwise intersection, every pair of leaves admits a value of $x$;
@@ -377,7 +378,7 @@ Thus elimination is not complete, contradicting~(1).
 \label{cor:finite-check}
 For finite $V$, the Helly-2 slice property for $\RelSet$ is decidable:
 \begin{enumerate}
-  \item compute $\Cl(\RelSet)$ (finite);
+  \item compute $\Cl{\RelSet}$ (finite);
   \item form all slices $R[\_,b], R[a,\_]$;
   \item check that no triple of slices has non-empty pairwise intersections and empty
         triple intersection.
@@ -418,21 +419,21 @@ Converse flips the type: $(R)^{\top} = R^{\top} \in \RelSet(B,A)$.
 For a same-sort relation $R \in \RelSet(A,A)$, diagonal restriction is
 $R^{\ast} = \{ (a,a) \mid (a,a)\in R \} \in \RelSet(A,A)$.
 
-Let $\Cl(\RelSet)$ be the least family of typed relations containing
+Let $\Cl{\RelSet}$ be the least family of typed relations containing
 $\RelSet$ and closed under these typed operations (composition, intersection, converse,
 and diagonal restriction where defined).
 
 \paragraph{Slices by sort.}
-For a typed relation $R \in \Cl(\RelSet)(A,B)$ and element $b \in V_B$, define the slice
+For a typed relation $R \in \Cl{\RelSet}(A,B)$ and element $b \in V_B$, define the slice
 \[
   R[\_,b] \;=\; \{ a\in V_A \mid (a,b)\in R \}
 \]
 For each sort $A$, collect all slices into the sorted slice family
 \[
-  \mathcal{F}_A \;=\; \{ R[\_,b] \mid R \in \Cl(\RelSet)(A,B),\ b\in V_B \}.
+  \mathcal{F}_A \;=\; \{ R[\_,b] \mid R \in \Cl{\RelSet}(A,B),\ b\in V_B \}.
 \]
 As in the single-sorted case, each $\mathcal{F}_A$ is closed under intersection because
-$\Cl(\RelSet)$ is closed under intersection of like-typed relations.
+$\Cl{\RelSet}$ is closed under intersection of like-typed relations.
 
 \begin{definition}[Helly-2 by sort]
 We say that a typed family $\RelSet$ has the \emph{Helly-2 slice property} if for
@@ -446,18 +447,18 @@ is enough to rule out \emph{bad triples} $A,B,C\in\mathcal{F}_A$ with all pairwi
 intersections non-empty but empty triple intersection.
 
 \paragraph{Typed elimination.}
-Constraint graphs are now many-sorted: each variable $x:A$ has sort $A \in \mathcal{O}$ and each edge $x \xrightarrow{R} y$ carries a typed relation $R \in \Cl(\RelSet)(A,B)$.
-Self-loops on $x$ carry same-sort relations $R \in \Cl(\RelSet)(A,A)$.
+Constraint graphs are now many-sorted: each variable $x:A$ has sort $A \in \mathcal{O}$ and each edge $x \xrightarrow{R} y$ carries a typed relation $R \in \Cl{\RelSet}(A,B)$.
+Self-loops on $x$ carry same-sort relations $R \in \Cl{\RelSet}(A,A)$.
 
 When eliminating a variable $x:A$, we first normalize the local star so that
 all incident non-loop edges are oriented \emph{outward} from $x$: we replace any incoming
 edge $y \xrightarrow{S} x$ by the outgoing edge $x \xrightarrow{S^{\top}} y$.
 Let the outgoing edges be $x:A \xrightarrow{R_i} y_i:B_i$ and the self-loop be
-$R_0 \in \Cl(\RelSet)(A,A)$.
+$R_0 \in \Cl{\RelSet}(A,A)$.
 For each pair $i \leq j$ we insert the composed edge from $y_j$ to $y_i$ with typed relation
 \[
   R_{ij} \;=\; (R_i)^{\top}\; R_0^{\ast}\; R_j
-  \quad\in\; \Cl(\RelSet)(B_i,B_j),
+  \quad\in\; \Cl{\RelSet}(B_i,B_j),
 \]
 intersecting with any existing relation between $y_i$ and $y_j$.
 If some same-sort self-loop becomes empty on the diagonal, report unsatisfiable.
