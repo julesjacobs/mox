@@ -395,12 +395,84 @@ correctly rejected by this criterion.
 
 \subsection{Many-sorted constraint families}
 
-\begin{itemize}
-  \item Sorts O
-  \item Relation families R_{A,B}, A,B in O.
-  \item Closure under *typed* operations: composition, intersection, converse, diagonal restriction.
-  \item Formulate Helly-2 slice property for many-sorted case (per sort).
-\end{itemize}
+We now generalize the previous discussion from a single carrier set $V$ to a
+many-sorted setting. This is the natural abstraction for type/mode systems where
+variables, modes, or resources live in different universes and constraints relate
+values across sorts.
+
+
+
+
+
+
+\paragraph{Sorted carriers and typed relations.}
+Let $\mathcal{O}$ be a finite set of sorts.
+For each $A\in\mathcal{O}$, fix a finite carrier $V_A$.
+A binary relation is \emph{typed} by its source and target sorts,
+so a relation $R \in \RelSet(A,B)$ is a subset of $V_A\times V_B$.
+
+Given two typed relations $R \in \RelSet(A,B)$ and $S \in \RelSet(B,C)$ with matching middle sort $B$, their
+composition is the typed relation $(R S)_{A,C} = \{ (a,c) \mid \exists b\in V_B.\ (a,b)\in R \land (b,c)\in S \}$.
+Intersection is defined only for relations with the same type: $R \cap S \in \RelSet(A,B)$.
+Converse flips the type: $(R)^{\top} = R^{\top} \in \RelSet(B,A)$.
+For a same-sort relation $R \in \RelSet(A,A)$, diagonal restriction is
+$R^{\ast} = \{ (a,a) \mid (a,a)\in R \} \in \RelSet(A,A)$.
+
+Let $\Cl(\RelSet)$ be the least family of typed relations containing
+$\RelSet$ and closed under these typed operations (composition, intersection, converse,
+and diagonal restriction where defined).
+
+\paragraph{Slices by sort.}
+For a typed relation $R \in \Cl(\RelSet)(A,B)$ and element $b \in V_B$, define the slice
+\[
+  R[\_,b] \;=\; \{ a\in V_A \mid (a,b)\in R \}
+\]
+For each sort $A$, collect all slices into the sorted slice family
+\[
+  \mathcal{F}_A \;=\; \{ R[\_,b] \mid R \in \Cl(\RelSet)(A,B),\ b\in V_B \}.
+\]
+As in the single-sorted case, each $\mathcal{F}_A$ is closed under intersection because
+$\Cl(\RelSet)$ is closed under intersection of like-typed relations.
+
+\begin{definition}[Helly-2 by sort]
+We say that a typed family $\RelSet$ has the \emph{Helly-2 slice property} if for
+every sort $A\in\mathcal{O}$ the slice family $\mathcal{F}_A$ satisfies Helly-2:
+for every finite subfamily $\{F_1,\dots,F_k\}\subseteq\mathcal{F}_A$, pairwise
+non-empty intersections imply a non-empty total intersection.
+\end{definition}
+
+By intersection-closure, Lemma~\ref{lem:helly-triples} applies sortwise: for each $A$ it
+is enough to rule out \emph{bad triples} $A,B,C\in\mathcal{F}_A$ with all pairwise
+intersections non-empty but empty triple intersection.
+
+\paragraph{Typed elimination.}
+Constraint graphs are now many-sorted: each variable $x:A$ has sort $A \in \mathcal{O}$ and each edge $x \xrightarrow{R} y$ carries a typed relation $R \in \Cl(\RelSet)(A,B)$.
+Self-loops on $x$ carry same-sort relations $R \in \Cl(\RelSet)(A,A)$.
+
+When eliminating a variable $x:A$, we first normalize the local star so that
+all incident non-loop edges are oriented \emph{outward} from $x$: we replace any incoming
+edge $y \xrightarrow{S} x$ by the outgoing edge $x \xrightarrow{S^{\top}} y$.
+Let the outgoing edges be $x:A \xrightarrow{R_i} y_i:B_i$ and the self-loop be
+$R_0 \in \Cl(\RelSet)(A,A)$.
+For each pair $i \leq j$ we insert the composed edge from $y_j$ to $y_i$ with typed relation
+\[
+  R_{ij} \;=\; (R_i)^{\top}\; R_0^{\ast}\; R_j
+  \quad\in\; \Cl(\RelSet)(B_i,B_j),
+\]
+intersecting with any existing relation between $y_i$ and $y_j$.
+If some same-sort self-loop becomes empty on the diagonal, report unsatisfiable.
+
+\begin{theorem}[Many-sorted characterization]
+\label{thm:elimination-correct-typed}
+For finite carriers $\{V_A\}_{A\in\mathcal{O}}$ and a typed family $\RelSet$, the
+typed variable-elimination algorithm above is sound and complete for all many-sorted
+constraint graphs over $\RelSet$ if and only if $\RelSet$ has the Helly-2 slice property
+by sort.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+The argument is verbatim the single-sorted proof, carried out for each eliminated sort.
+\end{proof}
 
 \section{Solver Architecture}
 
