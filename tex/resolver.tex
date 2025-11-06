@@ -1,0 +1,152 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathpartir}
+\usepackage{fontawesome5}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\mprset{flushleft}
+
+\newcommand{\kw}[1]{\text{\textbf{#1}}}
+\newcommand{\judge}[3]{#1 \vdash #2 : #3}
+\newcommand{\Jud}[2]{\judge{\Gamma}{#1}{#2}}
+\newcommand{\leqto}{\mathrel{\leq_{\mathrm{to}}}}
+\newcommand{\leqin}{\mathrel{\leq_{\mathrm{in}}}}
+\newcommand{\mode}[1]{\textsc{#1}}
+\newcommand{\subtype}{\mathrel{\sqsubseteq}}
+\newcommand{\Alias}[2]{#1 \mathrel{\underset{\text{alias}}{\rightsquigarrow}} #2}
+\newcommand{\Lock}[2][]{\text{\faLock}_{#1}(#2)}
+
+\newcommand{\Rel}[2]{\mathcal{R}_{#1}(#2)}
+\newcommand{\Solve}[1]{\mathsf{solve}(#1)}
+\newcommand{\Constraint}[1]{\mathcal{C}\!\left(#1\right)}
+
+\newcommand{\todo}[1]{\textcolor{red}{\textbf{TODO:} #1}}
+
+\title{Relational Solver Notes}
+\author{Jules Jacobs}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Roadmap}
+
+This document sketches the relational solver that accompanies the Mox type system notes.
+The goal is to develop a mode solver that is powerful enough to handle the mode constraints produced by the type checker.
+
+At a high level, we will develop a solver for binary constraints between modes.
+We will first analyze a class of constraints that can be solved in polynomial time.
+Then we will develop a more powerful solver that can handle that class of constraints.
+
+\section{Constraint Language}
+
+As a first step, assume we have a finite domain $V$ of values, and a set of binary relations $R_i \subseteq V \times V$.
+Given a set of variables and asserted contraints between them, we want to determine if there exists a valuation of the variables that satisfies all the constraints.
+
+In general this is a NP-complete problem: consider $V=\{0,1,2,\dots,k\}$ and $R_1 = \{ (a,b) \mid a \neq b \} \subseteq V \times V$.
+Given a graph we can use this constraints to encode the $k$-coloring problem: we want to assign a color to each vertex such that no two adjacent vertices have the same color. The $k$-coloring problem is NP-complete, so this problem is also NP-complete.
+
+However, certain classes of constraints can be solved in polynomial time. Consider the set of constraints $R_i = \{ (a,b) \mid b \geq a + i \} \subseteq V \times V$. Given a graph of variables and constraints, we can solve this problem in polynomial time using the Floyd-Warshall algorithm.
+
+Equivalently, we can solve the problem by variable elimination: we take a variable $x$ and all adjacent constraints on it. We assert all transitive constraints (where $R_i$ composes with $R_j$ to produce $R_{i+j}$) and repeat until all variables are eliminated.
+If, during this process, we ever see a constraint between a variable and itself with $i \neq 0$, then the constraints are unsatisfiable.
+
+Why does this elimination strategy work for this class of constraints, but not for the general case, and in particular for the $k$-coloring problem with inequality constraints?
+
+Consider a variable $x$ with:
+\begin{itemize}
+    \item a set of predecessors $a_1,a_2,a_3$ with $R_{i_1}(a_1,x), R_{i_2}(a_2,x), R_{i_3}(a_3,x)$ constraints on them,
+    \item a set of successors $b_1,b_2$ with $R_{j_1}(x,b_1), R_{j_2}(x,b_2)$ constraints on them,
+\end{itemize}
+When eliminating $x$, we assert every transitive constraint $R_{i_p + j_q}(a_p,b_q)$ for $p \in \{1,2,3\}$ and $q \in \{1,2\}$:
+
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}[>=Latex]
+    \begin{scope}[xshift=-2.5cm]
+      \node[draw,circle,inner sep=1.5pt] (a1) at (0,0.9) {$a_1$};
+      \node[draw,circle,inner sep=1.5pt] (a2) at (0,0) {$a_2$};
+      \node[draw,circle,inner sep=1.5pt] (a3) at (0,-0.9) {$a_3$};
+      \node[draw,circle,inner sep=1.5pt] (x)  at (2,0) {$x$};
+      \node[draw,circle,inner sep=1.5pt] (b1) at (4,0.9) {$b_1$};
+      \node[draw,circle,inner sep=1.5pt] (b2) at (4,-0.9) {$b_2$};
+
+      \draw[->] (a1) -- node[pos=0.35,above,sloped] {$+i_1$} (x);
+      \draw[->] (a2) -- node[pos=0.35,above] {$+i_2$} (x);
+      \draw[->] (a3) -- node[pos=0.35,below,sloped] {$+i_3$} (x);
+
+      \draw[->] (x) -- node[above,sloped] {$+j_1$} (b1);
+      \draw[->] (x) -- node[below,sloped] {$+j_2$} (b2);
+
+      \node[font=\small,align=center] at (2,-2) {Before elimination};
+    \end{scope}
+
+    \node at (3.2,0) {$\Longrightarrow$};
+
+    \begin{scope}[xshift=5cm]
+      \node[draw,circle,inner sep=1.5pt] (a1p) at (0,0.9) {$a_1$};
+      \node[draw,circle,inner sep=1.5pt] (a2p) at (0,0) {$a_2$};
+      \node[draw,circle,inner sep=1.5pt] (a3p) at (0,-0.9) {$a_3$};
+      \node[draw,circle,inner sep=1.5pt] (b1p) at (4,0.9) {$b_1$};
+      \node[draw,circle,inner sep=1.5pt] (b2p) at (4,-0.9) {$b_2$};
+
+      \draw[dashed,->,black!60] (a1p) to[out=10,in=170] 
+        node[pos=0.5,sloped,above,font=\scriptsize] {$+i_1{+}j_1$} (b1p);
+      \draw[dashed,->,black!60] (a1p) --
+        node[pos=0.7,sloped,below,font=\scriptsize] {$+i_1{+}j_2$} (b2p);
+
+      \draw[dashed,->,black!60] (a2p) to[out=5,in=175]
+        node[pos=0.5,sloped,above,font=\scriptsize] {$+i_2{+}j_1$} (b1p);
+      \draw[dashed,->,black!60] (a2p) to[out=-5,in=-175]
+        node[pos=0.5,sloped,below,font=\scriptsize] {$+i_2{+}j_2$} (b2p);
+
+      \draw[dashed,->,black!60] (a3p) --
+        node[pos=0.7,sloped,above,font=\scriptsize] {$+i_3{+}j_1$} (b1p);
+      \draw[dashed,->,black!60] (a3p) to[out=-10,in=-170]
+        node[pos=0.5,sloped,below,font=\scriptsize] {$+i_3{+}j_2$} (b2p);
+
+      \node[font=\small,align=center] at (2,-2) {After elimination};
+    \end{scope}
+  \end{tikzpicture}
+\end{figure}
+
+I claim that if there is a solution for the neighboring variables that satisfies all of those transitive constraints, then there is a solution for $x$ that satisfies the original constraints: we can simply set $x$ to any value in the interval $\max(a_1 + i_1, a_2 + i_2, a_3 + i_3) \leq x \leq \min(b_1 + j_1, b_2 + j_2)$. This interval is guaranteed to be non-empty if the transitive constraints hold.
+
+The key blocker for $k$-coloring is that this property does not hold for inequality constraints. Suppose for example we have a vertex $x$ and $k+1$ neighbors with inequality constraints. The transitive constraints are trivial if $k \geq 3$, because if we have $a \neq x \neq b$, then for a given value of $a$, all values of $b$ are still possible, by choosing a particular value for $x$. Thus, the strategy of variable elimination does not work for $k$-coloring, for $k \geq 3$: for $\neq$ constraints, eliminating $x$ produces no useful transitives; every neighbour pair remains unconstrained:
+
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}[>=Latex]
+    \begin{scope}[xshift=-2.5cm]
+      \node[draw,circle,inner sep=1.5pt] (x2) at (0,0) {$x$};
+      \foreach \angle/\name in {90/c_1,25/c_2,-35/c_3,-130/c_4,155/c_5} {
+        \node[draw,circle,inner sep=1.5pt] (\name) at (\angle:1.8) {$\name$};
+        \draw[-] (x2) -- node[midway,sloped,above] {$\neq$} (\name);
+      }
+      \node[font=\small,align=center] at (0,-2.2) {Before elimination};
+    \end{scope}
+
+    \node at (1,0) {$\Longrightarrow$};
+
+    \begin{scope}[xshift=5cm]
+      \node[draw,circle,inner sep=1.5pt,opacity=0] (x3) at (0,0) {$x$};
+      \foreach \angle/\name in {90/c_1,25/c_2,-35/c_3,-130/c_4,155/c_5} {
+        \node[draw,circle,inner sep=1.5pt] (\name p) at (\angle:1.8) {$\name$};
+      }
+      \node[font=\small,color=black!60] at (0,0) {(no new constraints)};
+      \node[font=\small,align=center] at (0,-2.2) {After elimination};
+    \end{scope}
+  \end{tikzpicture}
+\end{figure}
+
+The OxCaml mode solver has constraints of the form $x \leq G(y)$ where $G$ are modalities with left adjoints. Like the interval constraints we considered above, these constraints can be solved in polynomial time using variable elimination, and for the same reason.
+
+\section{Solver Architecture}
+
+\section{Open Questions}
+
+\end{document}
