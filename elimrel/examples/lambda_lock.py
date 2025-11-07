@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from elimrel.helly_checker import Relation, check_helly, create_helly_report
+from elimrel.helly_checker import Predicate, Relation, check_helly, create_helly_report
 
 sorts = {
     "token": ["0", "1"],
@@ -18,6 +18,16 @@ relations = [
         ),
     ),
     Relation(
+        "codisjoint_tokens",
+        "token",
+        "token",
+        (
+            ("0", "1"),
+            ("1", "0"),
+            ("1", "1"),
+        ),
+    ),
+    Relation(
         "leq_token",
         "token",
         "token",
@@ -25,6 +35,31 @@ relations = [
             ("1", "1"),
             ("0", "1"),
             ("0", "0"),
+        ),
+    ),
+    Relation(
+        "=",
+        "token",
+        "token",
+        (
+            ("0", "0"),
+            ("1", "1"),
+        ),
+    ),
+    Relation(
+        "=0",
+        "token",
+        "token",
+        (
+            ("0", "0"),
+        ),
+    ),
+    Relation(
+        "=1",
+        "token",
+        "token",
+        (
+            ("1", "1"),
         ),
     ),
 ]

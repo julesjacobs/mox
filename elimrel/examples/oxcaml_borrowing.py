@@ -8,7 +8,7 @@ sorts = {
     "contention": ("uncontended", "shared", "contended"),
     "linearity": ("many", "once"),
     "portability": ("portable", "nonportable"),
-    "areality": ("global", "regional", "local"),
+    "areality": ("global", "regional", "local", "borrowed"),
 }
 
 def leq(elems):
@@ -24,6 +24,12 @@ relations = [
     leqrel('linearity'), 
     leqrel('portability'), 
     leqrel('areality'),
+    Relation("global", "areality", "areality", (
+        ("borrowed", "borrowed"), 
+        ("global", "global"), ("global", "regional"), ("global", "local"), 
+        ("regional", "regional"), ("regional", "local"), 
+        ("local", "local")
+    )),
     Relation("linearity_dagger_uniqueness", "linearity", "uniqueness", (
         ("many", "aliased"), 
         ("once", "unique"),
