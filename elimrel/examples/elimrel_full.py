@@ -8,7 +8,7 @@ sorts = {
     "contention": ("uncontended", "shared", "contended"),
     "linearity": ("many", "once"),
     "portability": ("portable", "nonportable"),
-    "areality": ("global", "stack", "borrowed"),
+    "areality": ("global", "regional", "local", "borrowed"),
 }
 
 relations = [
@@ -16,8 +16,8 @@ relations = [
     Relation("contention<=", "contention", "contention", (("contended", "contended"), ("shared", "contended"), ("uncontended", "contended"), ("shared", "shared"), ("uncontended", "shared"), ("uncontended", "uncontended"))),
     Relation("linearity<=", "linearity", "linearity", (("many", "many"), ("many", "once"), ("once", "once"))),
     Relation("portability<=", "portability", "portability", (("nonportable", "nonportable"), ("portable", "nonportable"), ("portable", "portable"))),
-    Relation("areality<=", "areality", "areality", (("borrowed", "borrowed"), ("global", "borrowed"), ("global", "global"), ("global", "stack"), ("stack", "borrowed"), ("stack", "stack"))),
-    Relation("areality<=in", "areality", "areality", (("borrowed", "borrowed"), ("global", "global"), ("global", "stack"), ("stack", "stack"))),
+    Relation("areality<=", "areality", "areality", (("borrowed", "borrowed"), ("global", "borrowed"), ("global", "global"), ("global", "regional"), ("global", "local"), ("local", "borrowed"), ("local", "local"), ("regional", "regional"), ("regional", "local"), ("regional", "borrowed"))),
+    Relation("areality<=in", "areality", "areality", (("borrowed", "borrowed"), ("global", "global"), ("global", "local"), ("global", "regional"), ("regional", "regional"), ("regional", "local"), ("local", "local"))),
     Relation("linearity_dagger_uniqueness", "linearity", "uniqueness", (("many", "aliased"), ("once", "aliased"), ("once", "unique"))),
     Relation("portability_dagger_contention", "portability", "contention", (("nonportable", "contended"), ("nonportable", "shared"), ("nonportable", "uncontended"), ("portable", "uncontended"))),
 ]
