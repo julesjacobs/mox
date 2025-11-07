@@ -4,22 +4,54 @@ from pathlib import Path
 from elimrel.helly_checker import Predicate, Relation, check_helly, create_helly_report
 
 sorts = {
-    "uniqueness": ("unique", "aliased"),
+    "uniqueness": ("unique", "aliased", "taken"),
     "contention": ("uncontended", "shared", "contended"),
     "linearity": ("many", "once"),
     "portability": ("portable", "nonportable"),
     "areality": ("global", "regional", "local", "borrowed"),
 }
 
+def leq(elems):
+    n = len(elems)
+    return [(elems[i],elems[j]) for i in range(0,n) for j in range(i,n)]
+
+def leqrel(name):
+    return Relation(f"{name}<=", name, name, leq(sorts[name]))
+
 relations = [
-    Relation("uniqueness<=", "uniqueness", "uniqueness", (("aliased", "aliased"), ("aliased", "unique"), ("unique", "unique"))),
-    Relation("contention<=", "contention", "contention", (("contended", "contended"), ("shared", "contended"), ("uncontended", "contended"), ("shared", "shared"), ("uncontended", "shared"), ("uncontended", "uncontended"))),
-    Relation("linearity<=", "linearity", "linearity", (("many", "many"), ("many", "once"), ("once", "once"))),
-    Relation("portability<=", "portability", "portability", (("nonportable", "nonportable"), ("portable", "nonportable"), ("portable", "portable"))),
-    Relation("areality<=", "areality", "areality", (("borrowed", "borrowed"), ("global", "borrowed"), ("global", "global"), ("global", "regional"), ("global", "local"), ("local", "borrowed"), ("local", "local"), ("regional", "regional"), ("regional", "local"), ("regional", "borrowed"))),
-    Relation("areality<=in", "areality", "areality", (("borrowed", "borrowed"), ("global", "global"), ("global", "local"), ("global", "regional"), ("regional", "regional"), ("regional", "local"), ("local", "local"))),
-    Relation("linearity_dagger_uniqueness", "linearity", "uniqueness", (("many", "aliased"), ("once", "aliased"), ("once", "unique"))),
-    Relation("portability_dagger_contention", "portability", "contention", (("nonportable", "contended"), ("nonportable", "shared"), ("nonportable", "uncontended"), ("portable", "uncontended"))),
+    leqrel('uniqueness'), 
+    leqrel('contention'), 
+    leqrel('linearity'), 
+    leqrel('portability'), 
+    leqrel('areality'),
+    Relation("areality<=in", "areality", "areality", (
+        ("borrowed", "borrowed"), 
+        ("global", "global"), ("global", "regional"), ("global", "local"), 
+        ("regional", "regional"), ("regional", "local"), 
+        ("local", "local")
+    )),
+    Relation("linearity_dagger_uniqueness", "linearity", "uniqueness", (
+        ("many", "aliased"), 
+        ("once", "unique")
+    )),
+    Relation("portability_dagger_contention", "portability", "contention", (
+        ("portable", "contended"), 
+        ("nonportable", "shared"), 
+        ("nonportable", "uncontended"), 
+    )),
+    Relation("shared_modality", "contention", "contention", (
+        ("contended", "shared"),
+        ("shared", "shared"),
+        ("uncontended", "uncontended"),
+    )),
+    Relation("not_both_unique", "uniqueness", "uniqueness", (
+        ("unique", "taken"),
+        ("taken", "unique"),
+        ("aliased", "aliased"),
+        ("aliased", "taken"),
+        ("taken", "aliased"),
+        ("taken", "taken"),
+    ))
 ]
 
 predicates = [
