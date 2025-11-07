@@ -6,7 +6,7 @@ from elimrel.helly_checker import Predicate, Relation, check_helly, create_helly
 sorts = {
     "uniqueness": ("unique", "aliased", "taken"),
     "contention": ("uncontended", "shared", "contended"),
-    "linearity": ("many", "once"),
+    "linearity": ("many", "once", "never"),
     "portability": ("portable", "nonportable"),
     "areality": ("global", "regional", "local", "borrowed"),
 }
@@ -32,10 +32,15 @@ relations = [
     )),
     Relation("linearity_dagger_uniqueness", "linearity", "uniqueness", (
         ("many", "aliased"), 
-        ("once", "unique")
+        ("once", "unique"),
+        ("once", "aliased"),
+        ("never", "taken"),
+        ("never", "aliased"),
+        ("never", "unique")
     )),
     Relation("portability_dagger_contention", "portability", "contention", (
         ("portable", "contended"), 
+        ("nonportable", "contended"), 
         ("nonportable", "shared"), 
         ("nonportable", "uncontended"), 
     )),
@@ -51,7 +56,18 @@ relations = [
         ("aliased", "taken"),
         ("taken", "aliased"),
         ("taken", "taken"),
-    ))
+    )),
+    Relation("is_callable_linearity", "linearity", "uniqueness", (
+        ("many", "aliased"),
+        ("once", "unique"),
+    )),
+    # Relation("is_callable_portability", "portability", "contention", (
+    #     ("portable", "contended"),
+    #     ("portable", "shared"),
+    #     ("portable", "uncontended"),
+    #     ("nonportable", "uncontended"),
+    #     ("nonportable", "shared"),
+    # ))
 ]
 
 predicates = [
