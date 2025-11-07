@@ -4,11 +4,12 @@ from pathlib import Path
 from elimrel.helly_checker import Predicate, Relation, check_helly, create_helly_report
 
 sorts = {
-    "uniqueness": ("unique", "aliased", "taken"),
+    "uniqueness": ("unique", "aliased"),
     "contention": ("uncontended", "shared", "contended"),
-    "linearity": ("many", "once", "never"),
+    "mod_contended": ("yes", "no"),
+    "linearity": ("many", "once"),
     "portability": ("portable", "nonportable"),
-    "areality": ("global", "regional", "local", "borrowed"),
+    "areality": ("global", "regional", "local"),
 }
 
 def leq(elems):
@@ -24,43 +25,23 @@ relations = [
     leqrel('linearity'), 
     leqrel('portability'), 
     leqrel('areality'),
-    Relation("areality<=in", "areality", "areality", (
-        ("borrowed", "borrowed"), 
-        ("global", "global"), ("global", "regional"), ("global", "local"), 
-        ("regional", "regional"), ("regional", "local"), 
-        ("local", "local")
-    )),
+    leqrel('mod_contended'),
     Relation("linearity_dagger_uniqueness", "linearity", "uniqueness", (
         ("many", "aliased"), 
         ("once", "unique"),
         ("once", "aliased"),
-        ("never", "taken"),
-        ("never", "aliased"),
-        ("never", "unique")
     )),
     Relation("portability_dagger_contention", "portability", "contention", (
-        ("portable", "contended"), 
-        ("nonportable", "contended"), 
-        ("nonportable", "shared"), 
+        ("portable", "contended"),
+        ("nonportable", "contended"),
+        ("nonportable", "shared"),
         ("nonportable", "uncontended"), 
     )),
-    Relation("shared_modality", "contention", "contention", (
-        ("contended", "shared"),
-        ("shared", "shared"),
-        ("uncontended", "uncontended"),
-    )),
-    Relation("not_both_unique", "uniqueness", "uniqueness", (
-        ("unique", "taken"),
-        ("taken", "unique"),
-        ("aliased", "aliased"),
-        ("aliased", "taken"),
-        ("taken", "aliased"),
-        ("taken", "taken"),
-    )),
-    Relation("is_callable_linearity", "linearity", "uniqueness", (
-        ("many", "aliased"),
-        ("once", "unique"),
-    )),
+    Relation("mod_contended_crosses", "mod_contended", "contention", (
+        ("yes", "contended"),
+        ("no", "shared"),
+        ("no", "uncontended"),
+    ))
 ]
 
 predicates = [
