@@ -24,11 +24,20 @@ relations = [
     leqrel('linearity'), 
     leqrel('portability'), 
     leqrel('areality'),
-    Relation("global", "areality", "areality", (
+    Relation("global_in", "areality", "areality", (
         ("borrowed", "borrowed"), 
-        ("global", "global"), ("global", "regional"), ("global", "local"), 
-        ("regional", "regional"), ("regional", "local"), 
-        ("local", "local")
+        ("local", "borrowed"), 
+        ("regional", "borrowed"), 
+        ("global", "borrowed"), 
+        ("global", "global"),
+        ("global", "regional"),
+        ("global", "local"),
+    )),
+    Relation("global_out", "areality", "areality", (
+        ("borrowed", "borrowed"), 
+        ("global", "global"), ("global", "regional"), ("global", "local"), ("global", "borrowed"),
+        ("regional", "global"), ("regional", "regional"), ("regional", "local"), ("regional", "borrowed"),
+        ("local", "global"), ("local", "regional"), ("local", "local"), ("local", "borrowed"),
     )),
     Relation("linearity_dagger_uniqueness", "linearity", "uniqueness", (
         ("many", "aliased"), 
