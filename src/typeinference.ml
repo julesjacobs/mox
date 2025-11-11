@@ -70,7 +70,14 @@ let insert_bound target bounds =
   if has_bound target bounds then (bounds, false)
   else (target :: bounds, true)
 
-let assert_modes_leq lower upper = failwith "TODO"
+(* Asserts the leq_in relation between every axis in the lower and upper modes.
+  Uses the mode solver functions directly. *)
+let assert_modes_leq lower upper =
+  Modesolver.Uniqueness.assert_leq_in lower.uniqueness upper.uniqueness;
+  Modesolver.Contention.assert_leq_in lower.contention upper.contention;
+  Modesolver.Linearity.assert_leq_in lower.linearity upper.linearity;
+  Modesolver.Portability.assert_leq_in lower.portability upper.portability;
+  Modesolver.Areality.assert_leq_in lower.areality upper.areality
 
 let rec assert_subtype lower upper =
   if lower == upper then ()
