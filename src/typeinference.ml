@@ -248,3 +248,229 @@ let rec solve_with_arrow meta =
       List.iter handle_lower lower_bounds;
       List.iter handle_upper upper_bounds;
       (domain_meta, arrow_mode, codomain_meta)
+
+(* -------------------------------------------------------------------------- *)
+(* Typing context and errors                                                  *)
+(* -------------------------------------------------------------------------- *)
+
+type error =
+  | Unbound_variable of Ast.ident
+  | Expected_function of ty
+  | Expected_pair of ty
+  | Expected_sum of ty
+  | Cannot_infer of string
+  | Not_a_subtype of ty * ty
+
+exception Error of error
+
+type context = (Ast.ident * ty) list
+
+let empty_context : context = []
+
+let extend ctx name ty = (name, ty) :: ctx
+
+let lookup ctx name =
+  match List.assoc_opt name ctx with
+  | Some ty -> ty
+  | None -> raise (Error (Unbound_variable name))
+
+(* -------------------------------------------------------------------------- *)
+(* Helpers for creating fresh mode/meta state                                 *)
+(* -------------------------------------------------------------------------- *)
+
+let fresh_storage_mode () =
+  { uniqueness = Modesolver.Uniqueness.new_var ();
+    areality = Modesolver.Areality.new_var () }
+
+let fresh_future_mode () =
+  { linearity = Modesolver.Linearity.new_var ();
+    portability = Modesolver.Portability.new_var ();
+    areality = Modesolver.Areality.new_var () }
+
+let fresh_mode_vars () =
+  { uniqueness = Modesolver.Uniqueness.new_var ();
+    contention = Modesolver.Contention.new_var ();
+    linearity = Modesolver.Linearity.new_var ();
+    portability = Modesolver.Portability.new_var ();
+    areality = Modesolver.Areality.new_var () }
+
+let fresh_ty_var () = TyMeta (fresh_meta ~modes:(fresh_mode_vars ()) ())
+
+(* -------------------------------------------------------------------------- *)
+(* Conversion helpers                                                         *)
+(* -------------------------------------------------------------------------- *)
+
+let fixed_uniqueness value =
+  Modesolver.Uniqueness.new_var ~domain:[ value ] ()
+
+let fixed_areality value =
+  Modesolver.Areality.new_var ~domain:[ value ] ()
+
+let fixed_linearity value = Modesolver.Linearity.new_var ~domain:[ value ] ()
+let fixed_portability value = Modesolver.Portability.new_var ~domain:[ value ] ()
+
+let storage_mode_of_ast (storage : Ast.storage_mode) : storage_mode =
+  { uniqueness = fixed_uniqueness storage.uniqueness;
+    areality = fixed_areality storage.areality }
+
+let future_mode_of_ast (mode : Modes.Future.t) : future_mode =
+  { linearity = fixed_linearity mode.linearity;
+    portability = fixed_portability mode.portability;
+    areality = fixed_areality mode.areality }
+
+let rec ty_of_ast (ty : Ast.ty) : ty =
+  match ty with
+  | Ast.TyUnit -> TyUnit
+  | Ast.TyEmpty -> TyEmpty
+  | Ast.TyArrow (domain, mode, codomain) ->
+      TyArrow (ty_of_ast domain, future_mode_of_ast mode, ty_of_ast codomain)
+  | Ast.TyPair (left, storage, right) ->
+      TyPair (ty_of_ast left, storage_mode_of_ast storage, ty_of_ast right)
+  | Ast.TySum (left, storage, right) ->
+      TySum (ty_of_ast left, storage_mode_of_ast storage, ty_of_ast right)
+
+(* -------------------------------------------------------------------------- *)
+(* Subtyping on concrete types                                                *)
+(* -------------------------------------------------------------------------- *)
+
+let rec subtype_ty lower upper =
+  match (lower, upper) with
+  | TyUnit, TyUnit -> ()
+  | TyEmpty, TyEmpty -> ()
+  | TyArrow (arg1, mode1, res1), TyArrow (arg2, mode2, res2) ->
+      subtype_ty arg2 arg1;
+      subtype_ty res1 res2;
+      assert_future_leq mode1 mode2
+  | TyPair (l1, storage1, r1), TyPair (l2, storage2, r2)
+  | TySum (l1, storage1, r1), TySum (l2, storage2, r2) ->
+      subtype_ty l1 l2;
+      subtype_ty r1 r2;
+      assert_storage_leq storage1 storage2
+  | TyMeta meta_lower, TyMeta meta_upper ->
+      assert_subtype meta_lower meta_upper
+  | TyMeta meta, TyUnit ->
+      solve_with_unit meta
+  | TyUnit, TyMeta meta ->
+      solve_with_unit meta
+  | TyMeta meta, TyEmpty ->
+      solve_with_empty meta
+  | TyEmpty, TyMeta meta ->
+      solve_with_empty meta
+  | TyMeta meta, TyArrow (arg, mode, res) ->
+      let domain_meta, arrow_mode, codomain_meta = solve_with_arrow meta in
+      subtype_ty arg (TyMeta domain_meta);
+      subtype_ty (TyMeta codomain_meta) res;
+      assert_future_leq arrow_mode mode
+  | TyArrow (arg, mode, res), TyMeta meta ->
+      let domain_meta, arrow_mode, codomain_meta = solve_with_arrow meta in
+      subtype_ty (TyMeta domain_meta) arg;
+      subtype_ty res (TyMeta codomain_meta);
+      assert_future_leq mode arrow_mode
+  | TyMeta meta, TyPair (left, storage, right) ->
+      let lower_left, lower_storage, lower_right = solve_with_pair meta in
+      subtype_ty (TyMeta lower_left) left;
+      subtype_ty (TyMeta lower_right) right;
+      assert_storage_leq lower_storage storage
+  | TyPair (left, storage, right), TyMeta meta ->
+      let upper_left, upper_storage, upper_right = solve_with_pair meta in
+      subtype_ty left (TyMeta upper_left);
+      subtype_ty right (TyMeta upper_right);
+      assert_storage_leq storage upper_storage
+  | TyMeta meta, TySum (left, storage, right) ->
+      let lower_left, lower_storage, lower_right = solve_with_sum meta in
+      subtype_ty (TyMeta lower_left) left;
+      subtype_ty (TyMeta lower_right) right;
+      assert_storage_leq lower_storage storage
+  | TySum (left, storage, right), TyMeta meta ->
+      let upper_left, upper_storage, upper_right = solve_with_sum meta in
+      subtype_ty left (TyMeta upper_left);
+      subtype_ty right (TyMeta upper_right);
+      assert_storage_leq storage upper_storage
+  | _ -> raise (Error (Not_a_subtype (lower, upper)))
+
+let unify_ty t1 t2 =
+  subtype_ty t1 t2;
+  subtype_ty t2 t1;
+  t1
+
+(* -------------------------------------------------------------------------- *)
+(* Shape destruction helpers                                                  *)
+(* -------------------------------------------------------------------------- *)
+
+let rec expect_arrow ty =
+  match ty with
+  | TyArrow (domain, mode, codomain) -> (domain, mode, codomain)
+  | TyMeta meta ->
+      let domain_meta, mode, codomain_meta = solve_with_arrow meta in
+      (TyMeta domain_meta, mode, TyMeta codomain_meta)
+  | _ -> raise (Error (Expected_function ty))
+
+let rec expect_pair ty =
+  match ty with
+  | TyPair (left, storage, right) -> (left, storage, right)
+  | TyMeta meta ->
+      let left_meta, storage, right_meta = solve_with_pair meta in
+      (TyMeta left_meta, storage, TyMeta right_meta)
+  | _ -> raise (Error (Expected_pair ty))
+
+let rec expect_sum ty =
+  match ty with
+  | TySum (left, storage, right) -> (left, storage, right)
+  | TyMeta meta ->
+      let left_meta, storage, right_meta = solve_with_sum meta in
+      (TyMeta left_meta, storage, TyMeta right_meta)
+  | _ -> raise (Error (Expected_sum ty))
+
+(* -------------------------------------------------------------------------- *)
+(* Inference                                                                  *)
+(* -------------------------------------------------------------------------- *)
+
+let rec infer (ctx : context) (expr : Ast.expr) : ty =
+  match expr with
+  | Ast.Var name -> lookup ctx name
+  | Ast.Unit -> TyUnit
+  | Ast.Hole -> fresh_ty_var ()
+  | Ast.Absurd contradiction ->
+      let contradiction_ty = infer ctx contradiction in
+      subtype_ty contradiction_ty TyEmpty;
+      fresh_ty_var ()
+  | Ast.Fun (param, body) ->
+      let param_ty = fresh_ty_var () in
+      let result_ty = infer (extend ctx param param_ty) body in
+      TyArrow (param_ty, fresh_future_mode (), result_ty)
+  | Ast.App (fn, arg) ->
+      let fn_ty = infer ctx fn in
+      let domain_ty, _, codomain_ty = expect_arrow fn_ty in
+      let arg_ty = infer ctx arg in
+      subtype_ty arg_ty domain_ty;
+      codomain_ty
+  | Ast.Pair (left, right) ->
+      let left_ty = infer ctx left in
+      let right_ty = infer ctx right in
+      TyPair (left_ty, fresh_storage_mode (), right_ty)
+  | Ast.Let (name, bound, body) ->
+      let bound_ty = infer ctx bound in
+      infer (extend ctx name bound_ty) body
+  | Ast.LetPair (x1, x2, pair_expr, body) ->
+      let pair_ty = infer ctx pair_expr in
+      let left_ty, _, right_ty = expect_pair pair_ty in
+      infer (extend (extend ctx x2 right_ty) x1 left_ty) body
+  | Ast.Inl value ->
+      let left_ty = infer ctx value in
+      TySum (left_ty, fresh_storage_mode (), fresh_ty_var ())
+  | Ast.Inr value ->
+      let right_ty = infer ctx value in
+      TySum (fresh_ty_var (), fresh_storage_mode (), right_ty)
+  | Ast.Match (scrutinee, x1, e1, x2, e2) ->
+      let scrutinee_ty = infer ctx scrutinee in
+      let left_ty, _, right_ty = expect_sum scrutinee_ty in
+      let branch1_ty = infer (extend ctx x1 left_ty) e1 in
+      let branch2_ty = infer (extend ctx x2 right_ty) e2 in
+      unify_ty branch1_ty branch2_ty
+  | Ast.Annot (expr, annotation) ->
+      let annotated_ty = ty_of_ast annotation in
+      let inferred = infer ctx expr in
+      subtype_ty inferred annotated_ty;
+      annotated_ty
+
+let infer_top expr = infer empty_context expr
