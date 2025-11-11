@@ -86,7 +86,7 @@ let rec assert_subtype lower upper =
       List.iter (fun bound -> assert_subtype bound upper) lower.lower_bounds;
       List.iter (fun bound -> assert_subtype lower bound) upper.upper_bounds))
 
-let component_modes_pair meta = failwith "TODO"
+let component_modes_pair modes = failwith "TODO"
 let assert_storage_leq lower upper = failwith "TODO"
 
 let rec solve_with_pair meta =
