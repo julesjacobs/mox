@@ -1,14 +1,17 @@
 open Modes
 
+(* Used on data types such as pairs and sums. *)
 type storage_mode = 
   { uniqueness : Modesolver.Uniqueness.var;
     areality : Modesolver.Areality.var }
 
+(* Used on function types. *)
 type future_mode =
   { linearity : Modesolver.Linearity.var;
     portability : Modesolver.Portability.var;
     areality : Modesolver.Areality.var }
 
+(* Used on meta-variables to constrain contents via the <=in relation. *)
 type mode_vars =
   { uniqueness : Modesolver.Uniqueness.var;
     contention : Modesolver.Contention.var;
@@ -16,6 +19,7 @@ type mode_vars =
     portability : Modesolver.Portability.var;
     areality : Modesolver.Areality.var }
 
+(* Type of types + metas *)
 type ty =
   | TyUnit
   | TyEmpty

@@ -35,5 +35,6 @@
         "autoShowOutputPanel": "always"
       }
     ]
-  }
+  },
+  "explorer.excludeGitIgnore": true
 }
