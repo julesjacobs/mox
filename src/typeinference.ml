@@ -130,3 +130,37 @@ let rec solve_with_pair meta =
       List.iter handle_lower lower_bounds;
       List.iter handle_upper upper_bounds;
       (left_meta, storage_mode, right_meta)
+
+let component_modes_sum modes = failwith "TODO"
+
+let rec solve_with_sum meta =
+  match meta.solution with
+  | Some (TySum (TyMeta left_meta, storage, TyMeta right_meta)) ->
+      (left_meta, storage, right_meta)
+  | Some (TySum _) ->
+      invalid_arg "solve_with_sum: expected meta components"
+  | Some _ ->
+      invalid_arg "solve_with_sum: meta already solved to non-sum type"
+  | None ->
+      let component_modes, storage_mode = component_modes_sum meta.modes in
+      let left_meta = fresh_meta ~modes:component_modes () in
+      let right_meta = fresh_meta ~modes:component_modes () in
+      meta.solution <- Some (TySum (TyMeta left_meta, storage_mode, TyMeta right_meta));
+      let lower_bounds = meta.lower_bounds in
+      let upper_bounds = meta.upper_bounds in
+      meta.lower_bounds <- [];
+      meta.upper_bounds <- [];
+      let handle_lower bound =
+        let (lower_left, lower_storage_mode, lower_right) = solve_with_sum bound in
+        assert_subtype lower_left left_meta;
+        assert_subtype lower_right right_meta;
+        assert_storage_leq lower_storage_mode storage_mode
+      and handle_upper bound =
+        let (upper_left, upper_storage_mode, upper_right) = solve_with_sum bound in
+        assert_subtype left_meta upper_left;
+        assert_subtype right_meta upper_right;
+        assert_storage_leq upper_storage_mode storage_mode
+      in
+      List.iter handle_lower lower_bounds;
+      List.iter handle_upper upper_bounds;
+      (left_meta, storage_mode, right_meta)
