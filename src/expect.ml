@@ -14,6 +14,13 @@ type processed =
   | PBlank of string
   | PExpr of string list * expectation
 
+type infer = expr -> (Ast.ty, string) result
+
+let default_infer (expr : expr) =
+  try Ok (Typechecker.infer expr) with
+  | Typechecker.Error err -> Error (Typechecker.string_of_error err)
+  | Typechecker.Mode_error msg -> Error msg
+
 let is_type_line line =
   let trimmed = String.trim line in
   String.length trimmed > 0 && trimmed.[0] = '>'
@@ -75,19 +82,14 @@ let parse_expr_from_lines ~filename ~start_line lines =
       let col = pos.pos_cnum - pos.pos_bol + 1 in
       raise (Error (Printf.sprintf "%s:%d:%d: parse error" filename pos.pos_lnum col))
 
-let process_chunk ~filename chunk =
+let process_chunk ~filename ~infer chunk =
   match chunk with
   | Blank line -> PBlank line
   | Expr { start_line; lines } ->
       let expr = parse_expr_from_lines ~filename ~start_line lines in
-      try
-        let ty = Typechecker.infer expr in
-        PExpr (lines, Type (Pretty.string_of_ty ty))
-      with
-      | Typechecker.Error err ->
-          let msg = Typechecker.string_of_error err in
-          PExpr (lines, Error msg)
-      | Typechecker.Mode_error msg -> PExpr (lines, Error msg)
+      (match infer expr with
+      | Ok ty -> PExpr (lines, Type (Pretty.string_of_ty ty))
+      | Error msg -> PExpr (lines, Error msg))
 
 let render processed =
   let expectation_to_string = function
@@ -100,14 +102,14 @@ let render processed =
   in
   List.concat (List.map render_chunk processed)
 
-let process_lines ?(filename = "<tests>") lines =
+let process_lines ?(filename = "<tests>") ?(infer = default_infer) lines =
   let chunks = parse_chunks lines in
-  let processed = List.map (process_chunk ~filename) chunks in
+  let processed = List.map (process_chunk ~filename ~infer) chunks in
   render processed
 
-let process_file path =
+let process_file ?infer path =
   let lines = read_lines path in
-  let rendered = process_lines ~filename:path lines in
+  let rendered = process_lines ~filename:path ?infer lines in
   let oc = open_out path in
   List.iter
     (fun line ->
@@ -116,7 +118,7 @@ let process_file path =
     rendered;
   close_out oc
 
-let rec process_path path =
+let rec process_path ?infer path =
   if not (Sys.file_exists path) then
     raise (Error (Printf.sprintf "No such file or directory: %s" path))
   else if Sys.is_directory path then
@@ -126,9 +128,9 @@ let rec process_path path =
       (fun entry ->
         if entry <> "." && entry <> ".." then
           let child = Filename.concat path entry in
-          process_path child)
+          process_path ?infer child)
       entries
   else if Filename.check_suffix path ".mox" then
-    process_file path
+    process_file ?infer path
   else
     ()

@@ -8,13 +8,42 @@ let set_mode m () = mode := m
 
 let positionals = ref []
 
+type backend = Typechecker | Typeinference
+
+let backend = ref Typechecker
+
+let set_backend name =
+  let value =
+    match String.lowercase_ascii name with
+    | "typechecker" | "checker" -> Typechecker
+    | "typeinference" | "inference" | "infer" -> Typeinference
+    | _ ->
+        raise
+          (Arg.Bad
+             (Printf.sprintf "Unknown engine %s (expected typechecker or typeinference)" name))
+  in
+  backend := value
+
+let infer_with_backend expr =
+  match !backend with
+  | Typechecker ->
+      (try Ok (Typechecker.infer expr) with
+      | Typechecker.Error err -> Error (Typechecker.string_of_error err)
+      | Typechecker.Mode_error msg -> Error msg)
+  | Typeinference ->
+      (try Ok (Typeinference.infer expr) with
+      | Typeinference.Error err -> Error (Typeinference.string_of_error err))
+
 let () =
   let usage_msg =
-    "Usage: mox [--type] [FILE]\n       mox record PATH   (PATH may be a file or directory)"
+    "Usage: mox [--type] [--engine ENGINE] [FILE]\n       mox record PATH   (PATH may be a file or directory)"
   in
   let spec =
     [ "--type", Arg.Unit (set_mode Ty), "Parse input as a type instead of an expression";
-      "--expr", Arg.Unit (set_mode Expr), "Parse input as an expression (default)" ]
+      "--expr", Arg.Unit (set_mode Expr), "Parse input as an expression (default)";
+      ( "--engine",
+        Arg.String set_backend,
+        "Select typing backend: typechecker (default) or typeinference" ) ]
   in
   let handle_anon arg = positionals := arg :: !positionals in
   Arg.parse spec handle_anon usage_msg;
@@ -43,12 +72,11 @@ let () =
     in
     match result with
     | `Expr e -> (
-        try
-          let ty = Typechecker.infer e in
-          Printf.printf "%s : %s\n" (string_of_expr e) (string_of_ty ty)
-        with Typechecker.Error err ->
-          prerr_endline (Typechecker.string_of_error err);
-          exit 1)
+        match infer_with_backend e with
+        | Ok ty -> Printf.printf "%s : %s\n" (string_of_expr e) (string_of_ty ty)
+        | Error msg ->
+            prerr_endline msg;
+            exit 1)
     | `Ty t -> print_endline (string_of_ty t)
   in
   match List.rev !positionals with
@@ -62,7 +90,7 @@ let () =
       if !mode <> Expr then (
         prerr_endline "Cannot combine record with --type/--expr flags.";
         exit 1);
-      (try Expect.process_path path with
+      (try Expect.process_path ~infer:infer_with_backend path with
       | Expect.Error msg ->
           prerr_endline msg;
           exit 1)
