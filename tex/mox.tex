@@ -122,30 +122,30 @@ The flipping of the $\leqto$ order stems from the fact that it's safe to \emph{f
 
 \section{Expressions}
 
-\begin{flalign*}
-e &\mathrel{::=} {} && \text{-- expressions} &&\\
- & \mid x \mid \Let{x}{e_1}{e_2} && \text{-- variables} &&\\
- & \mid \UnitTerm \mid \Absurd{e}&& \text{-- unit and empty} &&\\
- & \mid \App{e_1}{e_2} \mid \Fun{x}{e} && \text{-- functions} &&\\
- & \mid \Pair{e_1}{e_2} \mid \LetPair{x_1}{x_2}{e_1}{e_2} && \text{-- pairs} &&\\
- & \mid \Inl{e} \mid \Inr{e} && \text{-- sums} &&\\
- & \mid \Match{e}{x_1}{e_1}{x_2}{e_2} && &&\\
- & \mid \RefCell{e} \mid \Deref{e} \mid \Assign{e_1}{e_2} && \text{-- references} &&
-\end{flalign*}
+\begin{alignat*}{2}
+e &\mathrel{::=} {} &\quad& \text{-- expressions}\\
+ & \mid x \mid \Let{x}{e_1}{e_2} &\quad& \text{-- variables}\\
+ & \mid \UnitTerm \mid \Absurd{e}&\quad& \text{-- unit and empty}\\
+ & \mid \App{e_1}{e_2} \mid \Fun{x}{e} &\quad& \text{-- functions}\\
+ & \mid \Pair{e_1}{e_2} \mid \LetPair{x_1}{x_2}{e_1}{e_2} &\quad& \text{-- pairs}\\
+ & \mid \Inl{e} \mid \Inr{e} &\quad& \text{-- sums}\\
+ & \mid \Match{e}{x_1}{e_1}{x_2}{e_2} &\quad&\\
+ & \mid \RefCell{e} \mid \Deref{e} \mid \Assign{e_1}{e_2} &\quad& \text{-- references}
+\end{alignat*}
 
 \bigskip
 
 
 \section{Types}
 
-\begin{flalign*}
-\tau &\mathrel{::=} {} &&&&\\
- & \mid \TUnit \mid \TEmpty && \text{-- unit and empty} &&\\
- & \mid \TFun[f]{\tau_1}{\tau_2} && \text{-- functions} &&\\
- & \mid \TPair[s]{\tau_1}{\tau_2} && \text{-- pairs} &&\\
- & \mid \TSum[s]{\tau_1}{\tau_2} && \text{-- sums} &&\\
- & \mid \TRef[r]{\tau} && \text{-- references} &&
-\end{flalign*}
+\begin{alignat*}{2}
+\tau &\mathrel{::=} {} &\quad&\\
+ & \mid \TUnit \mid \TEmpty &\quad& \text{-- unit and empty}\\
+ & \mid \TFun[f]{\tau_1}{\tau_2} &\quad& \text{-- functions}\\
+ & \mid \TPair[s]{\tau_1}{\tau_2} &\quad& \text{-- pairs}\\
+ & \mid \TSum[s]{\tau_1}{\tau_2} &\quad& \text{-- sums}\\
+ & \mid \TRef[r]{\tau} &\quad& \text{-- references}
+\end{alignat*}
 
 \paragraph{Notation}
 
@@ -404,9 +404,9 @@ where
   \Lock[f]{\TUnit} &\ =\  \TUnit\\
   \Lock[f]{\TEmpty} &\ =\ \TEmpty\\
   \Lock[f]{\TFun[f']{\tau_1}{\tau_2}} &\ =\ \TFun[f']{\tau_1}{\tau_2} \quad\text{ if }\quad f \leqto f'\\
-  \Lock[f]{\TPair[s]{\tau_1}{\tau_2}} &\ =\ \TPair[s']{\Lock[f]{\tau_1}}{\Lock[f]{\tau_2}} \quad\text{ where }\quad s' = (s_{\text{u}} \sqcup f_{\text{linearity}}^\dagger,\ s_{\text{a}})\\
-  \Lock[f]{\TSum[s]{\tau_1}{\tau_2}} &\ =\ \TSum[s']{\Lock[f]{\tau_1}}{\Lock[f]{\tau_2}} \quad\text{ where }\quad s' = (s_{\text{u}} \sqcup f_{\text{linearity}}^\dagger,\ s_{\text{a}})\\
-  \Lock[f]{\TRef[r]{\tau}} &\ =\ \TRef[r']{\Lock[f]{\tau}} \quad\text{ where }\quad r' = (r_{\text{u}} \sqcup f_{\text{linearity}}^\dagger,\ r_{\text{a}},\ r_{\text{c}} \sqcup f_{\text{portability}}^\dagger)\\
+  \Lock[f]{\TPair[s]{\tau_1}{\tau_2}} &\ =\ \TPair[s']{\Lock[f]{\tau_1}}{\Lock[f]{\tau_2}} \quad\text{where } s' = (s_{\text{u}} \sqcup f_{\text{linearity}}^\dagger,\ s_{\text{a}})\\
+  \Lock[f]{\TSum[s]{\tau_1}{\tau_2}} &\ =\ \TSum[s']{\Lock[f]{\tau_1}}{\Lock[f]{\tau_2}} \quad\text{where } s' = (s_{\text{u}} \sqcup f_{\text{linearity}}^\dagger,\ s_{\text{a}})\\
+  \Lock[f]{\TRef[r]{\tau}} &\ =\ \TRef[r']{\Lock[f]{\tau}} \quad\text{where } r' = (r_{\text{u}} \sqcup f_{\text{linearity}}^\dagger,\ r_{\text{a}},\ r_{\text{c}} \sqcup f_{\text{portability}}^\dagger)\\
   \Lock[f]{\tau} &\ =\ \bot \quad\text{ otherwise}
 \end{align*}
 The dagger map translates closure capabilities into the weakening applied to captured bindings:
