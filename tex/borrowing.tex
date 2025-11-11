@@ -58,7 +58,7 @@
   \text{\faLock}_{#1}(#2)
 }
 \newcommand{\ClampMap}[2]{%
-  \begin{minipage}{0.23\linewidth}
+  \begin{minipage}{0.45\linewidth}
     \centering
     \begin{tikzpicture}[scale=0.8]
       \foreach \x/\y in {#2} {
@@ -70,8 +70,8 @@
         \node[below] at (\v + 0.5,-0.12) {$\v$};
         \node[left] at (-0.12,\v + 0.5) {$\v$};
       }
-    \end{tikzpicture}\\[2pt]
-    \footnotesize #1
+      \node at (2,4.4) {$y = #1$};
+    \end{tikzpicture}
   \end{minipage}
 }
 
@@ -299,7 +299,7 @@ The adjunction laws become especially tangible on our four-point lattice.  Below
     \node[below] at (\v + 0.5,-0.15) {$\v$};
     \node[left] at (-0.15,\v + 0.5) {$\v$};
   }
-  \node at (2,4.3) {$y \leq \max(x,2)$};
+\node at (2,4.3) {$y \leq \max(x,2)$};
 \end{tikzpicture}
 \end{minipage}\hfill
 \begin{minipage}{0.45\linewidth}
@@ -320,7 +320,7 @@ The adjunction laws become especially tangible on our four-point lattice.  Below
     \node[below] at (\v + 0.5,-0.15) {$\v$};
     \node[left] at (-0.15,\v + 0.5) {$\v$};
   }
-  \node at (2,4.3) {$g_2(y) \leq x$};
+\node at (2,4.3) {$g_2(y) \leq x$};
 \end{tikzpicture}
 \end{minipage}
 \end{center}
@@ -389,10 +389,10 @@ The adjunction laws become especially tangible on our four-point lattice.  Below
 \noindent\textbf{Pictures.} The following grids show \(y = f_c(x)\) for every clamp level.  Blue squares highlight the equality points, just like in the earlier adjoint figures.
 
 \begin{center}
-\ClampMap{$\max(x,0)$}{0/0,1/1,2/2,3/3}\hspace{1em}
-\ClampMap{$\max(x,1)$}{0/1,1/1,2/2,3/3}\hspace{1em}
-\ClampMap{$\max(x,2)$}{0/2,1/2,2/2,3/3}\hspace{1em}
-\ClampMap{$\max(x,3)$}{0/3,1/3,2/3,3/3}
+\ClampMap{\max(x,0)}{0/0,1/1,2/2,3/3}\hfill
+\ClampMap{\max(x,1)}{0/1,1/1,2/2,3/3}\\[1em]
+\ClampMap{\max(x,2)}{0/2,1/2,2/2,3/3}\hfill
+\ClampMap{\max(x,3)}{0/3,1/3,2/3,3/3}
 \end{center}
 
 \smallskip
@@ -401,10 +401,10 @@ The adjunction laws become especially tangible on our four-point lattice.  Below
 \medskip
 
 \begin{center}
-\ClampMap{$\min(x,0)$}{0/0,1/0,2/0,3/0}\hspace{1em}
-\ClampMap{$\min(x,1)$}{0/0,1/1,2/1,3/1}\hspace{1em}
-\ClampMap{$\min(x,2)$}{0/0,1/1,2/2,3/2}\hspace{1em}
-\ClampMap{$\min(x,3)$}{0/0,1/1,2/2,3/3}
+\ClampMap{\min(x,0)}{0/0,1/0,2/0,3/0}\hfill
+\ClampMap{\min(x,1)}{0/0,1/1,2/1,3/1}\\[1em]
+\ClampMap{\min(x,2)}{0/0,1/1,2/2,3/2}\hfill
+\ClampMap{\min(x,3)}{0/0,1/1,2/2,3/3}
 \end{center}
 
 \smallskip
