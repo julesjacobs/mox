@@ -88,8 +88,8 @@ For future modes the two orders coincide, whereas for past modes the in-placemen
 \noindent\textbf{Future axes ($f$)}
 \[
 \begin{alignedat}{2}
-\text{linearity (l):}&\quad \mode{many} \leqto \mode{once} \\
-&\quad \mode{many} \leqin \mode{once}\\[0.5ex]
+\text{linearity (l):}&\quad \mode{many} \leqto \mode{once} \leqto \mode{never} \\
+&\quad \mode{many} \leqin \mode{once} \leqin \mode{never}\\[0.5ex]
 \text{portability (p):}&\quad \mode{portable} \leqto \mode{non-portable}\\
 &\quad \mode{portable} \leqin \mode{non-portable}\\
 \text{areality (a):}&\quad \mode{global} \leqto \mode{regional} \leqto \mode{local}\\
@@ -109,6 +109,8 @@ A mode is then the pair $m = (p, f)$, with both relations lifted again to $m$.
 Modes are about \emph{deep} operations on values. For example, the uniqueness and linearity axes are about the operation of creating an alias to a value. Alias creation is deep in the sense that when we alias a data structure, then all its children should also be considered aliased (i.e., there are multiple pointer paths from the stack roots to the element). Uniqueness is about whether the pointer path to it is unique, i.e., whether an aliasing operation has been performed on it in the past, and linearity is about whether we're allowed to perform an aliasing operation on it in the future.
 
 A $\mode{unique}$ly referenced value can be coerced to an $\mode{aliased}$ value -- we simply forget that it was uniquely referenced -- hence $\mode{unique} \leqto \mode{aliased}$. It is also safe to store an aliased value inside a uniquely referenced structure, so $\mode{aliased} \leqin \mode{unique}$. Conversely, it is nonsensical to say a uniquely referenced value is stored in an aliased container, because aliasing is a deep property: if the container is considered aliased, then all its elements are as well.
+
+For future modes we additionally track the sentinel $\mode{never}$ on the linearity axis. A $\mode{never}$ function cannot be invoked; operationally it represents a closure whose call capability has been consumed. Aliasing a $\mode{once}$ closure demotes it to $\mode{never}$ rather than rejecting the program outright.
 
 If an aliasing operation may be performed on a value (mode $\mode{many}$, think ``aliasable''), it is safe to coerce it to a value on which we are not allowed to perform an aliasing operation (mode $\mode{once}$, think ``nonaliasable''), hence $\mode{many} \leqto \mode{once}$.
 Conversely, values that we can create aliases to may be safely stored in containers that we are not allowed to create aliases to, hence $\mode{many} \leqin \mode{once}$.

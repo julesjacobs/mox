@@ -207,8 +207,11 @@ let rec alias_type ty =
       ensure_well_formed domain;
       ensure_well_formed codomain;
       let linearity = mode.Modes.Future.linearity in
-      if not (Modes.Linearity.leq_to linearity Modes.Linearity.default) then
-        raise (Mode_error "Cannot alias a once-qualified function");
+      let mode =
+        if Modes.Linearity.leq_to linearity Modes.Linearity.default then mode
+        else
+          { mode with Modes.Future.linearity = Modes.Linearity.top_to }
+      in
       TyArrow (domain, mode, codomain)
   | TyPair (left, storage, right) ->
       let left' = alias_type left in
@@ -310,7 +313,10 @@ let rec infer_expr env expr =
       let arg_fv = free_vars arg in
       let fn_ty = infer_expr env fn in
       (match fn_ty with
-      | TyArrow (param, _, result) ->
+      | TyArrow (param, future, result) ->
+          let linearity = future.Modes.Future.linearity in
+          if Modes.Linearity.equal linearity Modes.Linearity.top_to then
+            raise (Mode_error "Cannot call a never-qualified function");
           let arg_env = alias_env_between env fn_fv arg_fv in
           check_expr arg_env arg param;
           result

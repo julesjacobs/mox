@@ -93,7 +93,13 @@ module Uniqueness_spec = struct
   let equal = ( = )
 end
 
-module Uniqueness = Make_axis (Uniqueness_spec)
+module Uniqueness = struct
+  include Make_axis (Uniqueness_spec)
+  type nonrec t = Uniqueness_spec.t = Unique | Aliased
+
+  let unique = Unique
+  let aliased = Aliased
+end
 
 module Contention_spec = struct
   type t = Uncontended | Shared | Contended
@@ -108,19 +114,33 @@ module Contention_spec = struct
   let equal = ( = )
 end
 
-module Contention = Make_axis (Contention_spec)
+module Contention = struct
+  include Make_axis (Contention_spec)
+  type nonrec t = Contention_spec.t = Uncontended | Shared | Contended
+
+  let uncontended = Uncontended
+  let shared = Shared
+  let contended = Contended
+end
 
 module Linearity_spec = struct
-  type t = Many | Once
+  type t = Many | Once | Never
 
-  let order_to = [ Many; Once ]
+  let order_to = [ Many; Once; Never ]
   let order_in = order_to
   let default = Many
-  let show = function Many -> "many" | Once -> "once"
+  let show = function Many -> "many" | Once -> "once" | Never -> "never"
   let equal = ( = )
 end
 
-module Linearity = Make_axis (Linearity_spec)
+module Linearity = struct
+  include Make_axis (Linearity_spec)
+  type nonrec t = Linearity_spec.t = Many | Once | Never
+
+  let many = Many
+  let once = Once
+  let never = Never
+end
 
 module Portability_spec = struct
   type t = Portable | NonPortable
@@ -132,7 +152,13 @@ module Portability_spec = struct
   let equal = ( = )
 end
 
-module Portability = Make_axis (Portability_spec)
+module Portability = struct
+  include Make_axis (Portability_spec)
+  type nonrec t = Portability_spec.t = Portable | NonPortable
+
+  let portable = Portable
+  let nonportable = NonPortable
+end
 
 module Areality_spec = struct
   type t = Global | Regional | Local
@@ -144,7 +170,14 @@ module Areality_spec = struct
   let equal = ( = )
 end
 
-module Areality = Make_axis (Areality_spec)
+module Areality = struct
+  include Make_axis (Areality_spec)
+  type nonrec t = Areality_spec.t = Global | Regional | Local
+
+  let global = Global
+  let regional = Regional
+  let local = Local
+end
 
 let concat parts =
   parts |> List.filter (fun s -> s <> "") |> String.concat " "

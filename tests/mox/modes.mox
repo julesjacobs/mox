@@ -3,7 +3,7 @@
 > (unit *[unique local] (unit * unit))
 
 (((left(unit)), (right(unit))) : ((unit +[unique local] empty) * (unit +[unique local] unit)))
-> error: Mode unique contended local portable exceeds allowed once
+> error: Mode unique contended local portable exceeds allowed never
 
 (* arrow annotations roundtrip *)
 ((fun f => f) : ((unit ->[local once portable] unit) -> (unit ->[local once portable] unit)))

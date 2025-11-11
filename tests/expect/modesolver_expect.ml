@@ -219,7 +219,7 @@ let%expect_test "assert_predicate after relation narrows outgoing edges" =
     (Modesolver.get_relation p a);
   [%expect {|
     portable -> global
-  |}]
+ |}]
 
 let%expect_test "inconsistent cross-axis assertion raises" =
   let module U = Modesolver.Uniqueness in
@@ -309,4 +309,34 @@ let%expect_test "domain restriction via predicate after cross relation" =
     (Modesolver.get_relation l p);
   [%expect {|
     once -> portable
+  |}]
+
+let%expect_test "linearity join_to produces upper bounds" =
+  let module L = Modesolver.Linearity in
+  let many = L.new_var ~domain:[ Modes.Linearity.Many ] () in
+  let once = L.new_var ~domain:[ Modes.Linearity.Once ] () in
+  let join = L.join_to many once in
+  print_relation
+    ~to_string_a:Modes.Linearity.to_string
+    ~to_string_b:Modes.Linearity.to_string
+    (L.get_relation join join);
+  [%expect {|
+    once -> once
+    once -> never
+    never -> never
+  |}]
+
+let%expect_test "linearity join_to bounded by constraint" =
+  let module L = Modesolver.Linearity in
+  let once = L.new_var ~domain:[ Modes.Linearity.Once ] () in
+  let never = L.new_var ~domain:[ Modes.Linearity.Never ] () in
+  let join = L.join_to once never in
+  let bound = L.new_var ~domain:[ Modes.Linearity.Never ] () in
+  L.assert_leq_to join bound;
+  print_relation
+    ~to_string_a:Modes.Linearity.to_string
+    ~to_string_b:Modes.Linearity.to_string
+    (L.get_relation join join);
+  [%expect {|
+    never -> never
   |}]

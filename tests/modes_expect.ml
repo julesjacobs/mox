@@ -91,6 +91,12 @@ let%expect_test "type arrow custom" =
   |> Printf.printf "%s\n";
   [%expect {|(unit ->[local once portable] unit)|}]
 
+let%expect_test "alias once arrow becomes never" =
+  let ty = parse_ty "unit ->[local once] unit" in
+  let aliased = Typechecker.alias_type ty in
+  Pretty.string_of_ty aliased |> Printf.printf "%s\n";
+  [%expect {|(unit ->[local never] unit)|}]
+
 let%expect_test "type arrow portable only" =
   parse_ty "unit ->[portable] unit"
   |> Pretty.string_of_ty
@@ -134,7 +140,7 @@ let%expect_test "mode violation" =
    with
   | () -> Printf.printf "unexpected success\n"
   | exception Typechecker.Mode_error msg -> Printf.printf "%s\n" msg);
-  [%expect {|Mode unique contended local portable exceeds allowed once|}]
+  [%expect {|Mode unique contended local portable exceeds allowed never|}]
 
 let%expect_test "check mode success" =
   Typechecker.check_mode (parse_ty "unit *[unique local] unit") Modes.Mode.top_in;
@@ -187,6 +193,36 @@ let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
 ((fun _ => unique_pair) : (unit ->[local once] (unit *[unique local] unit)))
 |};
   [%expect {| type=(unit ->[local once] (unit *[unique local] unit)) |}]
+
+let%expect_test "calling never-qualified function is illegal" =
+  run_infer
+    {|
+let f = ((fun x => x) : (unit ->[local never] unit)) in
+f unit
+|};
+  [%expect {| mode_error=Cannot call a never-qualified function |}]
+
+let%expect_test "aliasing once function in env demotes to never" =
+  run_infer
+    {|
+let once_fun = ((fun x => x) : (unit ->[local once] unit)) in
+let alias = once_fun in
+(alias unit, alias unit)
+|};
+  [%expect {|
+    mode_error=Cannot call a never-qualified function
+  |}]
+
+let%expect_test "never functions block even under subsumption" =
+  run_infer
+    {|
+let never_fun = ((fun x => x) : (unit ->[local never] unit)) in
+let annotated = (never_fun : (unit -> unit)) in
+annotated unit
+|};
+  [%expect {|
+    error=(unit ->[local never] unit) is not a subtype of (unit -> unit)
+  |}]
 
 let%expect_test "lock_many_alias_pair_ok" =
   run_infer

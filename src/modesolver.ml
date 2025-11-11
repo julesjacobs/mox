@@ -60,6 +60,26 @@ let get_relation = get_relation_generic
 let assert_predicate = assert_predicate_generic
 let restrict_domain = restrict_domain_generic
 
+let linearity_uniqueness_dagger_relation =
+  Relations.make
+    [ (Modes.Linearity.never, Modes.Uniqueness.unique);
+      (Modes.Linearity.never, Modes.Uniqueness.aliased);
+      (Modes.Linearity.once, Modes.Uniqueness.unique);
+      (Modes.Linearity.once, Modes.Uniqueness.aliased) ]
+
+let portability_contention_dagger_relation =
+  Relations.make
+    [ (Modes.Portability.nonportable, Modes.Contention.uncontended);
+      (Modes.Portability.nonportable, Modes.Contention.shared);
+      (Modes.Portability.nonportable, Modes.Contention.contended);
+      (Modes.Portability.portable, Modes.Contention.contended) ]
+
+let assert_linearity_dagger lin_var uniq_var =
+  assert_relation linearity_uniqueness_dagger_relation lin_var uniq_var
+
+let assert_portability_dagger port_var cont_var =
+  assert_relation portability_contention_dagger_relation port_var cont_var
+
 module type AXIS = sig
   type t
 
@@ -110,6 +130,7 @@ module type AXIS_SOLVER = sig
   val assert_predicate : relation -> var -> unit
   val restrict_domain : mode list -> var -> unit
   val get_relation : var -> var -> relation
+  val join_to : var -> var -> var
 end
 
 module Make (A : AXIS) : AXIS_SOLVER with type mode = A.t = struct
@@ -132,6 +153,11 @@ module Make (A : AXIS) : AXIS_SOLVER with type mode = A.t = struct
   let assert_predicate rel v = assert_predicate_generic rel v
   let restrict_domain domain v = restrict_domain_generic domain v
   let get_relation v1 v2 = get_relation_generic v1 v2
+  let join_to v1 v2 =
+    let z = new_var () in
+    assert_leq_to v1 z;
+    assert_leq_to v2 z;
+    z
 end
 
 module Uniqueness = Make (struct

@@ -10,6 +10,10 @@ val assert_relation : ('a, 'b) Relations.t -> 'a var -> 'b var -> unit
 val get_relation : 'a var -> 'b var -> ('a, 'b) Relations.t
 val assert_predicate : ('a, 'a) Relations.t -> 'a var -> unit
 val restrict_domain : 'a list -> 'a var -> unit
+val assert_linearity_dagger :
+  Modes.Linearity.t mode_var -> Modes.Uniqueness.t mode_var -> unit
+val assert_portability_dagger :
+  Modes.Portability.t mode_var -> Modes.Contention.t mode_var -> unit
 
 module type AXIS_SOLVER = sig
   type mode
@@ -26,6 +30,7 @@ module type AXIS_SOLVER = sig
   val assert_predicate : relation -> var -> unit
   val restrict_domain : mode list -> var -> unit
   val get_relation : var -> var -> relation
+  val join_to : var -> var -> var
 end
 
 module Uniqueness : AXIS_SOLVER with type mode = Modes.Uniqueness.t
