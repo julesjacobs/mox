@@ -1,8 +1,15 @@
 open Modes
 
-type storage_mode = Ast.storage_mode =
-  { uniqueness : Modes.Uniqueness.t;
-    areality : Modes.Areality.t }
+type storage_mode = 
+  { uniqueness : Modesolver.Uniqueness.var;
+    areality : Modesolver.Areality.var }
+
+type mode_vars =
+  { uniqueness : Modesolver.Uniqueness.var;
+    contention : Modesolver.Contention.var;
+    linearity : Modesolver.Linearity.var;
+    portability : Modesolver.Portability.var;
+    areality : Modesolver.Areality.var }
 
 type ty =
   | TyUnit
@@ -11,13 +18,6 @@ type ty =
   | TyPair of ty * storage_mode * ty
   | TySum of ty * storage_mode * ty
   | TyMeta of meta
-
-and mode_vars =
-  { uniqueness : Modesolver.Uniqueness.var;
-    contention : Modesolver.Contention.var;
-    linearity : Modesolver.Linearity.var;
-    portability : Modesolver.Portability.var;
-    areality : Modesolver.Areality.var }
 
 and meta =
   { mutable solution : ty option;
@@ -95,7 +95,7 @@ let rec assert_subtype lower upper =
 
 let component_modes_pair modes = failwith "TODO"
 
-let assert_storage_leq lower upper =
+let assert_storage_leq (lower : storage_mode) (upper : storage_mode) =
   Modesolver.Uniqueness.assert_leq_in lower.uniqueness upper.uniqueness;
   Modesolver.Areality.assert_leq_in lower.areality upper.areality
 
