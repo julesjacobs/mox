@@ -93,7 +93,22 @@ let rec assert_subtype lower upper =
       List.iter (fun bound -> assert_subtype bound upper) lower.lower_bounds;
       List.iter (fun bound -> assert_subtype lower bound) upper.upper_bounds))
 
-let component_modes_pair modes = failwith "TODO"
+(* Takes the parent modes and does the following:
+  - Creates fresh storage modes and asserts the leq_in relation between the parent and them.
+  - Returns the component modes (the parent modes with new storage modes), and the storage modes separately. *)
+let component_modes_pair modes =
+  let storage_mode =
+    { uniqueness = Modesolver.Uniqueness.new_var ();
+      areality = Modesolver.Areality.new_var () }
+  in
+  Modesolver.Uniqueness.assert_leq_in storage_mode.uniqueness modes.uniqueness;
+  Modesolver.Areality.assert_leq_in storage_mode.areality modes.areality;
+  let component_modes =
+    { modes with
+      uniqueness = storage_mode.uniqueness;
+      areality = storage_mode.areality }
+  in
+  (component_modes, storage_mode)
 
 let assert_storage_leq (lower : storage_mode) (upper : storage_mode) =
   Modesolver.Uniqueness.assert_leq_in lower.uniqueness upper.uniqueness;
@@ -135,7 +150,7 @@ let rec solve_with_pair meta =
       List.iter handle_upper upper_bounds;
       (left_meta, storage_mode, right_meta)
 
-let component_modes_sum modes = failwith "TODO"
+let component_modes_sum = component_modes_pair
 
 let rec solve_with_sum meta =
   match meta.solution with
