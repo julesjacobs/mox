@@ -15,3 +15,15 @@ This project uses `.mox` test files to exercise the parser and bidirectional typ
 - Run the workflow above to populate the outputs. Review the diff and stage the test file together with your code change.
 
 Following this loop keeps the test suite authoritative and makes behavioural changes easy to spot in review.
+
+## Updating editor syntax files
+
+If you change `.vscode/mox-syntax/syntaxes/mox.tmLanguage.json`, remember that Cursor/VS Code read the grammar from the packaged `.vsix`, not directly from the workspace file. After editing the grammar:
+
+1. Rebuild the extension from `.vscode/mox-syntax/` with `npx vsce package`, then copy the resulting `.vsix` to `.vscode/mox-syntax.vsix` (Cursor expects that location).
+2. Reinstall the package in both editors so they pick up the new scopes:
+   - `code --install-extension .vscode/mox-syntax.vsix --force`
+   - `cursor --install-extension .vscode/mox-syntax.vsix --force`
+3. Reload the window (“Developer: Reload Window”) to flush the cached syntax data.
+
+Skipping these steps means the editors will continue using the previous grammar even though the repo files changed.

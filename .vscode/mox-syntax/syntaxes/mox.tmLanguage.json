@@ -9,6 +9,7 @@
     { "include": "#keywords" },
     { "include": "#builtins" },
     { "include": "#operators" },
+    { "include": "#mode-annotations" },
     { "match": "[a-zA-Z_][\\w']*", "name": "variable.other.mox" }
   ],
   "repository": {
@@ -75,6 +76,24 @@
         { "name": "keyword.operator.sum.mox", "match": "\\+|\\|" },
         { "name": "keyword.operator.assignment.mox", "match": ":" },
         { "name": "keyword.operator.pair.mox", "match": "," }
+      ]
+    },
+    "mode-annotations": {
+      "name": "meta.annotation.mode.mox markup.italic.mode.mox",
+      "contentName": "entity.other.attribute-name.mode.mox markup.italic.mode.mox",
+      "begin": "\\[",
+      "beginCaptures": {
+        "0": { "name": "punctuation.definition.annotation.begin.mox" }
+      },
+      "end": "\\]",
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.annotation.end.mox" }
+      },
+      "patterns": [
+        {
+          "match": "\\b(unique|aliased|contended|shared|uncontended|local|regional|global|portable|non-portable|once|many|never)\\b",
+          "name": "entity.name.type.mode.mox markup.italic.mode.mox"
+        }
       ]
     }
   }

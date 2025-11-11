@@ -5,7 +5,16 @@
   "editor.tokenColorCustomizations": {
     "textMateRules": [
       {
-        "scope": "markup.italic.mox",
+        "scope": [
+          "markup.italic.mox",
+          "markup.italic.mode.mox"
+        ],
+        "settings": {
+          "fontStyle": "italic"
+        }
+      },
+      {
+        "scope": "entity.name.type.mode.mox",
         "settings": {
           "fontStyle": "italic"
         }
