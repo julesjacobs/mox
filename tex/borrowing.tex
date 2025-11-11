@@ -57,6 +57,23 @@
 \newcommand{\Lock}[2][]{
   \text{\faLock}_{#1}(#2)
 }
+\newcommand{\ClampMap}[2]{%
+  \begin{minipage}{0.23\linewidth}
+    \centering
+    \begin{tikzpicture}[scale=0.8]
+      \foreach \x/\y in {#2} {
+        \fill[blue!25] (\x,\y) rectangle ++(1,1);
+      }
+      \draw[very thick] (0,0) rectangle (4,4);
+      \draw[step=1cm,gray!70] (0,0) grid (4,4);
+      \foreach \v in {0,...,3} {
+        \node[below] at (\v + 0.5,-0.12) {$\v$};
+        \node[left] at (-0.12,\v + 0.5) {$\v$};
+      }
+    \end{tikzpicture}\\[2pt]
+    \footnotesize #1
+  \end{minipage}
+}
 
 \newcommand{\jules}[1]{{\textcolor{red}{\textbf{J}: #1}}}
 
@@ -233,5 +250,164 @@ Likewise, the right adjoint \(h\) is characterised by \(f(x) \leq y \iff x \leq 
 
 \smallskip
 \noindent\emph{Slogan: the points above \(f\) (left) are exactly the points to the left of \(h\) (right).}
+
+\medskip
+
+\paragraph{Clamping upward: $f_c(x) = \max(x,c)$}
+For any constant \(c \in \{0,1,2,3\}\) consider the inflationary map \(f_c(x) = \max(x,c)\).  It always has a left adjoint
+\[
+g_c(y) =
+\begin{cases}
+0 & \text{if } y \leq c,\\
+y & \text{if } y > c,
+\end{cases}
+\]
+reflecting that any point below \(c\) ``backs off'' to the global mode while elements above \(c\) stay fixed.  When \(c = 0\) the map is the identity, so both adjoints coincide with \(f_c\).  For every \(c > 0\) there is \emph{no} right adjoint: if \(y < c\) then no element \(x\) satisfies \(\max(x,c) \leq y\), so the defining implication for a right adjoint would fail.
+
+\paragraph{Clamping downward: $f_c(x) = \min(x,c)$}
+Dually, the deflationary map \(f_c(x) = \min(x,c)\) always has a right adjoint
+\[
+h_c(y) =
+\begin{cases}
+y & \text{if } y < c,\\
+3 & \text{if } y \geq c,
+\end{cases}
+\]
+which keeps points strictly below \(c\) unchanged and collapses everything above \(c\) to the top mode \(3\).  This map has a left adjoint only in the trivial case \(c = 3\) (again the identity), because for any \(c < 3\) and \(y > c\) there is no \(x\) with \(y \leq \min(x,c)\).
+
+\paragraph{Adjoint pictures (example $c = 2$)}
+The adjunction laws become especially tangible on our four-point lattice.  Below we spell out the non-trivial clamp \(\max(x,2)\) together with its left adjoint \(g_2\), and \(\min(x,2)\) together with its right adjoint \(h_2\).
+
+\begin{center}
+\begin{minipage}{0.45\linewidth}
+\centering
+\begin{tikzpicture}[scale=0.9]
+  \foreach \x in {0,...,2} {
+    \foreach \y in {0,...,2} {
+      \fill[green!20] (\x,\y) rectangle ++(1,1);
+    }
+  }
+  \foreach \y in {0,...,3} {
+    \fill[green!20] (3,\y) rectangle ++(1,1);
+  }
+  \foreach \x/\y in {0/2,1/2,2/2,3/3} {
+    \fill[blue!25] (\x,\y) rectangle ++(1,1);
+  }
+  \draw[very thick] (0,0) rectangle (4,4);
+  \draw[step=1cm,gray!70] (0,0) grid (4,4);
+  \foreach \v in {0,...,3} {
+    \node[below] at (\v + 0.5,-0.15) {$\v$};
+    \node[left] at (-0.15,\v + 0.5) {$\v$};
+  }
+  \node at (2,4.3) {$y \leq \max(x,2)$};
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}{0.45\linewidth}
+\centering
+\begin{tikzpicture}[scale=0.9]
+  \foreach \y in {0,...,2} {
+    \foreach \x in {0,...,3} {
+      \fill[green!20] (\x,\y) rectangle ++(1,1);
+    }
+  }
+  \fill[green!20] (3,3) rectangle ++(1,1);
+  \foreach \x/\y in {0/0,0/1,0/2,3/3} {
+    \fill[blue!25] (\x,\y) rectangle ++(1,1);
+  }
+  \draw[very thick] (0,0) rectangle (4,4);
+  \draw[step=1cm,gray!70] (0,0) grid (4,4);
+  \foreach \v in {0,...,3} {
+    \node[below] at (\v + 0.5,-0.15) {$\v$};
+    \node[left] at (-0.15,\v + 0.5) {$\v$};
+  }
+  \node at (2,4.3) {$g_2(y) \leq x$};
+\end{tikzpicture}
+\end{minipage}
+\end{center}
+
+\smallskip
+\noindent\emph{Slogan: the points below \(\max(x,2)\) (left) are exactly the points to the right of \(g_2\) (right).}
+
+\medskip
+
+\begin{center}
+\begin{minipage}{0.45\linewidth}
+\centering
+\begin{tikzpicture}[scale=0.9]
+  \foreach \y in {0,...,3} {
+    \fill[orange!25] (0,\y) rectangle ++(1,1);
+  }
+  \foreach \y in {1,...,3} {
+    \fill[orange!25] (1,\y) rectangle ++(1,1);
+  }
+  \foreach \y in {2,...,3} {
+    \fill[orange!25] (2,\y) rectangle ++(1,1);
+    \fill[orange!25] (3,\y) rectangle ++(1,1);
+  }
+  \foreach \x/\y in {0/0,1/1,2/2,3/2} {
+    \fill[blue!25] (\x,\y) rectangle ++(1,1);
+  }
+  \draw[very thick] (0,0) rectangle (4,4);
+  \draw[step=1cm,gray!70] (0,0) grid (4,4);
+  \foreach \v in {0,...,3} {
+    \node[below] at (\v + 0.5,-0.15) {$\v$};
+    \node[left] at (-0.15,\v + 0.5) {$\v$};
+  }
+  \node at (2,4.3) {$\min(x,2) \leq y$};
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}{0.45\linewidth}
+\centering
+\begin{tikzpicture}[scale=0.9]
+  \fill[orange!25] (0,0) rectangle ++(1,1);
+  \foreach \x in {0,1} {
+    \fill[orange!25] (\x,1) rectangle ++(1,1);
+  }
+  \foreach \x in {0,...,3} {
+    \fill[orange!25] (\x,2) rectangle ++(1,1);
+    \fill[orange!25] (\x,3) rectangle ++(1,1);
+  }
+  \foreach \x/\y in {0/0,1/1,3/2,3/3} {
+    \fill[blue!25] (\x,\y) rectangle ++(1,1);
+  }
+  \draw[very thick] (0,0) rectangle (4,4);
+  \draw[step=1cm,gray!70] (0,0) grid (4,4);
+  \foreach \v in {0,...,3} {
+    \node[below] at (\v + 0.5,-0.15) {$\v$};
+    \node[left] at (-0.15,\v + 0.5) {$\v$};
+  }
+  \node at (2,4.3) {$x \leq h_2(y)$};
+\end{tikzpicture}
+\end{minipage}
+\end{center}
+
+\smallskip
+\noindent\emph{Slogan: the points above \(\min(x,2)\) (left) are exactly the points to the left of \(h_2\) (right).}
+
+\medskip
+
+\noindent\textbf{Pictures.} The following grids show \(y = f_c(x)\) for every clamp level.  Blue squares highlight the equality points, just like in the earlier adjoint figures.
+
+\begin{center}
+\ClampMap{$\max(x,0)$}{0/0,1/1,2/2,3/3}\hspace{1em}
+\ClampMap{$\max(x,1)$}{0/1,1/1,2/2,3/3}\hspace{1em}
+\ClampMap{$\max(x,2)$}{0/2,1/2,2/2,3/3}\hspace{1em}
+\ClampMap{$\max(x,3)$}{0/3,1/3,2/3,3/3}
+\end{center}
+
+\smallskip
+\noindent\emph{Left to right: increasing the lower bound pushes more points upward while the left adjoint collapses the shaded columns back to $0$ or fixes them.}
+
+\medskip
+
+\begin{center}
+\ClampMap{$\min(x,0)$}{0/0,1/0,2/0,3/0}\hspace{1em}
+\ClampMap{$\min(x,1)$}{0/0,1/1,2/1,3/1}\hspace{1em}
+\ClampMap{$\min(x,2)$}{0/0,1/1,2/2,3/2}\hspace{1em}
+\ClampMap{$\min(x,3)$}{0/0,1/1,2/2,3/3}
+\end{center}
+
+\smallskip
+\noindent\emph{Left to right: lowering the ceiling flattens more of the graph, and the right adjoint \(h_c\) matches the columns where the clamp leaves inputs unchanged.}
 
 \end{document}
