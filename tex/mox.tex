@@ -318,7 +318,8 @@ A dereference yields the stored payload, and assignment consumes the contexts us
 \begin{mathpar}
 \inferrule
   {\Sub{\tau_1'}{\tau_1} \\ \Sub{\tau_2}{\tau_2'} \\ f_1 \leqto f_2}
-  {\Sub{\TFun[f_1]{\tau_1}{\tau_2}}{\TFun[f_2]{\tau_1'}{\tau_2'}}}
+  {\Sub{\TFun[f_1]{\tau_1}{\tau_2}}{\TFun[f_2]{\tau_1'}{\tau_2'}}} 
+  \and
 \end{mathpar}
 
 \vspace{0.5em}\textit{Products and Sums}
@@ -363,6 +364,10 @@ The judgment $\Alias{\tau}{\tau'}$ records that aliasing $\tau$ is allowed and y
 \inferrule
   {f = (a, \mode{many}, p)}
   {\Alias{\TFun[f]{\tau_1}{\tau_2}}{\TFun[f]{\tau_1}{\tau_2}}}
+\and
+\inferrule
+  {f = (a, l, p) \and l \in \{\mode{never}, \mode{once}\} \and f' = (a, \mode{never}, p)}
+  {\Alias{\TFun[f]{\tau_1}{\tau_2}}{\TFun[f']{\tau_1}{\tau_2}}}
 \end{mathpar}
 
 \vspace{0.5em}\textit{Products and Sums}
