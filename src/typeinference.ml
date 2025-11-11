@@ -665,7 +665,14 @@ let rec infer_expr (ctx : context) (expr : Ast.expr) : ty =
 (* infer_top infers a top-level expression under the empty context. *)
 let infer_top expr = infer_expr empty_context expr
 
-let infer expr = ty_to_ast (infer_top expr)
+let wrap_solver_errors f =
+  try f () with
+  | Modesolver.Inconsistent msg ->
+      raise (Error (Cannot_infer (Printf.sprintf "mode solver inconsistency: %s" msg)))
+  | Intsolver.Inconsistent msg ->
+      raise (Error (Cannot_infer (Printf.sprintf "constraint solver inconsistency: %s" msg)))
+
+let infer expr = wrap_solver_errors (fun () -> ty_to_ast (infer_top expr))
 
 let string_of_inferred_ty ty =
   match ty_to_ast_opt ty with
