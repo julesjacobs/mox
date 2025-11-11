@@ -16,5 +16,5 @@
 > error: Mode unique contended local portable exceeds allowed unique never
 
 (* invalid sum: uniqueness violation across branches *)
-(((left(unit)), (right(unit))) : ((unit +[unique local] empty) * (unit +[aliased local] unit)))
+(((left(unit)), (right(unit))) : ((unit +[unique local] empty) *[aliased] (unit +[aliased local] unit)))
 > error: Mode unique contended local portable exceeds allowed never
