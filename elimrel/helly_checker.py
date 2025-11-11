@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import importlib
+import re
 from collections import deque
 from dataclasses import dataclass, field
 from html import escape
@@ -149,6 +150,26 @@ class _TypedRelation:
         composed = {(a, c) for (a, b) in self.pairs for c in lookup.get(b, ())}
         new_label = f"{_wrap_label(self.label)}⋅{_wrap_label(other.label)}"
         return _TypedRelation(self.source, other.target, frozenset(composed), new_label)
+
+
+@dataclass(frozen=True)
+class _PredicateEntry:
+    sort: str
+    constructor: str
+    label: str
+    members: Tuple[str, ...]
+    member_set: frozenset[str]
+    pair_set: frozenset[Pair]
+
+
+@dataclass(frozen=True)
+class _RelationEntry:
+    source: str
+    target: str
+    constructor: str
+    label: str
+    pairs: Tuple[Pair, ...]
+    pair_set: frozenset[Pair]
 
 
 def check_helly(
@@ -448,6 +469,602 @@ def _is_outer_product(rel: _TypedRelation) -> bool:
     return rel.pairs == product
 
 
+def _collect_predicate_entries(
+    carriers: Mapping[str, Sequence[str]],
+    predicates: Sequence[_TypedRelation],
+) -> Tuple[
+    dict[str, Tuple[_PredicateEntry, ...]],
+    dict[Tuple[str, str, frozenset[Pair]], _PredicateEntry],
+    dict[Tuple[str, frozenset[str]], _PredicateEntry],
+]:
+    raw: dict[str, list[Tuple[str, frozenset[Pair], Tuple[str, ...], frozenset[str]]]] = {}
+    seen: set[Tuple[str, str, frozenset[Pair]]] = set()
+    for rel in predicates:
+        if rel.source != rel.target:
+            continue
+        key = (rel.source, rel.target, rel.pairs)
+        if key in seen:
+            continue
+        seen.add(key)
+        carrier_values = carriers[rel.source]
+        members = tuple(value for value in carrier_values if (value, value) in rel.pairs)
+        member_set = frozenset(members)
+        raw.setdefault(rel.source, []).append((rel.label or rel.source, rel.pairs, members, member_set))
+
+    entries_by_sort: dict[str, Tuple[_PredicateEntry, ...]] = {}
+    key_lookup: dict[Tuple[str, str, frozenset[Pair]], _PredicateEntry] = {}
+    member_lookup: dict[Tuple[str, frozenset[str]], _PredicateEntry] = {}
+    for sort, items in raw.items():
+        used: set[str] = set()
+        entries: list[_PredicateEntry] = []
+        for label, pair_set, members, member_set in sorted(items, key=lambda item: item[0]):
+            ctor = _ocaml_predicate_constructor(label, used)
+            entry = _PredicateEntry(
+                sort=sort,
+                constructor=ctor,
+                label=label,
+                members=members,
+                member_set=member_set,
+                pair_set=pair_set,
+            )
+            entries.append(entry)
+            key_lookup[(sort, sort, pair_set)] = entry
+            member_lookup[(sort, member_set)] = entry
+        entries_by_sort[sort] = tuple(entries)
+    return entries_by_sort, key_lookup, member_lookup
+
+
+def _collect_relation_entries(
+    relations: Sequence[_TypedRelation],
+) -> Tuple[
+    dict[Tuple[str, str], Tuple[_RelationEntry, ...]],
+    dict[Tuple[str, str, frozenset[Pair]], _RelationEntry],
+]:
+    raw: dict[Tuple[str, str], list[Tuple[str, frozenset[Pair], Tuple[Pair, ...]]]] = {}
+    seen: set[Tuple[str, str, frozenset[Pair]]] = set()
+    for rel in relations:
+        if _is_predicate(rel):
+            continue
+        if _is_outer_product(rel):
+            continue
+        key = (rel.source, rel.target, rel.pairs)
+        if key in seen:
+            continue
+        seen.add(key)
+        pairs = _sorted_pairs(rel.pairs)
+        label = rel.label or f"{rel.source}_to_{rel.target}"
+        raw.setdefault((rel.source, rel.target), []).append((label, rel.pairs, pairs))
+
+    entries_by_type: dict[Tuple[str, str], Tuple[_RelationEntry, ...]] = {}
+    key_lookup: dict[Tuple[str, str, frozenset[Pair]], _RelationEntry] = {}
+    for (source, target), items in raw.items():
+        used: set[str] = set()
+        entries: list[_RelationEntry] = []
+        for label, pair_set, pairs in sorted(items, key=lambda item: item[0]):
+            ctor = _ocaml_relation_constructor(label, used)
+            entry = _RelationEntry(
+                source=source,
+                target=target,
+                constructor=ctor,
+                label=label,
+                pairs=pairs,
+                pair_set=pair_set,
+            )
+            entries.append(entry)
+            key_lookup[(source, target, pair_set)] = entry
+        entries_by_type[(source, target)] = tuple(entries)
+    return entries_by_type, key_lookup
+
+
+def _build_predicate_ops(
+    entries_by_sort: Mapping[str, Tuple[_PredicateEntry, ...]],
+    predicate_lookup: Mapping[Tuple[str, str, frozenset[Pair]], _PredicateEntry],
+) -> dict[str, dict[Tuple[str, str], str]]:
+    ops: dict[str, dict[Tuple[str, str], str]] = {}
+    for sort, entries in entries_by_sort.items():
+        cases: dict[Tuple[str, str], str] = {}
+        for a in entries:
+            for b in entries:
+                inter = a.pair_set & b.pair_set
+                result = predicate_lookup.get((sort, sort, inter))
+                if result is None:
+                    continue
+                cases[(a.constructor, b.constructor)] = result.constructor
+        ops[sort] = cases
+    return ops
+
+
+@dataclass
+class _RelationOpTables:
+    intersection: dict[Tuple[str, str], str]
+    restrict_source: dict[Tuple[str, str], str]
+    compose_source: dict[Tuple[str, str], str]
+    restrict_target: dict[Tuple[str, str], str]
+    compose_target: dict[Tuple[str, str], str]
+    has_source_predicates: bool
+    has_target_predicates: bool
+
+
+def _build_relation_ops(
+    entries_by_type: Mapping[Tuple[str, str], Tuple[_RelationEntry, ...]],
+    relation_lookup: Mapping[Tuple[str, str, frozenset[Pair]], _RelationEntry],
+    predicate_entries_by_sort: Mapping[str, Tuple[_PredicateEntry, ...]],
+    predicate_lookup: Mapping[Tuple[str, str, frozenset[Pair]], _PredicateEntry],
+    predicate_member_lookup: Mapping[Tuple[str, frozenset[str]], _PredicateEntry],
+) -> dict[Tuple[str, str], _RelationOpTables]:
+    tables: dict[Tuple[str, str], _RelationOpTables] = {}
+    for (source, target), relations in entries_by_type.items():
+        intersection_cases: dict[Tuple[str, str], str] = {}
+        restrict_source_cases: dict[Tuple[str, str], str] = {}
+        compose_source_cases: dict[Tuple[str, str], str] = {}
+        restrict_target_cases: dict[Tuple[str, str], str] = {}
+        compose_target_cases: dict[Tuple[str, str], str] = {}
+
+        source_pred_entries = predicate_entries_by_sort.get(source, ())
+        target_pred_entries = predicate_entries_by_sort.get(target, ())
+
+        for a in relations:
+            for b in relations:
+                inter = a.pair_set & b.pair_set
+                result = relation_lookup.get((source, target, inter))
+                if result is None:
+                    continue
+                intersection_cases[(a.constructor, b.constructor)] = result.constructor
+
+        for rel in relations:
+            if source_pred_entries:
+                for pred in source_pred_entries:
+                    filtered = frozenset((a, b) for (a, b) in rel.pair_set if a in pred.member_set)
+                    res_rel = relation_lookup.get((source, target, filtered))
+                    if res_rel is not None:
+                        restrict_source_cases[(rel.constructor, pred.constructor)] = res_rel.constructor
+                    target_members = frozenset(b for (a, b) in filtered)
+                    target_pred = predicate_member_lookup.get((target, target_members))
+                    if target_pred is not None:
+                        compose_source_cases[(rel.constructor, pred.constructor)] = target_pred.constructor
+            if target_pred_entries:
+                for pred in target_pred_entries:
+                    filtered = frozenset((a, b) for (a, b) in rel.pair_set if b in pred.member_set)
+                    res_rel = relation_lookup.get((source, target, filtered))
+                    if res_rel is not None:
+                        restrict_target_cases[(rel.constructor, pred.constructor)] = res_rel.constructor
+                    source_members = frozenset(a for (a, b) in filtered)
+                    source_pred = predicate_member_lookup.get((source, source_members))
+                    if source_pred is not None:
+                        compose_target_cases[(rel.constructor, pred.constructor)] = source_pred.constructor
+
+        tables[(source, target)] = _RelationOpTables(
+            intersection=intersection_cases,
+            restrict_source=restrict_source_cases,
+            compose_source=compose_source_cases,
+            restrict_target=restrict_target_cases,
+            compose_target=compose_target_cases,
+            has_source_predicates=bool(source_pred_entries),
+            has_target_predicates=bool(target_pred_entries),
+        )
+    return tables
+
+
+_OCAML_IDENTIFIER_RE = re.compile(r"[^0-9A-Za-z_]+")
+
+
+def _sanitize_identifier(name: str) -> str:
+    sanitized = _OCAML_IDENTIFIER_RE.sub("_", name.strip())
+    return sanitized.strip("_")
+
+
+def _ocaml_type_name(sort_name: str) -> str:
+    sanitized = _sanitize_identifier(sort_name).lower()
+    sanitized = sanitized.lstrip("_")
+    if not sanitized:
+        sanitized = "sort"
+    if sanitized[0].isdigit():
+        sanitized = f"sort_{sanitized}"
+    if not sanitized.startswith("sort_"):
+        sanitized = f"sort_{sanitized}"
+    return sanitized
+
+
+def _ocaml_predicate_type_name(sort_name: str) -> str:
+    sort_type = _ocaml_type_name(sort_name)
+    return f"{sort_type}_predicate"
+
+
+def _ocaml_predicate_function_name(sort_name: str) -> str:
+    return f"{_ocaml_predicate_type_name(sort_name)}_to_list"
+
+
+def _ocaml_relation_type_name(source: str, target: str) -> str:
+    return f"{_ocaml_type_name(source)}_to_{_ocaml_type_name(target)}_relation"
+
+
+def _ocaml_relation_function_name(source: str, target: str) -> str:
+    return f"{_ocaml_relation_type_name(source, target)}_to_list"
+
+
+def _ocaml_constructor_names(values: Sequence[str]) -> Tuple[str, ...]:
+    used: set[str] = set()
+    names: list[str] = []
+    for value in values:
+        base = _sanitize_identifier(value)
+        base = base.lstrip("_")
+        if not base:
+            base = "Value"
+        if not base[0].isalpha():
+            base = f"V_{base}"
+        if len(base) == 1:
+            base = base.upper()
+        else:
+            base = base[0].upper() + base[1:]
+        candidate = base
+        suffix = 2
+        while candidate in used:
+            candidate = f"{base}_{suffix}"
+            suffix += 1
+        used.add(candidate)
+        names.append(candidate)
+    return tuple(names)
+
+
+def _ocaml_predicate_constructor(label: str, used: set[str]) -> str:
+    base = _sanitize_identifier(label or "predicate")
+    base = base.lstrip("_") or "predicate"
+    if not base[0].isalpha():
+        base = f"P_{base}"
+    base = base[0].upper() + base[1:]
+    candidate = base
+    suffix = 2
+    while candidate in used:
+        candidate = f"{base}_{suffix}"
+        suffix += 1
+    used.add(candidate)
+    return candidate
+
+
+def _ocaml_relation_constructor(label: str, used: set[str]) -> str:
+    base = _sanitize_identifier(label or "relation")
+    base = base.lstrip("_") or "relation"
+    if not base[0].isalpha():
+        base = f"R_{base}"
+    base = base[0].upper() + base[1:]
+    candidate = base
+    suffix = 2
+    while candidate in used:
+        candidate = f"{base}_{suffix}"
+        suffix += 1
+    used.add(candidate)
+    return candidate
+
+
+def _render_solver_types(
+    carriers: Mapping[str, Sequence[str]],
+    *,
+    indent: str = "  ",
+) -> Tuple[str, Mapping[str, dict[str, str]]]:
+    blocks: list[str] = []
+    constructor_lookup: dict[str, dict[str, str]] = {}
+    for sort in sorted(carriers):
+        type_name = _ocaml_type_name(sort)
+        constructors = _ocaml_constructor_names(carriers[sort])
+        constructor_lookup[sort] = dict(zip(carriers[sort], constructors))
+        constructor_lines = "\n".join(f"{indent}  | {ctor}" for ctor in constructors)
+        block = "\n".join(
+            (
+                f"{indent}type {type_name} =",
+                constructor_lines,
+            )
+        )
+        blocks.append(block)
+    return "\n\n".join(blocks), constructor_lookup
+
+
+def _ordered_members(sort: str, members: Sequence[str], carriers: Mapping[str, Sequence[str]]) -> Tuple[str, ...]:
+    order_map = {value: idx for idx, value in enumerate(carriers[sort])}
+    return tuple(sorted(members, key=lambda value: order_map.get(value, len(order_map))))
+
+
+def _group_predicates(
+    carriers: Mapping[str, Sequence[str]],
+    predicates: Sequence[_TypedRelation],
+) -> Mapping[str, Tuple[Tuple[str, Tuple[str, ...]], ...]]:
+    grouped: dict[str, list[Tuple[str, Tuple[str, ...]]]] = {}
+    seen: set[Tuple[str, frozenset[str]]] = set()
+    for rel in predicates:
+        if rel.source != rel.target:
+            continue
+        members = tuple(sorted({a for (a, b) in rel.pairs if a == b}))
+        key = (rel.source, frozenset(members))
+        if key in seen:
+            continue
+        seen.add(key)
+        if not members:
+            # still record empty predicates; they map to [].
+            ordered = ()
+        else:
+            ordered = _ordered_members(rel.source, members, carriers)
+        grouped.setdefault(rel.source, []).append((rel.label or f"{rel.source}_predicate", ordered))
+    for sort in grouped:
+        grouped[sort].sort(key=lambda item: item[0])
+    return {sort: tuple(entries) for sort, entries in grouped.items()}
+
+
+def _group_relations(
+    relations: Sequence[_TypedRelation],
+) -> Mapping[Tuple[str, str], Tuple[Tuple[str, Tuple[Pair, ...]], ...]]:
+    grouped: dict[Tuple[str, str], list[Tuple[str, Tuple[Pair, ...]]]] = {}
+    for rel in relations:
+        if _is_predicate(rel):
+            continue
+        if _is_outer_product(rel):
+            continue
+        ordered_pairs = _sorted_pairs(rel.pairs)
+        label = rel.label or f"{rel.source}_to_{rel.target}"
+        grouped.setdefault((rel.source, rel.target), []).append((label, ordered_pairs))
+    for key in grouped:
+        grouped[key].sort(key=lambda item: item[0])
+    return {key: tuple(entries) for key, entries in grouped.items()}
+
+
+def _render_predicate_sections(
+    predicate_entries: Mapping[str, Tuple[_PredicateEntry, ...]],
+    predicate_ops: Mapping[str, dict[Tuple[str, str], str]],
+    constructor_lookup: Mapping[str, Mapping[str, str]],
+    *,
+    indent: str = "  ",
+) -> Tuple[str, str]:
+    impl_blocks: list[str] = []
+    sig_blocks: list[str] = []
+    for sort in sorted(predicate_entries.keys()):
+        entries = predicate_entries.get(sort)
+        if not entries:
+            continue
+        type_name = _ocaml_predicate_type_name(sort)
+        func_name = _ocaml_predicate_function_name(sort)
+        intersection_name = f"{type_name}_intersection"
+        sort_type = _ocaml_type_name(sort)
+        constructor_lines = [f"{indent}  | {entry.constructor}" for entry in entries]
+        match_lines = []
+        for entry in entries:
+            member_constructors = [constructor_lookup[sort][value] for value in entry.members]
+            body = "[" + "; ".join(member_constructors) + "]" if member_constructors else "[]"
+            match_lines.append(f"{indent}  | {entry.constructor} -> {body}")
+        type_decl_impl = "\n".join(
+            [
+                f"{indent}type {type_name} =",
+                "\n".join(constructor_lines),
+            ]
+        )
+        type_decl_sig = f"{indent}type {type_name}"
+        cases = predicate_ops.get(sort, {})
+        if cases:
+            intersection_lines = [
+                f"{indent}  | {lhs}, {rhs} -> {result}"
+                for (lhs, rhs), result in sorted(cases.items())
+            ]
+            intersection_lines.append(f"{indent}  | _ -> invalid_arg \"{intersection_name}\"")
+            intersection_body = "\n".join(
+                [
+                    f"{indent}let {intersection_name} (p1 : {type_name}) (p2 : {type_name}) : {type_name} =",
+                    f"{indent}  match p1, p2 with",
+                    "\n".join(intersection_lines),
+                ]
+            )
+        else:
+            intersection_body = (
+                f"{indent}let {intersection_name} (_ : {type_name}) (_ : {type_name}) : {type_name} = invalid_arg \"{intersection_name}\""
+            )
+        impl_block = "\n".join(
+            [
+                type_decl_impl,
+                "",
+                f"{indent}let {func_name} : {type_name} -> {sort_type} list = function",
+                "\n".join(match_lines),
+                "",
+                intersection_body,
+            ]
+        )
+        sig_block = "\n".join(
+            [
+                type_decl_sig,
+                "",
+                f"{indent}val {func_name} : {type_name} -> {sort_type} list",
+                f"{indent}val {intersection_name} : {type_name} -> {type_name} -> {type_name}",
+            ]
+        )
+        impl_blocks.append(impl_block)
+        sig_blocks.append(sig_block)
+    return "\n\n".join(impl_blocks), "\n\n".join(sig_blocks)
+
+
+def _render_relation_sections(
+    relation_entries: Mapping[Tuple[str, str], Tuple[_RelationEntry, ...]],
+    relation_ops: Mapping[Tuple[str, str], _RelationOpTables],
+    constructor_lookup: Mapping[str, Mapping[str, str]],
+    predicate_entries: Mapping[str, Tuple[_PredicateEntry, ...]],
+    *,
+    indent: str = "  ",
+) -> Tuple[str, str]:
+    impl_blocks: list[str] = []
+    sig_blocks: list[str] = []
+    for (source, target) in sorted(relation_entries.keys(), key=lambda item: (item[0], item[1])):
+        entries = relation_entries.get((source, target))
+        if not entries:
+            continue
+        type_name = _ocaml_relation_type_name(source, target)
+        func_name = _ocaml_relation_function_name(source, target)
+        intersection_name = f"{type_name}_intersection"
+        source_type = _ocaml_type_name(source)
+        target_type = _ocaml_type_name(target)
+        constructor_lines = [f"{indent}  | {entry.constructor}" for entry in entries]
+        match_lines = []
+        for entry in entries:
+            pair_literals = [
+                f"({constructor_lookup[source][a]}, {constructor_lookup[target][b]})"
+                for (a, b) in entry.pairs
+            ]
+            body = "[" + "; ".join(pair_literals) + "]" if pair_literals else "[]"
+            match_lines.append(f"{indent}  | {entry.constructor} -> {body}")
+        type_decl_impl = "\n".join(
+            [
+                f"{indent}type {type_name} =",
+                "\n".join(constructor_lines),
+            ]
+        )
+        type_decl_sig = f"{indent}type {type_name}"
+        ops = relation_ops[(source, target)]
+
+        def render_binary_function(
+            fname: str,
+            left_type: str,
+            right_type: str,
+            result_type: str,
+            cases: Mapping[Tuple[str, str], str],
+        ) -> Tuple[str, str]:
+            if cases:
+                case_lines = [
+                    f"{indent}  | {lhs}, {rhs} -> {result}"
+                    for (lhs, rhs), result in sorted(cases.items())
+                ]
+                case_lines.append(f"{indent}  | _ -> invalid_arg \"{fname}\"")
+                impl = "\n".join(
+                    [
+                        f"{indent}let {fname} (x : {left_type}) (y : {right_type}) : {result_type} =",
+                        f"{indent}  match x, y with",
+                        "\n".join(case_lines),
+                    ]
+                )
+            else:
+                impl = f"{indent}let {fname} (_ : {left_type}) (_ : {right_type}) : {result_type} = invalid_arg \"{fname}\""
+            sig = f"{indent}val {fname} : {left_type} -> {right_type} -> {result_type}"
+            return impl, sig
+
+        impl_sections = [
+            type_decl_impl,
+            "",
+            f"{indent}let {func_name} : {type_name} -> ({source_type} * {target_type}) list = function",
+            "\n".join(match_lines),
+            "",
+        ]
+        sig_sections = [
+            type_decl_sig,
+            "",
+            f"{indent}val {func_name} : {type_name} -> ({source_type} * {target_type}) list",
+            "",
+        ]
+        intersection_impl, intersection_sig = render_binary_function(
+            intersection_name,
+            type_name,
+            type_name,
+            type_name,
+            ops.intersection,
+        )
+        impl_sections.append(intersection_impl)
+        sig_sections.append(intersection_sig)
+
+        if ops.has_source_predicates:
+            source_pred_type = _ocaml_predicate_type_name(source)
+            target_pred_type = _ocaml_predicate_type_name(target)
+            restrict_name = f"{type_name}_restrict_source"
+            compose_name = f"{type_name}_compose_source"
+            restrict_impl, restrict_sig = render_binary_function(
+                restrict_name,
+                type_name,
+                source_pred_type,
+                type_name,
+                ops.restrict_source,
+            )
+            compose_impl, compose_sig = render_binary_function(
+                compose_name,
+                type_name,
+                source_pred_type,
+                target_pred_type,
+                ops.compose_source,
+            )
+            impl_sections.extend(["", restrict_impl, "", compose_impl])
+            sig_sections.extend(["", restrict_sig, "", compose_sig])
+
+        if ops.has_target_predicates:
+            target_pred_type = _ocaml_predicate_type_name(target)
+            source_pred_type = _ocaml_predicate_type_name(source)
+            restrict_name = f"{type_name}_restrict_target"
+            compose_name = f"{type_name}_compose_target"
+            restrict_impl, restrict_sig = render_binary_function(
+                restrict_name,
+                type_name,
+                target_pred_type,
+                type_name,
+                ops.restrict_target,
+            )
+            compose_impl, compose_sig = render_binary_function(
+                compose_name,
+                type_name,
+                target_pred_type,
+                source_pred_type,
+                ops.compose_target,
+            )
+            impl_sections.extend(["", restrict_impl, "", compose_impl])
+            sig_sections.extend(["", restrict_sig, "", compose_sig])
+
+        impl_block = "\n".join(impl_sections)
+        sig_block = "\n".join(sig_sections)
+        impl_blocks.append(impl_block)
+        sig_blocks.append(sig_block)
+    return "\n\n".join(impl_blocks), "\n\n".join(sig_blocks)
+
+
+def _generate_solver_sources(
+    carriers: Mapping[str, Sequence[str]],
+) -> Tuple[str, str]:
+    type_block, _ = _render_solver_types(carriers)
+    body_ml = type_block
+    body_mli = type_block
+    header = "(* Auto-generated by elimrel.helly_checker. *)"
+    ml_lines = [
+        header,
+        "",
+        "module Solver = struct",
+        body_ml,
+        "end",
+        "",
+    ]
+    mli_lines = [
+        header,
+        "",
+        "module Solver : sig",
+        body_mli,
+        "end",
+        "",
+    ]
+    return "\n".join(ml_lines), "\n".join(mli_lines)
+
+
+def _solver_output_paths(prefix: Union[str, Path]) -> Tuple[Path, Path]:
+    base = Path(prefix)
+    if base.suffix == ".ml":
+        ml_path = base
+        mli_path = base.with_suffix(".mli")
+    elif base.suffix == ".mli":
+        mli_path = base
+        ml_path = base.with_suffix(".ml")
+    else:
+        ml_path = base.with_suffix(".ml")
+        mli_path = base.with_suffix(".mli")
+    return ml_path, mli_path
+
+
+def _write_solver_files(
+    prefix: Union[str, Path],
+    carriers: Mapping[str, Sequence[str]],
+) -> Tuple[Path, Path]:
+    ml_text, mli_text = _generate_solver_sources(carriers)
+    ml_path, mli_path = _solver_output_paths(prefix)
+    ml_path.parent.mkdir(parents=True, exist_ok=True)
+    ml_path.write_text(ml_text, encoding="utf-8")
+    mli_path.parent.mkdir(parents=True, exist_ok=True)
+    mli_path.write_text(mli_text, encoding="utf-8")
+    return ml_path, mli_path
+
+
 def create_helly_report(
     path: Union[str, Path],
     sorts: Mapping[str, Sequence[str]],
@@ -456,6 +1073,7 @@ def create_helly_report(
     *,
     title: str = "Helly-2 Report",
     include_outer_products: bool = False,
+    solver_prefix: Optional[Union[str, Path]] = None,
 ) -> HellyResult:
     (
         carriers,
@@ -480,6 +1098,8 @@ def create_helly_report(
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(html, encoding="utf-8")
+    if solver_prefix is not None:
+        _write_solver_files(solver_prefix, carriers)
     return result
 
 
@@ -942,6 +1562,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         help="Write an HTML report to the given path.",
     )
     parser.add_argument(
+        "--solver-prefix",
+        help="When writing a report, also emit PREFIX.ml and PREFIX.mli with solver stubs.",
+    )
+    parser.add_argument(
         "--include-outer-products",
         action="store_true",
         help="Show relations whose matrices are full outer products (normally hidden).",
@@ -951,6 +1575,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if not args.module:
         parser.print_help()
         return 0
+    if args.solver_prefix and not args.report:
+        parser.error("--solver-prefix requires --report")
 
     try:
         sorts, relations, predicates = _load_module_family(args.module)
@@ -962,6 +1588,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 predicates=predicates,
                 title=f"Helly-2 Report — {args.module}",
                 include_outer_products=args.include_outer_products,
+                solver_prefix=args.solver_prefix,
             )
         else:
             result = check_helly(sorts, relations, predicates=predicates)
@@ -972,6 +1599,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     print(result.to_text(), flush=True)
     if args.report:
         print(f"Report written to {args.report}", flush=True)
+    if args.solver_prefix:
+        ml_path, mli_path = _solver_output_paths(args.solver_prefix)
+        print(f"Solver written to {ml_path} and {mli_path}", flush=True)
     return 0 if result.ok else 1
 
 

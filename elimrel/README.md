@@ -22,6 +22,13 @@ print("Report written to helly_report.html")
 PY
 ```
 
+Pass `solver_prefix="solver/rel_solver"` to `create_helly_report` to also emit
+`solver/rel_solver.ml` and `solver/rel_solver.mli`. These OCaml stubs currently
+declare one variant type per sort (enumerating the carrier). The helper script
+`python3 -m elimrel.examples.run_all` regenerates every packaged example in one
+go and leaves a `report.html`, `solver.ml`, and `solver.mli` inside each
+`elimrel/examples/<name>/` directory.
+
 ## Command Line
 
 The module can also be used as a CLI by pointing it at a Python module that exposes
@@ -31,7 +38,10 @@ The module can also be used as a CLI by pointing it at a Python module that expo
 python3 -m elimrel.helly_checker elimrel.examples.helly_violation
 ```
 
-Pass `--report out.html` to emit an HTML report alongside the console summary. If the
+Pass `--report out.html` to emit an HTML report alongside the console summary. Combine
+`--report` with `--solver-prefix path/to/solver` to additionally write
+`path/to/solver.ml` and `path/to/solver.mli` containing the per-sort OCaml type
+stubs. If the
 module exposes a `predicates` list (or its `build_family()` returns `(sorts, relations,
 predicates)`), those predicates are included automatically. The
 process exits with status `0` when every sort satisfies Helly-2 and `1` when a
@@ -39,8 +49,8 @@ counterexample is found; the offending slices are printed with provenance.
 
 ## Examples
 
-- `elimrel/examples/helly_violation.py` declares a bad triple of slices that violates
+- `elimrel/examples/helly_violation/` declares a bad triple of slices that violates
   Helly-2 (`python3 -m elimrel.helly_checker elimrel.examples.helly_violation`).
-- `elimrel/examples/diff_constraints.py` models the difference constraints `x ≤ y + k`
+- `elimrel/examples/diff_constraints/` models the difference constraints `x ≤ y + k`
   for `k ∈ {-3,…,3}` over `{0,1,2,3}` and satisfies Helly-2 (`python3 -m
   elimrel.helly_checker elimrel.examples.diff_constraints`).

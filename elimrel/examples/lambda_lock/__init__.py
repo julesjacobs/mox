@@ -67,6 +67,6 @@ relations = [
 if __name__ == "__main__":
     result = check_helly(sorts, relations)
     print(result.to_text())
-    report_path = Path(__file__).with_suffix(".html")
+    report_path = Path(__file__).with_name("report.html")
     create_helly_report(report_path, sorts, relations, title="Helly-2 Report — lambda_lock")
     print(f"Report written to {report_path}")

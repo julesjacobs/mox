@@ -82,7 +82,7 @@ if __name__ == "__main__":
 
     result = check_helly(sorts, relations, predicates=predicates)
     print(result.to_text())
-    report_path = Path(__file__).with_suffix(".html")
+    report_path = Path(__file__).with_name("report.html")
     create_helly_report(
         report_path,
         sorts,
