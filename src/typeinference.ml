@@ -94,7 +94,10 @@ let rec assert_subtype lower upper =
       List.iter (fun bound -> assert_subtype lower bound) upper.upper_bounds))
 
 let component_modes_pair modes = failwith "TODO"
-let assert_storage_leq lower upper = failwith "TODO"
+
+let assert_storage_leq lower upper =
+  Modesolver.Uniqueness.assert_leq_in lower.uniqueness upper.uniqueness;
+  Modesolver.Areality.assert_leq_in lower.areality upper.areality
 
 let rec solve_with_pair meta =
   match meta.solution with
