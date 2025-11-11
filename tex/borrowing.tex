@@ -410,4 +410,122 @@ The adjunction laws become especially tangible on our four-point lattice.  Below
 \smallskip
 \noindent\emph{Left to right: lowering the ceiling flattens more of the graph, and the right adjoint \(h_c\) matches the columns where the clamp leaves inputs unchanged.}
 
+\medskip
+
+\paragraph{Partial adjoints on restricted fibres}
+Although the clamps fail to admit total adjoints on the whole lattice, their diagonal points still behave adjointly when we restrict to the regions where the inequalities have witnesses.
+
+\begin{itemize}
+  \item For \(f(x) = \max(x,2)\) every point with \(y \ge 2\) has preimages, so the upset \(\{2,3\}\) supports a partial right adjoint \(\hat{h}_2(y) = y\).  The equality points \((2,2)\) and \((3,3)\) on the diagonal survive and certify the adjunction inside that upset.
+  \item For \(f(x) = \min(x,2)\) every point with \(y \le 2\) injects into some \(x\), so the downset \(\{0,1,2\}\) supports a partial left adjoint \(\hat{g}_2(y) = y\).  Here the diagonal points \((0,0)\), \((1,1)\), and \((2,2)\) witness the restricted adjunction.
+\end{itemize}
+
+\begin{center}
+\begin{minipage}{0.45\linewidth}
+\centering
+\begin{tikzpicture}[scale=0.9]
+  \fill[gray!15] (0,0) rectangle (4,2);
+  \foreach \x in {0,...,2} {
+    \fill[orange!25] (\x,2) rectangle ++(1,1);
+  }
+  \foreach \x in {0,...,3} {
+    \fill[orange!25] (\x,3) rectangle ++(1,1);
+  }
+  \foreach \x/\y in {2/2,3/3} {
+    \fill[blue!25] (\x,\y) rectangle ++(1,1);
+  }
+  \draw[very thick] (0,0) rectangle (4,4);
+  \draw[step=1cm,gray!70] (0,0) grid (4,4);
+  \foreach \v in {0,...,3} {
+    \node[below] at (\v + 0.5,-0.15) {$\v$};
+    \node[left] at (-0.15,\v + 0.5) {$\v$};
+  }
+  \node at (2,4.3) {$f(x) \le y$ (only $y \ge 2$)};
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}{0.45\linewidth}
+\centering
+\begin{tikzpicture}[scale=0.9]
+  \fill[gray!15] (0,0) rectangle (4,2);
+  \foreach \x in {0,...,2} {
+    \fill[orange!25] (\x,2) rectangle ++(1,1);
+  }
+  \foreach \x in {0,...,3} {
+    \fill[orange!25] (\x,3) rectangle ++(1,1);
+  }
+  \foreach \x/\y in {2/2,3/3} {
+    \fill[blue!25] (\x,\y) rectangle ++(1,1);
+  }
+  \draw[very thick] (0,0) rectangle (4,4);
+  \draw[step=1cm,gray!70] (0,0) grid (4,4);
+  \foreach \v in {0,...,3} {
+    \node[below] at (\v + 0.5,-0.15) {$\v$};
+    \node[left] at (-0.15,\v + 0.5) {$\v$};
+  }
+  \node at (2,4.3) {$x \le \hat{h}_2(y)$};
+\end{tikzpicture}
+\end{minipage}
+\end{center}
+
+\smallskip
+\noindent\emph{Slogan: once we ignore $y < 2$, the remaining points above \(f\) agree perfectly with the points below the partial adjoint \(\hat{h}_2\).}
+
+\medskip
+
+\begin{center}
+\begin{minipage}{0.45\linewidth}
+\centering
+\begin{tikzpicture}[scale=0.9]
+  \fill[gray!15] (0,3) rectangle (4,4);
+  \foreach \x in {0,...,3} {
+    \fill[green!20] (\x,0) rectangle ++(1,1);
+  }
+  \foreach \x in {1,...,3} {
+    \fill[green!20] (\x,1) rectangle ++(1,1);
+  }
+  \foreach \x in {2,...,3} {
+    \fill[green!20] (\x,2) rectangle ++(1,1);
+  }
+  \foreach \x/\y in {0/0,1/1,2/2} {
+    \fill[blue!25] (\x,\y) rectangle ++(1,1);
+  }
+  \draw[very thick] (0,0) rectangle (4,4);
+  \draw[step=1cm,gray!70] (0,0) grid (4,4);
+  \foreach \v in {0,...,3} {
+    \node[below] at (\v + 0.5,-0.15) {$\v$};
+    \node[left] at (-0.15,\v + 0.5) {$\v$};
+  }
+  \node at (2,4.3) {$y \le f(x)$ (only $y \le 2$)};
+\end{tikzpicture}
+\end{minipage}\hfill
+\begin{minipage}{0.45\linewidth}
+\centering
+\begin{tikzpicture}[scale=0.9]
+  \fill[gray!15] (0,3) rectangle (4,4);
+  \foreach \x in {0,...,3} {
+    \fill[green!20] (\x,0) rectangle ++(1,1);
+  }
+  \foreach \x in {1,...,3} {
+    \fill[green!20] (\x,1) rectangle ++(1,1);
+  }
+  \foreach \x in {2,...,3} {
+    \fill[green!20] (\x,2) rectangle ++(1,1);
+  }
+  \foreach \x/\y in {0/0,1/1,2/2} {
+    \fill[blue!25] (\x,\y) rectangle ++(1,1);
+  }
+  \draw[very thick] (0,0) rectangle (4,4);
+  \draw[step=1cm,gray!70] (0,0) grid (4,4);
+  \foreach \v in {0,...,3} {
+    \node[below] at (\v + 0.5,-0.15) {$\v$};
+    \node[left] at (-0.15,\v + 0.5) {$\v$};
+  }
+  \node at (2,4.3) {$\hat{g}_2(y) \le x$};
+\end{tikzpicture}
+\end{minipage}
+\end{center}
+
+\smallskip
+\noindent\emph{Slogan: discarding $y > 2$ leaves a perfect match between the points below \(f\) and the points to the right of the partial left adjoint \(\hat{g}_2\).}
+
 \end{document}
