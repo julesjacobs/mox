@@ -4,6 +4,11 @@ type storage_mode =
   { uniqueness : Modesolver.Uniqueness.var;
     areality : Modesolver.Areality.var }
 
+type future_mode =
+  { linearity : Modesolver.Linearity.var;
+    portability : Modesolver.Portability.var;
+    areality : Modesolver.Areality.var }
+
 type mode_vars =
   { uniqueness : Modesolver.Uniqueness.var;
     contention : Modesolver.Contention.var;
@@ -14,7 +19,7 @@ type mode_vars =
 type ty =
   | TyUnit
   | TyEmpty
-  | TyArrow of ty * Future.t * ty
+  | TyArrow of ty * future_mode * ty
   | TyPair of ty * storage_mode * ty
   | TySum of ty * storage_mode * ty
   | TyMeta of meta
@@ -114,9 +119,10 @@ let assert_storage_leq (lower : storage_mode) (upper : storage_mode) =
   Modesolver.Uniqueness.assert_leq_in lower.uniqueness upper.uniqueness;
   Modesolver.Areality.assert_leq_in lower.areality upper.areality
 
-let assert_future_leq lower upper =
-  if not (Modes.Future.leq_in lower upper) then
-    invalid_arg "solve_with_arrow: future mode cannot be satisfied"
+let assert_future_leq (lower : future_mode) (upper : future_mode) =
+  Modesolver.Linearity.assert_leq_in lower.linearity upper.linearity;
+  Modesolver.Portability.assert_leq_in lower.portability upper.portability;
+  Modesolver.Areality.assert_leq_in lower.areality upper.areality
 
 let rec solve_with_pair meta =
   match meta.solution with
@@ -184,7 +190,32 @@ let rec solve_with_sum meta =
       List.iter handle_upper upper_bounds;
       (left_meta, storage_mode, right_meta)
 
-let component_modes_arrow modes = failwith "TODO"
+(* Takes the parent modes and does the following:
+  - Creates fresh future (function) mode and asserts the leq_in relation between the parent and it.
+  - Returns fresh component modes (minimum elements in the \in relation), and the future modes *)
+let component_modes_arrow modes =
+  let open Modes in
+  let min_uniqueness = Modesolver.Uniqueness.bottom_in in
+  let min_contention = Modesolver.Contention.bottom_in in
+  let min_linearity = Modesolver.Linearity.bottom_in in
+  let min_portability = Modesolver.Portability.bottom_in in
+  let min_areality = Modesolver.Areality.bottom_in in
+  let component_modes = {
+    uniqueness = min_uniqueness;
+    contention = min_contention;
+    linearity = min_linearity;
+    portability = min_portability;
+    areality = min_areality
+  } in
+  let arrow_mode = {
+    linearity = Modesolver.Linearity.new_var ();
+    portability = Modesolver.Portability.new_var ();
+    areality = Modesolver.Areality.new_var ();
+  } in
+  Modesolver.Linearity.assert_leq_in modes.linearity arrow_mode.linearity;
+  Modesolver.Portability.assert_leq_in modes.portability arrow_mode.portability;
+  Modesolver.Areality.assert_leq_in modes.areality arrow_mode.areality;
+  (component_modes, arrow_mode)
 
 let rec solve_with_arrow meta =
   match meta.solution with

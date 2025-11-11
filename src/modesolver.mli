@@ -31,6 +31,7 @@ module type AXIS_SOLVER = sig
   val restrict_domain : mode list -> var -> unit
   val get_relation : var -> var -> relation
   val join_to : var -> var -> var
+  val bottom_in : var
 end
 
 module Uniqueness : AXIS_SOLVER with type mode = Modes.Uniqueness.t

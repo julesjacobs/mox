@@ -236,9 +236,11 @@ let%expect_test "inconsistent cross-axis assertion raises" =
     boom: relation became empty
   |}]
 
+type color = Red | Green | Blue
+type size = Small | Large
+
 let%expect_test "custom typed solver variable" =
-  type color = Red | Green | Blue
-  type size = Small | Large
+
   let encode_color = function Red -> 0 | Green -> 1 | Blue -> 2 in
   let decode_color = function
     | 0 -> Red
@@ -272,8 +274,9 @@ let%expect_test "custom typed solver variable" =
     green -> large
   |}]
 
+type tag = A | B
+
 let%expect_test "assert_relation intersection between custom vars" =
-  type tag = A | B
   let encode = function A -> 0 | B -> 1 in
   let decode = function 0 -> A | 1 -> B | _ -> failwith "tag" in
   let x = Modesolver.new_var ~encode ~decode ~domain:[ A; B ] in

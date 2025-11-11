@@ -87,6 +87,7 @@ module type AXIS = sig
   val equal : t -> t -> bool
   val leq_to : t -> t -> bool
   val leq_in : t -> t -> bool
+  val bottom_in : t
 end
 
 let relation_from order predicate =
@@ -131,6 +132,7 @@ module type AXIS_SOLVER = sig
   val restrict_domain : mode list -> var -> unit
   val get_relation : var -> var -> relation
   val join_to : var -> var -> var
+  val bottom_in : var
 end
 
 module Make (A : AXIS) : AXIS_SOLVER with type mode = A.t = struct
@@ -158,6 +160,7 @@ module Make (A : AXIS) : AXIS_SOLVER with type mode = A.t = struct
     assert_leq_to v1 z;
     assert_leq_to v2 z;
     z
+  let bottom_in = new_var ~domain:[A.bottom_in] ()
 end
 
 module Uniqueness = Make (struct
@@ -167,6 +170,7 @@ module Uniqueness = Make (struct
   let equal = Modes.Uniqueness.equal
   let leq_to = Modes.Uniqueness.leq_to
   let leq_in = Modes.Uniqueness.leq_in
+  let bottom_in = Modes.Uniqueness.bottom_in
 end)
 
 module Contention = Make (struct
@@ -176,6 +180,7 @@ module Contention = Make (struct
   let equal = Modes.Contention.equal
   let leq_to = Modes.Contention.leq_to
   let leq_in = Modes.Contention.leq_in
+  let bottom_in = Modes.Contention.bottom_in
 end)
 
 module Linearity = Make (struct
@@ -185,6 +190,7 @@ module Linearity = Make (struct
   let equal = Modes.Linearity.equal
   let leq_to = Modes.Linearity.leq_to
   let leq_in = Modes.Linearity.leq_in
+  let bottom_in = Modes.Linearity.bottom_in
 end)
 
 module Portability = Make (struct
@@ -194,6 +200,7 @@ module Portability = Make (struct
   let equal = Modes.Portability.equal
   let leq_to = Modes.Portability.leq_to
   let leq_in = Modes.Portability.leq_in
+  let bottom_in = Modes.Portability.bottom_in
 end)
 
 module Areality = Make (struct
@@ -203,4 +210,5 @@ module Areality = Make (struct
   let equal = Modes.Areality.equal
   let leq_to = Modes.Areality.leq_to
   let leq_in = Modes.Areality.leq_in
+  let bottom_in = Modes.Areality.bottom_in
 end)
