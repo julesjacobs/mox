@@ -1,5 +1,3 @@
-open Mox
-
 let print_relation ~to_string_a ~to_string_b rel =
   rel
   |> Relations.to_list
