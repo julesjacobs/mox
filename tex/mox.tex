@@ -421,6 +421,25 @@ The linearity and portability axes translate to past modes as follows:
 Intuitively, a $\mode{many}$ closure can only reuse captured data as $\mode{aliased}$, and a $\mode{portable}$ closure forces captured bindings to be $\mode{contended}$.
 When the captured value is a reference we update the pointer's uniqueness and contention components while locking the stored payload recursively.
 
+\section{Type Inference}
+
+We must be able to maintain these constraints on \textbf{type variables}:
+\begin{itemize}
+  \item Subtyping constraints $\Sub{\tau_1}{\tau_2}$ between two type variables.
+  \item Alias constraints between two type variables ("type variable $\tau_1$ is the aliased version of type variable $\tau_2$").
+  \item Lock constraints between two type variables ("type variable $\tau_1$ is type variable $\tau_2$ locked with modes $f$").
+  \item In-placement constraints on a type variable (given by a set of modes $m$).
+\end{itemize}
+
+\noindent
+We must able able to maintain these constraints on \textbf{mode variables}:
+\begin{itemize}
+  \item $\leqin$ constraints between two mode variables.
+  \item $\leqto$ constraints between two mode variables.
+  \item Domain constraints on mode variables.
+  \item Dagger-constraints between mode variables.
+\end{itemize}
+
 \section{Desiderata}
 
 \begin{enumerate}

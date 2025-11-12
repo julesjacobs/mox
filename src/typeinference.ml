@@ -2,6 +2,7 @@ open Modes
 
 module StringSet = Set.Make (String)
 
+(* Todo: move this to a more appropriate file *)
 let diag_values ~equal relation =
   Relations.to_list relation
   |> List.fold_left
@@ -796,7 +797,7 @@ let must_be_never linearity =
   | [value] -> Modes.Linearity.equal value Modes.Linearity.top_to
   | _ -> false
 
-(* infer implements bidirectional inference for expressions under a typing context. *)
+(* infer implements HM-style subtyping inference for expressions under a typing context. *)
 let rec infer_expr (ctx : context) (expr : Ast.expr) : ty =
   match expr with
   | Ast.Var name -> lookup ctx name
