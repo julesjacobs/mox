@@ -420,6 +420,8 @@ The linearity and portability axes translate to past modes as follows:
 
 Intuitively, a $\mode{many}$ closure can only reuse captured data as $\mode{aliased}$, and a $\mode{portable}$ closure forces captured bindings to be $\mode{contended}$.
 When the captured value is a reference we update the pointer's uniqueness and contention components while locking the stored payload recursively.
+If we lock a type with respect to $\mode{many}$ then we change all $\mode{unique}$ to $\mode{aliased}$.
+If we lock a type with respect to $\mode{portable}$ then we change all $\mode{uncontended}$ and $\mode{shared}$ to $\mode{contended}$.
 
 \section{Type Inference}
 
