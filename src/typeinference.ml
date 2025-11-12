@@ -1,7 +1,19 @@
 open Modes
 
+module StringSet = Set.Make (String)
+
+let diag_values ~equal relation =
+  Relations.to_list relation
+  |> List.fold_left
+       (fun acc (a, b) ->
+         if equal a b && not (List.exists (fun existing -> equal existing a) acc) then
+           a :: acc
+         else acc)
+       []
+  |> List.rev
+
 (* Used on data types such as pairs and sums. *)
-type storage_mode = 
+type storage_mode =
   { uniqueness : Modesolver.Uniqueness.var;
     areality : Modesolver.Areality.var }
 
@@ -36,7 +48,30 @@ and meta =
        - the bound graph is kept transitively closed (edges imply their consequences) *)
     mutable lower_bounds : meta list;
     mutable upper_bounds : meta list;
-    modes : mode_vars }
+    modes : mode_vars;
+    mutable alias_obligation : bool;
+    mutable lock_obligations : future_mode list }
+
+let fresh_meet_uniqueness a b =
+  let m = Modesolver.Uniqueness.new_var () in
+  Modesolver.Uniqueness.assert_leq_in m a;
+  Modesolver.Uniqueness.assert_leq_in m b;
+  m
+
+let fresh_meet_areality a b =
+  let m = Modesolver.Areality.new_var () in
+  Modesolver.Areality.assert_leq_in m a;
+  Modesolver.Areality.assert_leq_in m b;
+  m
+
+let uniqueness_default () =
+  Modesolver.Uniqueness.new_var ~domain:[Modes.Uniqueness.default] ()
+
+let uniqueness_top_in () =
+  Modesolver.Uniqueness.new_var ~domain:[Modes.Uniqueness.top_in] ()
+
+let linearity_top_to () =
+  Modesolver.Linearity.new_var ~domain:[ Modes.Linearity.top_to ] ()
 
 let fresh_meta_id =
   let counter = ref 0 in
@@ -51,7 +86,9 @@ let fresh_meta ?solution ?(lower_bounds = []) ?(upper_bounds = []) ~modes () =
     solution;
     lower_bounds;
     upper_bounds;
-    modes }
+    modes;
+    alias_obligation = false;
+    lock_obligations = [] }
 
 (* solve_with_unit forces the meta-variable to resolve to [unit] and closes its bounds. *)
 let rec solve_with_unit meta =
@@ -59,6 +96,8 @@ let rec solve_with_unit meta =
   | Some _ -> ()
   | None ->
       meta.solution <- Some TyUnit;
+      meta.alias_obligation <- false;
+      meta.lock_obligations <- [];
       List.iter solve_with_unit meta.lower_bounds;
       List.iter solve_with_unit meta.upper_bounds;
       meta.lower_bounds <- [];
@@ -70,6 +109,8 @@ let rec solve_with_empty meta =
   | Some _ -> ()
   | None ->
       meta.solution <- Some TyEmpty;
+      meta.alias_obligation <- false;
+      meta.lock_obligations <- [];
       List.iter solve_with_empty meta.lower_bounds;
       List.iter solve_with_empty meta.upper_bounds;
       meta.lower_bounds <- [];
@@ -118,9 +159,50 @@ let rec assert_subtype lower upper =
       List.iter (fun bound -> assert_subtype bound upper) lower.lower_bounds;
       List.iter (fun bound -> assert_subtype lower bound) upper.upper_bounds))
 
+let register_alias_obligation meta = meta.alias_obligation <- true
+
+let register_lock_obligation meta mode =
+  meta.lock_obligations <- mode :: meta.lock_obligations
+
+let linearity_forces_strict linearity =
+  match
+    diag_values ~equal:Modes.Linearity.equal
+      (Modesolver.Linearity.get_relation linearity linearity)
+  with
+  | [value] -> not (Modes.Linearity.leq_to value Modes.Linearity.default)
+  | _ -> false
+
+let constrain_dagger linearity target =
+  let default = uniqueness_default () in
+  Modesolver.Uniqueness.assert_leq_in default target;
+  if linearity_forces_strict linearity then
+    let top = uniqueness_top_in () in
+    Modesolver.Uniqueness.assert_leq_in top target
+
+let lock_storage_for_closure (closure : future_mode) (storage : storage_mode) =
+  constrain_dagger closure.linearity storage.uniqueness
+
+let rec alias_ty_for_duplication ty =
+  match ty with
+  | TyUnit | TyEmpty -> ()
+  | TyArrow (domain, mode, codomain) ->
+      alias_ty_for_duplication domain;
+      alias_ty_for_duplication codomain;
+      let top = linearity_top_to () in
+      Modesolver.Linearity.assert_leq_to top mode.linearity;
+      Modesolver.Linearity.assert_leq_to mode.linearity top
+  | TyPair (left, storage, right) | TySum (left, storage, right) ->
+      Modesolver.Uniqueness.assert_leq_in (uniqueness_default ()) storage.uniqueness;
+      alias_ty_for_duplication left;
+      alias_ty_for_duplication right
+  | TyMeta meta -> (
+      match meta.solution with
+      | Some ty -> alias_ty_for_duplication ty
+      | None -> register_alias_obligation meta)
+
 (* Takes the parent modes and does the following:
   - Creates fresh storage modes and asserts the leq_in relation between the parent and them.
-  - Returns the component modes (the parent modes with new storage modes), and the storage modes separately. *)
+  - Returns the component modes (the parent modes intersected with storage axes), and the storage modes separately. *)
 let component_modes_pair modes =
   let storage_mode =
     { uniqueness = Modesolver.Uniqueness.new_var ();
@@ -130,21 +212,30 @@ let component_modes_pair modes =
   Modesolver.Areality.assert_leq_in storage_mode.areality modes.areality;
   let component_modes =
     { modes with
-      uniqueness = storage_mode.uniqueness;
-      areality = storage_mode.areality }
+      uniqueness = fresh_meet_uniqueness modes.uniqueness storage_mode.uniqueness;
+      areality = fresh_meet_areality modes.areality storage_mode.areality }
   in
   (component_modes, storage_mode)
 
 (* assert_storage_leq ensures both fields of storage_mode respect <=. *)
-let assert_storage_leq (lower : storage_mode) (upper : storage_mode) =
+let assert_storage_leq_in (lower : storage_mode) (upper : storage_mode) =
   Modesolver.Uniqueness.assert_leq_in lower.uniqueness upper.uniqueness;
   Modesolver.Areality.assert_leq_in lower.areality upper.areality
 
+let assert_storage_leq_to (lower : storage_mode) (upper : storage_mode) =
+  Modesolver.Uniqueness.assert_leq_to lower.uniqueness upper.uniqueness;
+  Modesolver.Areality.assert_leq_to lower.areality upper.areality
+
 (* assert_future_leq compares function-mode components along their axes. *)
-let assert_future_leq (lower : future_mode) (upper : future_mode) =
+let assert_future_leq_in (lower : future_mode) (upper : future_mode) =
   Modesolver.Linearity.assert_leq_in lower.linearity upper.linearity;
   Modesolver.Portability.assert_leq_in lower.portability upper.portability;
   Modesolver.Areality.assert_leq_in lower.areality upper.areality
+
+let assert_future_leq_to (lower : future_mode) (upper : future_mode) =
+  Modesolver.Linearity.assert_leq_to lower.linearity upper.linearity;
+  Modesolver.Portability.assert_leq_to lower.portability upper.portability;
+  Modesolver.Areality.assert_leq_to lower.areality upper.areality
 
 (* solve_with_pair decomposes or instantiates a meta as a pair and syncs bounds. *)
 let rec solve_with_pair meta =
@@ -159,7 +250,22 @@ let rec solve_with_pair meta =
       let component_modes, storage_mode = component_modes_pair meta.modes in
       let left_meta = fresh_meta ~modes:component_modes () in
       let right_meta = fresh_meta ~modes:component_modes () in
+      let alias_pending = meta.alias_obligation in
+      let locks = meta.lock_obligations in
+      meta.alias_obligation <- false;
+      meta.lock_obligations <- [];
+      if alias_pending then
+        Modesolver.Uniqueness.assert_leq_in (uniqueness_default ()) storage_mode.uniqueness;
+      List.iter
+        (fun closure ->
+          lock_storage_for_closure closure storage_mode;
+          register_lock_obligation left_meta closure;
+          register_lock_obligation right_meta closure)
+        locks;
       meta.solution <- Some (TyPair (TyMeta left_meta, storage_mode, TyMeta right_meta));
+      if alias_pending then (
+        alias_ty_for_duplication (TyMeta left_meta);
+        alias_ty_for_duplication (TyMeta right_meta));
       let lower_bounds = meta.lower_bounds in
       let upper_bounds = meta.upper_bounds in
       meta.lower_bounds <- [];
@@ -168,12 +274,12 @@ let rec solve_with_pair meta =
         let (lower_left, lower_storage_mode, lower_right) = solve_with_pair bound in
         assert_subtype lower_left left_meta;
         assert_subtype lower_right right_meta;
-        assert_storage_leq lower_storage_mode storage_mode
+        assert_storage_leq_to lower_storage_mode storage_mode
       and handle_upper bound =
         let (upper_left, upper_storage_mode, upper_right) = solve_with_pair bound in
         assert_subtype left_meta upper_left;
         assert_subtype right_meta upper_right;
-        assert_storage_leq upper_storage_mode storage_mode
+        assert_storage_leq_to storage_mode upper_storage_mode
       in
       List.iter handle_lower lower_bounds;
       List.iter handle_upper upper_bounds;
@@ -195,7 +301,22 @@ let rec solve_with_sum meta =
       let component_modes, storage_mode = component_modes_sum meta.modes in
       let left_meta = fresh_meta ~modes:component_modes () in
       let right_meta = fresh_meta ~modes:component_modes () in
+      let alias_pending = meta.alias_obligation in
+      let locks = meta.lock_obligations in
+      meta.alias_obligation <- false;
+      meta.lock_obligations <- [];
+      if alias_pending then
+        Modesolver.Uniqueness.assert_leq_in (uniqueness_default ()) storage_mode.uniqueness;
+      List.iter
+        (fun closure ->
+          lock_storage_for_closure closure storage_mode;
+          register_lock_obligation left_meta closure;
+          register_lock_obligation right_meta closure)
+        locks;
       meta.solution <- Some (TySum (TyMeta left_meta, storage_mode, TyMeta right_meta));
+      if alias_pending then (
+        alias_ty_for_duplication (TyMeta left_meta);
+        alias_ty_for_duplication (TyMeta right_meta));
       let lower_bounds = meta.lower_bounds in
       let upper_bounds = meta.upper_bounds in
       meta.lower_bounds <- [];
@@ -204,42 +325,36 @@ let rec solve_with_sum meta =
         let (lower_left, lower_storage_mode, lower_right) = solve_with_sum bound in
         assert_subtype lower_left left_meta;
         assert_subtype lower_right right_meta;
-        assert_storage_leq lower_storage_mode storage_mode
+        assert_storage_leq_to lower_storage_mode storage_mode
       and handle_upper bound =
         let (upper_left, upper_storage_mode, upper_right) = solve_with_sum bound in
         assert_subtype left_meta upper_left;
         assert_subtype right_meta upper_right;
-        assert_storage_leq upper_storage_mode storage_mode
+        assert_storage_leq_to storage_mode upper_storage_mode
       in
       List.iter handle_lower lower_bounds;
       List.iter handle_upper upper_bounds;
       (left_meta, storage_mode, right_meta)
 
 (* Takes the parent modes and does the following:
-  - Creates fresh future (function) mode and asserts the leq_in relation between the parent and it.
-  - Returns fresh component modes (minimum elements in the \in relation), and the future modes *)
+  - Creates a fresh future (function) mode that must not exceed the parent bound (arrow_mode <=_in bound).
+  - Returns fresh component modes (minimum elements in the \in relation), and the future modes. *)
 let component_modes_arrow modes =
-  let open Modes in
-  let min_uniqueness = Modesolver.Uniqueness.bottom_in in
-  let min_contention = Modesolver.Contention.bottom_in in
-  let min_linearity = Modesolver.Linearity.bottom_in in
-  let min_portability = Modesolver.Portability.bottom_in in
-  let min_areality = Modesolver.Areality.bottom_in in
-  let component_modes = {
-    uniqueness = min_uniqueness;
-    contention = min_contention;
-    linearity = min_linearity;
-    portability = min_portability;
-    areality = min_areality
-  } in
-  let arrow_mode = {
-    linearity = Modesolver.Linearity.new_var ();
-    portability = Modesolver.Portability.new_var ();
-    areality = Modesolver.Areality.new_var ();
-  } in
-  Modesolver.Linearity.assert_leq_in modes.linearity arrow_mode.linearity;
-  Modesolver.Portability.assert_leq_in modes.portability arrow_mode.portability;
-  Modesolver.Areality.assert_leq_in modes.areality arrow_mode.areality;
+  let component_modes =
+    { uniqueness = Modesolver.Uniqueness.bottom_in;
+      contention = Modesolver.Contention.bottom_in;
+      linearity = Modesolver.Linearity.bottom_in;
+      portability = Modesolver.Portability.bottom_in;
+      areality = Modesolver.Areality.bottom_in }
+  in
+  let arrow_mode =
+    { linearity = Modesolver.Linearity.new_var ();
+      portability = Modesolver.Portability.new_var ();
+      areality = Modesolver.Areality.new_var () }
+  in
+  Modesolver.Linearity.assert_leq_in arrow_mode.linearity modes.linearity;
+  Modesolver.Portability.assert_leq_in arrow_mode.portability modes.portability;
+  Modesolver.Areality.assert_leq_in arrow_mode.areality modes.areality;
   (component_modes, arrow_mode)
 
 (* solve_with_arrow materializes arrow structure for a meta and propagates constraints. *)
@@ -255,6 +370,15 @@ let rec solve_with_arrow meta =
       let component_modes, arrow_mode = component_modes_arrow meta.modes in
       let domain_meta = fresh_meta ~modes:component_modes () in
       let codomain_meta = fresh_meta ~modes:component_modes () in
+      let alias_pending = meta.alias_obligation in
+      let locks = meta.lock_obligations in
+      meta.lock_obligations <- [];
+      meta.alias_obligation <- false;
+      if alias_pending then (
+        let top = linearity_top_to () in
+        Modesolver.Linearity.assert_leq_to top arrow_mode.linearity;
+        Modesolver.Linearity.assert_leq_to arrow_mode.linearity top);
+      List.iter (fun closure -> assert_future_leq_to closure arrow_mode) locks;
       meta.solution <- Some (TyArrow (TyMeta domain_meta, arrow_mode, TyMeta codomain_meta));
       let lower_bounds = meta.lower_bounds in
       let upper_bounds = meta.upper_bounds in
@@ -264,12 +388,12 @@ let rec solve_with_arrow meta =
         let (lower_domain, lower_future, lower_codomain) = solve_with_arrow bound in
         assert_subtype domain_meta lower_domain;
         assert_subtype lower_codomain codomain_meta;
-        assert_future_leq lower_future arrow_mode
+        assert_future_leq_to lower_future arrow_mode
       and handle_upper bound =
         let (upper_domain, upper_future, upper_codomain) = solve_with_arrow bound in
         assert_subtype upper_domain domain_meta;
         assert_subtype codomain_meta upper_codomain;
-        assert_future_leq arrow_mode upper_future
+        assert_future_leq_to arrow_mode upper_future
       in
       List.iter handle_lower lower_bounds;
       List.iter handle_upper upper_bounds;
@@ -307,10 +431,11 @@ let lookup ctx name =
 (* Helpers for creating fresh mode/meta state                                 *)
 (* -------------------------------------------------------------------------- *)
 
-(* fresh_storage_mode produces storage axes used for pairs/sums. *)
-let fresh_storage_mode () =
-  { uniqueness = Modesolver.Uniqueness.new_var ();
-    areality = Modesolver.Areality.new_var () }
+let storage_mode_for_constructor () =
+  { uniqueness =
+      Modesolver.Uniqueness.new_var ~domain:[ Modes.Uniqueness.unique ] ();
+    areality =
+      Modesolver.Areality.new_var ~domain:[ Modes.Areality.default ] () }
 
 (* fresh_future_mode allocates new function-mode axes for arrows. *)
 let fresh_future_mode () =
@@ -394,8 +519,8 @@ let assert_storage_within_bound (storage : storage_mode) (bound : mode_bound) =
 (* component_bound specializes a bound for a component sharing storage axes. *)
 let component_bound (bound : mode_bound) (storage : storage_mode) : mode_bound =
   { bound with
-    uniqueness = storage.uniqueness;
-    areality = storage.areality }
+    uniqueness = fresh_meet_uniqueness bound.uniqueness storage.uniqueness;
+    areality = fresh_meet_areality bound.areality storage.areality }
 
 (* check_mode_within_bound walks a type structure, asserting every mode axis fits. *)
 let rec check_mode_within_bound ty bound =
@@ -447,16 +572,6 @@ let rec ty_of_ast (ty : Ast.ty) : ty =
 (* -------------------------------------------------------------------------- *)
 (* AST reification                                                            *)
 (* -------------------------------------------------------------------------- *)
-
-let diag_values ~equal relation =
-  Relations.to_list relation
-  |> List.fold_left
-       (fun acc (a, b) ->
-         if equal a b && not (List.exists (fun existing -> equal existing a) acc) then
-           a :: acc
-         else acc)
-       []
-  |> List.rev
 
 let singleton_axis ~label ~equal get_relation var =
   let relation = get_relation var var in
@@ -528,12 +643,12 @@ let rec subtype_ty lower upper =
   | TyArrow (arg1, mode1, res1), TyArrow (arg2, mode2, res2) ->
       subtype_ty arg2 arg1;
       subtype_ty res1 res2;
-      assert_future_leq mode1 mode2
+      assert_future_leq_to mode1 mode2
   | TyPair (l1, storage1, r1), TyPair (l2, storage2, r2)
   | TySum (l1, storage1, r1), TySum (l2, storage2, r2) ->
       subtype_ty l1 l2;
       subtype_ty r1 r2;
-      assert_storage_leq storage1 storage2
+      assert_storage_leq_to storage1 storage2
   | TyMeta meta_lower, TyMeta meta_upper ->
       assert_subtype meta_lower meta_upper
   | TyMeta meta, TyUnit ->
@@ -548,32 +663,32 @@ let rec subtype_ty lower upper =
       let domain_meta, arrow_mode, codomain_meta = solve_with_arrow meta in
       subtype_ty arg (TyMeta domain_meta);
       subtype_ty (TyMeta codomain_meta) res;
-      assert_future_leq arrow_mode mode
+      assert_future_leq_to arrow_mode mode
   | TyArrow (arg, mode, res), TyMeta meta ->
       let domain_meta, arrow_mode, codomain_meta = solve_with_arrow meta in
       subtype_ty (TyMeta domain_meta) arg;
       subtype_ty res (TyMeta codomain_meta);
-      assert_future_leq mode arrow_mode
+      assert_future_leq_to mode arrow_mode
   | TyMeta meta, TyPair (left, storage, right) ->
       let lower_left, lower_storage, lower_right = solve_with_pair meta in
       subtype_ty (TyMeta lower_left) left;
       subtype_ty (TyMeta lower_right) right;
-      assert_storage_leq lower_storage storage
+      assert_storage_leq_to lower_storage storage
   | TyPair (left, storage, right), TyMeta meta ->
       let upper_left, upper_storage, upper_right = solve_with_pair meta in
       subtype_ty left (TyMeta upper_left);
       subtype_ty right (TyMeta upper_right);
-      assert_storage_leq storage upper_storage
+      assert_storage_leq_to storage upper_storage
   | TyMeta meta, TySum (left, storage, right) ->
       let lower_left, lower_storage, lower_right = solve_with_sum meta in
       subtype_ty (TyMeta lower_left) left;
       subtype_ty (TyMeta lower_right) right;
-      assert_storage_leq lower_storage storage
+      assert_storage_leq_to lower_storage storage
   | TySum (left, storage, right), TyMeta meta ->
       let upper_left, upper_storage, upper_right = solve_with_sum meta in
       subtype_ty left (TyMeta upper_left);
       subtype_ty right (TyMeta upper_right);
-      assert_storage_leq storage upper_storage
+      assert_storage_leq_to storage upper_storage
   | _ -> raise (Error (Not_a_subtype (lower, upper)))
 
 (* unify_ty is symmetric subtyping that collapses both directions. *)
@@ -617,6 +732,70 @@ let rec expect_sum ty =
 (* Inference                                                                  *)
 (* -------------------------------------------------------------------------- *)
 
+let remove_vars vars set =
+  List.fold_left (fun acc var -> StringSet.remove var acc) set vars
+
+let rec free_vars expr =
+  match expr with
+  | Ast.Var x -> StringSet.singleton x
+  | Ast.Unit -> StringSet.empty
+  | Ast.Hole -> StringSet.empty
+  | Ast.Absurd e -> free_vars e
+  | Ast.Annot (e, _) -> free_vars e
+  | Ast.Fun (x, body) -> free_vars_without body [ x ]
+  | Ast.App (fn, arg) -> StringSet.union (free_vars fn) (free_vars arg)
+  | Ast.Let (x, e1, e2) ->
+      StringSet.union (free_vars e1) (free_vars_without e2 [ x ])
+  | Ast.LetPair (x1, x2, e1, e2) ->
+      StringSet.union (free_vars e1) (free_vars_without e2 [ x1; x2 ])
+  | Ast.Pair (left, right) ->
+      StringSet.union (free_vars left) (free_vars right)
+  | Ast.Inl e -> free_vars e
+  | Ast.Inr e -> free_vars e
+  | Ast.Match (scrut, x1, e1, x2, e2) ->
+      let fv_scrut = free_vars scrut in
+      let fv_e1 = free_vars_without e1 [ x1 ] in
+      let fv_e2 = free_vars_without e2 [ x2 ] in
+      StringSet.union fv_scrut (StringSet.union fv_e1 fv_e2)
+
+and free_vars_without expr vars = remove_vars vars (free_vars expr)
+
+let fresh_alias_of_ty ty =
+  let alias = fresh_ty_var () in
+  subtype_ty ty alias;
+  alias_ty_for_duplication alias;
+  alias
+
+let alias_ctx_between ctx fv1 fv2 =
+  let shared = StringSet.inter fv1 fv2 in
+  List.map
+    (fun (name, ty) ->
+      if StringSet.mem name shared then (name, fresh_alias_of_ty ty)
+      else (name, ty))
+    ctx
+
+let rec lock_ty closure ty =
+  match ty with
+  | TyUnit | TyEmpty -> ()
+  | TyArrow (_, arrow_mode, _) ->
+      assert_future_leq_to closure arrow_mode
+  | TyPair (left, storage, right) | TySum (left, storage, right) ->
+      lock_ty closure left;
+      lock_ty closure right;
+      lock_storage_for_closure closure storage
+  | TyMeta meta -> (
+      match meta.solution with
+      | Some ty -> lock_ty closure ty
+      | None -> register_lock_obligation meta closure)
+
+let must_be_never linearity =
+  match
+    diag_values ~equal:Modes.Linearity.equal
+      (Modesolver.Linearity.get_relation linearity linearity)
+  with
+  | [value] -> Modes.Linearity.equal value Modes.Linearity.top_to
+  | _ -> false
+
 (* infer implements bidirectional inference for expressions under a typing context. *)
 let rec infer_expr (ctx : context) (expr : Ast.expr) : ty =
   match expr with
@@ -629,36 +808,62 @@ let rec infer_expr (ctx : context) (expr : Ast.expr) : ty =
       fresh_ty_var ()
   | Ast.Fun (param, body) ->
       let param_ty = fresh_ty_var () in
+      let closure_mode = fresh_future_mode () in
+      let body_fv = free_vars_without body [ param ] in
+      List.iter
+        (fun (name, ty) ->
+          if StringSet.mem name body_fv then lock_ty closure_mode ty)
+        ctx;
       let result_ty = infer_expr (extend ctx param param_ty) body in
-      TyArrow (param_ty, fresh_future_mode (), result_ty)
+      TyArrow (param_ty, closure_mode, result_ty)
   | Ast.App (fn, arg) ->
+      let fv_fn = free_vars fn in
+      let fv_arg = free_vars arg in
       let fn_ty = infer_expr ctx fn in
-      let domain_ty, _, codomain_ty = expect_arrow fn_ty in
-      let arg_ty = infer_expr ctx arg in
+      let domain_ty, mode, codomain_ty = expect_arrow fn_ty in
+      if must_be_never mode.linearity then
+        raise (Error (Cannot_infer "function is never-qualified"));
+      let arg_ctx = alias_ctx_between ctx fv_fn fv_arg in
+      let arg_ty = infer_expr arg_ctx arg in
       subtype_ty arg_ty domain_ty;
       codomain_ty
   | Ast.Pair (left, right) ->
+      let fv_left = free_vars left in
+      let fv_right = free_vars right in
       let left_ty = infer_expr ctx left in
-      let right_ty = infer_expr ctx right in
-      TyPair (left_ty, fresh_storage_mode (), right_ty)
+      let right_ctx = alias_ctx_between ctx fv_left fv_right in
+      let right_ty = infer_expr right_ctx right in
+      TyPair (left_ty, storage_mode_for_constructor (), right_ty)
   | Ast.Let (name, bound, body) ->
+      let fv_bound = free_vars bound in
+      let fv_body = free_vars_without body [ name ] in
+      let body_ctx = alias_ctx_between ctx fv_bound fv_body in
       let bound_ty = infer_expr ctx bound in
-      infer_expr (extend ctx name bound_ty) body
+      infer_expr (extend body_ctx name bound_ty) body
   | Ast.LetPair (x1, x2, pair_expr, body) ->
+      let fv_pair = free_vars pair_expr in
+      let fv_body = free_vars_without body [ x1; x2 ] in
+      let body_ctx = alias_ctx_between ctx fv_pair fv_body in
       let pair_ty = infer_expr ctx pair_expr in
       let left_ty, _, right_ty = expect_pair pair_ty in
-      infer_expr (extend (extend ctx x2 right_ty) x1 left_ty) body
+      infer_expr (extend (extend body_ctx x2 right_ty) x1 left_ty) body
   | Ast.Inl value ->
       let left_ty = infer_expr ctx value in
-      TySum (left_ty, fresh_storage_mode (), fresh_ty_var ())
+      TySum (left_ty, storage_mode_for_constructor (), fresh_ty_var ())
   | Ast.Inr value ->
       let right_ty = infer_expr ctx value in
-      TySum (fresh_ty_var (), fresh_storage_mode (), right_ty)
+      TySum (fresh_ty_var (), storage_mode_for_constructor (), right_ty)
   | Ast.Match (scrutinee, x1, e1, x2, e2) ->
+      let fv_scrutinee = free_vars scrutinee in
       let scrutinee_ty = infer_expr ctx scrutinee in
       let left_ty, _, right_ty = expect_sum scrutinee_ty in
-      let branch1_ty = infer_expr (extend ctx x1 left_ty) e1 in
-      let branch2_ty = infer_expr (extend ctx x2 right_ty) e2 in
+      let fv_e1 = free_vars_without e1 [ x1 ] in
+      let ctx_branch1 = alias_ctx_between ctx fv_scrutinee fv_e1 in
+      let branch1_ty = infer_expr (extend ctx_branch1 x1 left_ty) e1 in
+      let used = StringSet.union fv_scrutinee fv_e1 in
+      let fv_e2 = free_vars_without e2 [ x2 ] in
+      let ctx_branch2 = alias_ctx_between ctx used fv_e2 in
+      let branch2_ty = infer_expr (extend ctx_branch2 x2 right_ty) e2 in
       unify_ty branch1_ty branch2_ty
   | Ast.Annot (expr, annotation) ->
       let annotated_ty = ty_of_ast annotation in
