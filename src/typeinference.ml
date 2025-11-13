@@ -318,11 +318,27 @@ and assert_lock original locked future =
   | TyUnit, TyUnit -> ()
   | TyEmpty, TyEmpty -> ()
   | TyPair (original_left, original_storage, original_right), TyPair (locked_left, locked_storage, locked_right) ->
-      failwith "TODO"
+      (* Unique component joins with dagger(future), areality unchanged. *)
+      Modesolver.Uniqueness.assert_leq_to original_storage.uniqueness locked_storage.uniqueness;
+      Modesolver.assert_linearity_dagger future.linearity locked_storage.uniqueness;
+      assert_equal_areality original_storage.areality locked_storage.areality;
+      assert_lock original_left locked_left future;
+      assert_lock original_right locked_right future
   | TySum (original_left, original_storage, original_right), TySum (locked_left, locked_storage, locked_right) ->
-      failwith "TODO"
+      Modesolver.Uniqueness.assert_leq_to original_storage.uniqueness locked_storage.uniqueness;
+      Modesolver.assert_linearity_dagger future.linearity locked_storage.uniqueness;
+      assert_equal_areality original_storage.areality locked_storage.areality;
+      assert_lock original_left locked_left future;
+      assert_lock original_right locked_right future
   | TyArrow (original_domain, original_future, original_codomain), TyArrow (locked_domain, locked_future, locked_codomain) ->
-      failwith "TODO"
+      (* Locking leaves functions untouched provided ambient future ≤ function future. *)
+      assert_future_leq_to future original_future;
+      assert_future_leq_to original_future locked_future;
+      assert_future_leq_to locked_future original_future;
+      assert_subtype original_domain locked_domain;
+      assert_subtype locked_domain original_domain;
+      assert_subtype original_codomain locked_codomain;
+      assert_subtype locked_codomain original_codomain
   | _ ->
       type_error "assert_lock: not equivalent"
 
