@@ -79,6 +79,30 @@ let fresh_mode_vars () : mode_vars =
     portability = Modesolver.Portability.new_var ();
     areality = Modesolver.Areality.new_var () }
 
+let const_uniqueness_var value =
+  Modesolver.Uniqueness.new_var ~domain:[value] ()
+
+let const_contention_var value =
+  Modesolver.Contention.new_var ~domain:[value] ()
+
+let const_areality_var value =
+  Modesolver.Areality.new_var ~domain:[value] ()
+
+let const_linearity_var value =
+  Modesolver.Linearity.new_var ~domain:[value] ()
+
+let const_portability_var value =
+  Modesolver.Portability.new_var ~domain:[value] ()
+
+let top_mode_vars () : mode_vars =
+  (* Mode lattice top: type unrestricted on every axis. Useful when rules require
+     checking subcomponents at ⊤₍in₎ (see tex/mox.tex §Kinding). *)
+  { uniqueness = const_uniqueness_var Uniqueness.top_in;
+    contention = const_contention_var Contention.top_in;
+    linearity = const_linearity_var Linearity.top_in;
+    portability = const_portability_var Portability.top_in;
+    areality = const_areality_var Areality.top_in }
+
 let fresh_meta_id =
   let counter = ref 0 in
   fun () ->
@@ -122,6 +146,10 @@ let alias_linearity_relation =
       (Linearity.once, Linearity.never);
       (Linearity.never, Linearity.never) ]
 
+let assert_equal_in assert_leq var1 var2 =
+  assert_leq var1 var2;
+  assert_leq var2 var1
+
 let assert_equal_areality (left : Modesolver.Areality.var) (right : Modesolver.Areality.var) =
   Modesolver.Areality.assert_leq_to left right;
   Modesolver.Areality.assert_leq_to right left
@@ -157,19 +185,45 @@ let rec zonk ty =
     | None -> ty)
   | _ -> ty
 
+let assert_storage_within (storage : storage_mode) (mode_vars : mode_vars) =
+  (* Enforce ŝ ≤₍in₎ m, where ŝ embeds the storage annotation. *)
+  Modesolver.Uniqueness.assert_leq_in storage.uniqueness mode_vars.uniqueness;
+  Modesolver.Areality.assert_leq_in storage.areality mode_vars.areality
+
+let push_storage_to_components (storage : storage_mode) (container_mode : mode_vars) =
+  (* Computes m ∧ ŝ: components inherit the container's ambient constraints and
+     meet them with the storage annotation (see tex/mox.tex §Kinding). *)
+  let component_mode = fresh_mode_vars () in
+  Modesolver.Uniqueness.assert_leq_in component_mode.uniqueness storage.uniqueness;
+  Modesolver.Uniqueness.assert_leq_in component_mode.uniqueness container_mode.uniqueness;
+  Modesolver.Areality.assert_leq_in component_mode.areality storage.areality;
+  Modesolver.Areality.assert_leq_in component_mode.areality container_mode.areality;
+  assert_equal_in Modesolver.Contention.assert_leq_in component_mode.contention container_mode.contention;
+  assert_equal_in Modesolver.Linearity.assert_leq_in component_mode.linearity container_mode.linearity;
+  assert_equal_in Modesolver.Portability.assert_leq_in component_mode.portability container_mode.portability;
+  component_mode
+
 let rec assert_in ty mode_vars =
   match zonk ty with
   | TyMeta meta ->
-    (* Add constraint to meta *)
-    add_constraint meta (mk_constraint (In { target = meta; mode_vars = mode_vars }))
+    (* Record α : m by attaching an in-placement constraint to the meta. *)
+    add_constraint meta (mk_constraint (In { target = meta; mode_vars }))
   | TyUnit -> ()
   | TyEmpty -> ()
-  | TyPair (left, storage, right) ->
-    failwith "TODO"
+  | TyPair (left, storage, right)
   | TySum (left, storage, right) ->
-    failwith "TODO"
+    assert_storage_within storage mode_vars;
+    let component_mode = push_storage_to_components storage mode_vars in
+    assert_in left component_mode;
+    assert_in right component_mode
   | TyArrow (domain, future, codomain) ->
-    failwith "TODO"
+    (* \hat{f} ≤₍in₎ m *)
+    Modesolver.Areality.assert_leq_in future.areality mode_vars.areality;
+    Modesolver.Linearity.assert_leq_in future.linearity mode_vars.linearity;
+    Modesolver.Portability.assert_leq_in future.portability mode_vars.portability;
+    let top_mode = top_mode_vars () in
+    assert_in domain top_mode;
+    assert_in codomain top_mode
 
 (* Makes the outer type constructors equivalent. *)
 let outer_equiv ty1 ty2 =
@@ -275,18 +329,6 @@ let assert_lock original locked future =
 (* -------------------------------------------------------------------------- *)
 (* Converting annotated syntax *)
 
-let const_uniqueness_var value =
-  Modesolver.Uniqueness.new_var ~domain:[value] ()
-
-let const_areality_var value =
-  Modesolver.Areality.new_var ~domain:[value] ()
-
-let const_linearity_var value =
-  Modesolver.Linearity.new_var ~domain:[value] ()
-
-let const_portability_var value =
-  Modesolver.Portability.new_var ~domain:[value] ()
-
 let storage_mode_of_ast (storage : Ast.storage_mode) : storage_mode =
   { uniqueness = const_uniqueness_var storage.uniqueness;
     areality = const_areality_var storage.areality }
@@ -315,6 +357,13 @@ let rec ty_of_ast (ty_syntax : Ast.ty) : ty =
       let codomain' = ty_of_ast codomain in
       let future' = future_mode_of_ast future in
       TyArrow (domain', future', codomain')
+
+let top_mode_vars () : mode_vars =
+  { uniqueness = const_uniqueness_var Uniqueness.top_in;
+    contention = const_contention_var Contention.top_in;
+    linearity = const_linearity_var Linearity.top_in;
+    portability = const_portability_var Portability.top_in;
+    areality = const_areality_var Areality.top_in }
 
 (* -------------------------------------------------------------------------- *)
 (* Pretty-printing inference types.                                           *)
