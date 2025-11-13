@@ -476,14 +476,9 @@ and assert_alias source target =
       add_constraint target_meta constraint_
   | TyUnit, TyUnit -> ()
   | TyEmpty, TyEmpty -> ()
-  | TyPair (source_left, source_storage, source_right), TyPair (target_left, target_storage, target_right) ->
-      (* Make sure target_storage is aliased, areality is copied. *)
-      assert_aliased target_storage.uniqueness;
-      assert_equal_areality source_storage.areality target_storage.areality;
-      assert_alias source_left target_left;
-      assert_alias source_right target_right;
+  | TyPair (source_left, source_storage, source_right), TyPair (target_left, target_storage, target_right) 
   | TySum (source_left, source_storage, source_right), TySum (target_left, target_storage, target_right) ->
-      (* Similar to pair. *)
+      (* Make sure target_storage is aliased, areality is copied. *)
       assert_aliased target_storage.uniqueness;
       assert_equal_areality source_storage.areality target_storage.areality;
       assert_alias source_left target_left;
