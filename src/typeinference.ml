@@ -102,6 +102,32 @@ let add_constraints meta constraints =
   List.iter (add_constraint meta) constraints
 
 (* -------------------------------------------------------------------------- *)
+(* Mode helpers                                                               *)
+
+let assert_storage_leq_to lower upper =
+  Modesolver.Uniqueness.assert_leq_to lower.uniqueness upper.uniqueness;
+  Modesolver.Areality.assert_leq_to lower.areality upper.areality
+
+let assert_future_leq_to lower upper =
+  Modesolver.Linearity.assert_leq_to lower.linearity upper.linearity;
+  Modesolver.Portability.assert_leq_to lower.portability upper.portability;
+  Modesolver.Areality.assert_leq_to lower.areality upper.areality
+
+let assert_aliased uniqueness =
+  Modesolver.Uniqueness.restrict_domain [Uniqueness.aliased] uniqueness
+
+let assert_equal_areality left right =
+  Modesolver.Areality.assert_leq_to left right;
+  Modesolver.Areality.assert_leq_to right left
+
+let assert_equal_portability left right =
+  Modesolver.Portability.assert_leq_to left right;
+  Modesolver.Portability.assert_leq_to right left
+
+let assert_many linearity =
+  Modesolver.Linearity.restrict_domain [Linearity.many] linearity
+
+(* -------------------------------------------------------------------------- *)
 (* Error reporting.                                                           *)
 
 type error = string
