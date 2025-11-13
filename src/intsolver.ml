@@ -78,13 +78,13 @@ let rec domain_from_diagonal rel =
   |> List.filter_map (fun (a, b) -> if a = b then Some a else None)
   |> List.sort_uniq compare
 
-let rec reassert_full queue v1 v2 =
+and reassert_full queue v1 v2 =
   let full = full_relation v1 v2 in
   ignore (ensure_relation queue v1 v2 full)
 
-and restrict_domain_from_diagonal queue v rel =
-  let allowed = domain_from_diagonal rel in
-  if allowed = [] then raise (Inconsistent "diagonal relation emptied domain");
+and restrict_domain queue v allowed =
+  if allowed = [] then raise (Inconsistent "domain restriction emptied domain");
+  let allowed = List.sort_uniq compare allowed in
   let current = domain v in
   if list_equal allowed current then ()
   else (
@@ -92,8 +92,19 @@ and restrict_domain_from_diagonal queue v rel =
     let outs = Hashtbl.find_opt outgoing v |> Option.value ~default:[] in
     List.iter (fun dst -> reassert_full queue v dst) outs;
     let ins = Hashtbl.find_opt incoming v |> Option.value ~default:[] in
-    List.iter (fun src -> reassert_full queue src v) ins
-  )
+    List.iter (fun src -> reassert_full queue src v) ins)
+
+and restrict_domain_from_diagonal queue v rel =
+  let allowed = domain_from_diagonal rel in
+  restrict_domain queue v allowed
+
+and restrict_domain_from_relation queue projection rel v =
+  let projection_values =
+    Relations.to_list rel
+    |> List.map projection
+    |> List.sort_uniq compare
+  in
+  restrict_domain queue v projection_values
 
 and ensure_relation queue v1 v2 rel =
   let rel = clamp_relation v1 v2 rel in
@@ -104,7 +115,11 @@ and ensure_relation queue v1 v2 rel =
     if relation_is_empty intersected then
       raise (Inconsistent "relation became empty");
     add_relation_entry v1 v2 intersected;
-    if v1 = v2 then restrict_domain_from_diagonal queue v1 intersected;
+    if v1 = v2 then
+      restrict_domain_from_diagonal queue v1 intersected
+    else (
+      restrict_domain_from_relation queue fst intersected v1;
+      restrict_domain_from_relation queue snd intersected v2);
     Queue.push (v1, v2) queue;
     true
   )

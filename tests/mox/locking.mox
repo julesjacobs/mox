@@ -2,7 +2,7 @@
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
 ((fun _ => unique_pair)
  : (unit ->[local many] (unit *[unique local] unit)))
-> (unit ->[a=local l=many p=nonportable] (unit *[u=unique a=local] unit))
+> error: relation became empty
 
 (* once-qualified closures can retain unique storage *)
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in

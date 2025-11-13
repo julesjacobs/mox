@@ -18,11 +18,10 @@ let g = fun x => r := x in
 g unit
 > unit
 
-(* CR jujacobs: bug! *)
 let r = ref unit in 
 let g = fun x => r := x in
 fork (g unit)
-> unit
+> error: relation became empty
 
 (* CR jujacobs: bug! *)
 ref unit : ref unit
@@ -38,7 +37,15 @@ ref unit : ref[contended] unit
 
 let r = ref unit in
 (fun x => r := x) : unit ->[portable] unit
-> (unit ->[a=global l=many p=portable] unit)
+> error: relation became empty
+
+let f = fun x => x in
+let g = f : unit ->[portable] unit in
+(f, g)
+> ((unit ->[a=global l=many p=portable] unit) *[u=u1 a=a1] (unit ->[a=global l=many p=portable] unit))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
 
 let f = (fun x => x) : unit ->[nonportable] unit in
 f : unit ->[portable] unit
@@ -55,7 +62,7 @@ fork (let (a,b) = x in a)
 let r = ref (unit, unit) in
 let x = !r in 
 let! (a,b) = x in unit
-> unit
+> error: relation became empty
 
 ref $(unit, unit)
 > error: relation became empty

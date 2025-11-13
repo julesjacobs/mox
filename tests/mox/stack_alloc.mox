@@ -6,13 +6,10 @@ $(unit, unit)
 $left(unit)
 > (unit +[u=u1 a=local] 'a)
 > where
->   'a in {u=u2; c=c1; l=l1; p=p1; a=a1}
+>   'a in {u=u2; c=uncontended; l=never; p=nonportable; a=a1}
 > mode vars
 >   u1 ∈ {aliased, unique}
 >   a1 ∈ {global, local, regional}
->   p1 ∈ {nonportable, portable}
->   l1 ∈ {many, never, once}
->   c1 ∈ {contended, shared, uncontended}
 >   u2 ∈ {aliased, unique}
 > mode rels
 >   (u2,u1) ∉ {(unique,aliased)}
@@ -37,9 +34,8 @@ region
 region
   let x = $(unit, unit) in
   let (a,b) = x in (unit, unit)
-> (unit *[u=u1 a=a1] unit)
+> (unit *[u=u1 a=global] unit)
 > mode vars
->   a1 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}
 
 region
@@ -58,10 +54,7 @@ region
   let y = (x, x) in 
   let (z,w) = y in
   let (e,f) = z in e
-> (unit *[u=u1 a=a1] unit)
-> mode vars
->   a1 ∈ {global, local, regional}
->   u1 ∈ {aliased, unique}
+> (unit *[u=aliased a=global] unit)
 
 region
   let x = $(unit, unit) in
