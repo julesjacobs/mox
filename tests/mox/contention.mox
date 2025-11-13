@@ -13,7 +13,25 @@ let r = ref unit in fork (r := unit)
 let r = ref unit in fork (let x = !r in unit)
 > error: relation became empty
 
+let r = ref unit in 
+let g = fun x => r := x in
+g unit
+> unit
+
 (* CR jujacobs: bug! *)
+let r = ref unit in 
+let g = fun x => r := x in
+fork (g unit)
+> unit
+
+let r = ref unit in
+(fun x => r := x) : unit ->[portable] unit
+> (unit ->[a=global l=many p=portable] unit)
+
+let x = $(unit, unit) in 
+fork (let (a,b) = x in a)
+> error: relation became empty
+
 let r = ref (unit, unit) in
 let x = !r in 
 let! (a,b) = x in unit

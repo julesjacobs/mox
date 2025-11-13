@@ -1,32 +1,17 @@
 (* mode inference on pairs and sums *)
 ((unit, (unit, unit)) : (unit *[unique local] (unit * unit)))
-> (unit *[u=u2 a=a2] (unit *[u=u1 a=a1] unit))
-> mode vars
->   a1 ∈ {global, local, regional}
->   u1 ∈ {aliased, unique}
->   a2 ∈ {global, local, regional}
->   u2 ∈ {aliased, unique}
+> (unit *[u=unique a=local] (unit *[u=aliased a=global] unit))
 
 (((left(unit)), (right(unit))) : ((unit +[unique local] empty) * (unit +[unique local] unit)))
 > error: relation became empty
 
 (* arrow annotations roundtrip *)
 ((fun f => f) : ((unit ->[local once portable] unit) -> (unit ->[local once portable] unit)))
-> ((unit ->[a=a1 l=l1 p=p1] unit) ->[a=a2 l=l2 p=p2] (unit ->[a=a1 l=l1 p=p1] unit))
-> mode vars
->   p1 ∈ {non-portable, portable}
->   l1 ∈ {many, never, once}
->   a1 ∈ {global, local, regional}
->   p2 ∈ {non-portable, portable}
->   l2 ∈ {many, never, once}
->   a2 ∈ {global, local, regional}
+> ((unit ->[a=local l=once p=portable] unit) ->[a=global l=many p=non-portable] (unit ->[a=local l=once p=portable] unit))
 
 (* redundant mode annotation *)
 ((unit, unit) : (unit *[global] unit))
-> (unit *[u=u1 a=a1] unit)
-> mode vars
->   a1 ∈ {global, local, regional}
->   u1 ∈ {aliased, unique}
+> (unit *[u=aliased a=global] unit)
 
 (* violation: arrow modes stronger than implementation *)
 ((fun f => f) : ((unit ->[local once] unit) -> (unit ->[local once portable] unit)))

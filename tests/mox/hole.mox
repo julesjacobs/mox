@@ -1,26 +1,16 @@
 (* Holes cannot be inferred *)
 ?
-> ?184
+> ?206
 
 (* Holes check against any type *)
 (? : unit)
 > unit
 
 (? : (unit -> unit))
-> (unit ->[a=a1 l=l1 p=p1] unit)
-> mode vars
->   p1 ∈ {non-portable, portable}
->   l1 ∈ {many, never, once}
->   a1 ∈ {global, local, regional}
+> (unit ->[a=global l=many p=non-portable] unit)
 
 (left(?) : (unit + empty))
-> (unit +[u=u1 a=a1] empty)
-> mode vars
->   a1 ∈ {global, local, regional}
->   u1 ∈ {aliased, unique}
+> (unit +[u=aliased a=global] empty)
 
 ((?, unit) : (unit * unit))
-> (unit *[u=u1 a=a1] unit)
-> mode vars
->   a1 ∈ {global, local, regional}
->   u1 ∈ {aliased, unique}
+> (unit *[u=aliased a=global] unit)

@@ -2,23 +2,19 @@ unit
 > unit
 
 fun x => x
-> (?433 ->[a=a1 l=l1 p=p1] ?433)
+> (?465 ->[a=a1 l=l1 p=p1] ?465)
 > mode vars
 >   p1 ∈ {non-portable, portable}
 >   l1 ∈ {many, never, once}
 >   a1 ∈ {global, local, regional}
 
 (fun x => x) : (unit -> unit)
-> (unit ->[a=a1 l=l1 p=p1] unit)
-> mode vars
->   p1 ∈ {non-portable, portable}
->   l1 ∈ {many, never, once}
->   a1 ∈ {global, local, regional}
+> (unit ->[a=global l=many p=non-portable] unit)
 
 (fun x => (fun y => x))
-> (?435 ->[a=a2 l=l2 p=p2] (?436 ->[a=a1 l=l1 p=p1] ?437))
+> (?467 ->[a=a2 l=l2 p=p2] (?468 ->[a=a1 l=l1 p=p1] ?469))
 > where
->   lock ?435 -> ?437 with a=a1 l=l1 p=p1
+>   lock ?467 -> ?469 with a=a1 l=l1 p=p1
 > mode vars
 >   p1 ∈ {non-portable, portable}
 >   l1 ∈ {many, never, once}
@@ -28,7 +24,7 @@ fun x => x
 >   a2 ∈ {global, local, regional}
 
 (fun x => (fun y => y))
-> (?438 ->[a=a2 l=l2 p=p2] (?439 ->[a=a1 l=l1 p=p1] ?439))
+> (?470 ->[a=a2 l=l2 p=p2] (?471 ->[a=a1 l=l1 p=p1] ?471))
 > mode vars
 >   p1 ∈ {non-portable, portable}
 >   l1 ∈ {many, never, once}
@@ -38,17 +34,14 @@ fun x => x
 >   a2 ∈ {global, local, regional}
 
 (unit, unit) : (unit *[local unique] unit)
-> (unit *[u=u1 a=a1] unit)
-> mode vars
->   a1 ∈ {global, local, regional}
->   u1 ∈ {aliased, unique}
+> (unit *[u=unique a=local] unit)
 
 (fun p =>
 let f = (fun x => x p) in
 (f, f))
-> (?440 ->[a=a3 l=l2 p=p2] ((?448 ->[a=a1 l=l1 p=p1] ?449) *[u=u1 a=a2] (?448 ->[a=a1 l=l1 p=p1] ?449)))
+> (?472 ->[a=a3 l=l2 p=p2] ((?480 ->[a=a1 l=l1 p=p1] ?481) *[u=u1 a=a2] (?480 ->[a=a1 l=l1 p=p1] ?481)))
 > where
->   lock ?440 -> ?442 with a=a4 l=many p=p3
+>   lock ?472 -> ?474 with a=a4 l=many p=p3
 > mode vars
 >   p1 ∈ {non-portable, portable}
 >   l1 ∈ {many, never, once}

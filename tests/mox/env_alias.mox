@@ -9,56 +9,20 @@ let non_shared1 = ((unit, unit) : (unit *[unique] unit)) in
 let non_shared2 = ((unit, unit) : (unit *[unique] unit)) in
 (((fun f => f non_shared1) : ((unit *[unique] unit) -> unit) ->[once] unit),
  ((fun g => g non_shared2) : ((unit *[unique] unit) -> unit) ->[once] unit))
-> ((((unit *[u=u3 a=a7] unit) ->[a=a6 l=l4 p=p4] unit) ->[a=a5 l=l3 p=p3] unit) *[u=u2 a=a4] (((unit *[u=u1 a=a3] unit) ->[a=a2 l=l2 p=p2] unit) ->[a=a1 l=l1 p=p1] unit))
+> ((((unit *[u=unique a=global] unit) ->[a=global l=many p=non-portable] unit) ->[a=global l=once p=non-portable] unit) *[u=u1 a=a1] (((unit *[u=unique a=global] unit) ->[a=global l=many p=non-portable] unit) ->[a=global l=once p=non-portable] unit))
 > mode vars
->   p1 ∈ {non-portable, portable}
->   l1 ∈ {many, never, once}
 >   a1 ∈ {global, local, regional}
->   p2 ∈ {non-portable, portable}
->   l2 ∈ {many, never, once}
->   a2 ∈ {global, local, regional}
->   a3 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}
->   a4 ∈ {global, local, regional}
->   u2 ∈ {aliased, unique}
->   p3 ∈ {non-portable, portable}
->   l3 ∈ {many, never, once}
->   a5 ∈ {global, local, regional}
->   p4 ∈ {non-portable, portable}
->   l4 ∈ {many, never, once}
->   a6 ∈ {global, local, regional}
->   a7 ∈ {global, local, regional}
->   u3 ∈ {aliased, unique}
-> mode rels
->   (a5,a4) ∉ {(regional,global), (local,global), (local,regional)}
 
 (* application: non-shared variables used in both functions, but one is many *)
 let non_shared1 = ((unit, unit) : (unit *[unique] unit)) in
 let non_shared2 = ((unit, unit) : (unit *[unique] unit)) in
 (((fun f => f non_shared1) : ((unit *[unique] unit) ->[once] unit) ->[many] unit),
  ((fun g => g non_shared2) : ((unit *[unique] unit) ->[once] unit) ->[once] unit))
-> ((((unit *[u=u3 a=a7] unit) ->[a=a6 l=l4 p=p4] unit) ->[a=a5 l=l3 p=p3] unit) *[u=u2 a=a4] (((unit *[u=u1 a=a3] unit) ->[a=a2 l=l2 p=p2] unit) ->[a=a1 l=l1 p=p1] unit))
+> ((((unit *[u=unique a=global] unit) ->[a=global l=once p=non-portable] unit) ->[a=global l=many p=non-portable] unit) *[u=u1 a=a1] (((unit *[u=unique a=global] unit) ->[a=global l=once p=non-portable] unit) ->[a=global l=once p=non-portable] unit))
 > mode vars
->   p1 ∈ {non-portable, portable}
->   l1 ∈ {many, never, once}
 >   a1 ∈ {global, local, regional}
->   p2 ∈ {non-portable, portable}
->   l2 ∈ {many, never, once}
->   a2 ∈ {global, local, regional}
->   a3 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}
->   a4 ∈ {global, local, regional}
->   u2 ∈ {aliased, unique}
->   p3 ∈ {non-portable, portable}
->   l3 ∈ {many, never, once}
->   a5 ∈ {global, local, regional}
->   p4 ∈ {non-portable, portable}
->   l4 ∈ {many, never, once}
->   a6 ∈ {global, local, regional}
->   a7 ∈ {global, local, regional}
->   u3 ∈ {aliased, unique}
-> mode rels
->   (a5,a4) ∉ {(regional,global), (local,global), (local,regional)}
 
 (* application: shared variable used in both function and argument *)
 let shared = ((unit, unit) : (unit *[unique] unit)) in
@@ -69,20 +33,12 @@ let shared = ((unit, unit) : (unit *[unique] unit)) in
 (* pair: shared variable appears in both components *)
 let shared = ((unit, unit) : (unit *[unique local] unit)) in
 (shared, shared) : (unit *[local] unit) *[local] (unit *[local] unit)
-> ((unit *[u=aliased a=a1] unit) *[u=u1 a=a2] (unit *[u=aliased a=a1] unit))
-> mode vars
->   a1 ∈ {global, local, regional}
->   a2 ∈ {global, local, regional}
->   u1 ∈ {aliased, unique}
+> ((unit *[u=aliased a=local] unit) *[u=aliased a=local] (unit *[u=aliased a=local] unit))
 
 (* pair: shared variable appears in both components *)
 let shared = ((unit, unit) : (unit *[unique] unit)) in
 (shared, shared) : (unit *[aliased] unit) *[unique] (unit *[aliased] unit)
-> ((unit *[u=aliased a=a1] unit) *[u=u1 a=a2] (unit *[u=aliased a=a1] unit))
-> mode vars
->   a1 ∈ {global, local, regional}
->   a2 ∈ {global, local, regional}
->   u1 ∈ {aliased, unique}
+> ((unit *[u=aliased a=global] unit) *[u=unique a=global] (unit *[u=aliased a=global] unit))
 
 (* let-binding: shared variable used in initializer and body *)
 let shared = ((unit, unit) : (unit *[local] unit)) in

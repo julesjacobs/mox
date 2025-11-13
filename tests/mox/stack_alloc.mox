@@ -4,9 +4,9 @@ $(unit, unit)
 >   u1 ∈ {aliased, unique}
 
 $left(unit)
-> (unit +[u=u1 a=local] ?450)
+> (unit +[u=u1 a=local] ?482)
 > where
->   ?450 in {u=u2; c=c1; l=l1; p=p1; a=a1}
+>   ?482 in {u=u2; c=c1; l=l1; p=p1; a=a1}
 > mode vars
 >   u1 ∈ {aliased, unique}
 >   a1 ∈ {global, local, regional}
@@ -18,7 +18,7 @@ $left(unit)
 >   (u2,u1) ∉ {(unique,aliased)}
 
 $fun x => x
-> (?451 ->[a=local l=l1 p=p1] ?451)
+> (?483 ->[a=local l=l1 p=p1] ?483)
 > mode vars
 >   p1 ∈ {non-portable, portable}
 >   l1 ∈ {many, never, once}

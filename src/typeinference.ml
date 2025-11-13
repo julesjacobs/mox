@@ -587,9 +587,8 @@ and assert_lock original locked future =
       log_lock "arrow lock enforcement";
       (* Locking leaves functions untouched provided ambient future ≤ function future. *)
       (* CR jujacobs: check this carefully. *)
-      assert_future_leq_to future original_future;
+      assert_future_leq_to original_future future;
       assert_future_leq_to original_future locked_future;
-      assert_future_leq_to locked_future original_future;
       assert_subtype locked_domain original_domain;
       assert_subtype original_codomain locked_codomain
   | _ ->
@@ -1082,10 +1081,10 @@ let rec infer_with_env env expr =
     let ty_arrow = TyArrow (ty_param, future, ty_body) in
     ty_arrow
   | Ast.Annot (e, ty_syntax) ->
-    let ty = ty_of_ast ty_syntax in
     let ty' = infer_with_env env e in
+    let ty = ty_of_ast ty_syntax in
     assert_subtype ty' ty;
-    ty'
+    ty
   | Ast.Region e ->
     let ty = infer_with_env env e in
     let mode_vars = global_mode_vars () in
@@ -1123,8 +1122,7 @@ let rec infer_with_env env expr =
         areality = const_areality_var Areality.global }
     in
     let locked_env = lock_env captured_env future in
-    let env' = locked_env in
-    let body_ty = infer_with_env env' e in
+    let body_ty = infer_with_env locked_env e in
     assert_subtype body_ty TyUnit;
     TyUnit
 

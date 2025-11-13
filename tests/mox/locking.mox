@@ -2,39 +2,16 @@
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
 ((fun _ => unique_pair)
  : (unit ->[local many] (unit *[unique local] unit)))
-> (unit ->[a=a2 l=l1 p=p1] (unit *[u=u1 a=a1] unit))
-> mode vars
->   a1 ∈ {global, local, regional}
->   u1 ∈ {aliased, unique}
->   p1 ∈ {non-portable, portable}
->   l1 ∈ {many, never, once}
->   a2 ∈ {global, local, regional}
+> (unit ->[a=local l=many p=non-portable] (unit *[u=unique a=local] unit))
 
 (* once-qualified closures can retain unique storage *)
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
 ((fun _ => unique_pair)
  : (unit ->[local once] (unit *[unique local] unit)))
-> (unit ->[a=a2 l=l1 p=p1] (unit *[u=u1 a=a1] unit))
-> mode vars
->   a1 ∈ {global, local, regional}
->   u1 ∈ {aliased, unique}
->   p1 ∈ {non-portable, portable}
->   l1 ∈ {many, never, once}
->   a2 ∈ {global, local, regional}
+> (unit ->[a=local l=once p=non-portable] (unit *[u=unique a=local] unit))
 
 (* closures reject functions that exceed their mode budget *)
 let aliased_fun = ((fun x => x) : (unit ->[local many] unit)) in
 ((fun _ => aliased_fun)
  : (unit ->[local once] (unit ->[local many] unit)))
-> (unit ->[a=a2 l=l2 p=p2] (unit ->[a=a1 l=l1 p=p1] unit))
-> mode vars
->   p1 ∈ {non-portable, portable}
->   l1 ∈ {many, never, once}
->   a1 ∈ {global, local, regional}
->   p2 ∈ {non-portable, portable}
->   l2 ∈ {many, never, once}
->   a2 ∈ {global, local, regional}
-> mode rels
->   (a2,a1) ∉ {(regional,global), (local,global), (local,regional)}
->   (l2,l1) ∉ {(once,many), (never,many), (never,once)}
->   (p2,p1) ∉ {(non-portable,portable)}
+> (unit ->[a=local l=once p=non-portable] (unit ->[a=local l=many p=non-portable] unit))
