@@ -97,6 +97,7 @@ let rec free_vars expr =
       StringSet.union (free_vars left) (free_vars right)
   | Ast.Inl (_, e) -> free_vars e
   | Ast.Inr (_, e) -> free_vars e
+  | Ast.Region e -> free_vars e
   | Ast.Match (scrut, x1, e1, x2, e2) ->
       let fv_scrut = free_vars scrut in
       let fv_e1 = free_vars_without e1 [ x1 ] in
@@ -212,6 +213,10 @@ let top_mode_vars () : mode_vars =
     linearity = const_linearity_var Linearity.top_in;
     portability = const_portability_var Portability.top_in;
     areality = const_areality_var Areality.top_in }
+
+let global_mode_vars () : mode_vars =
+  let mode = top_mode_vars () in
+  { mode with areality = const_areality_var Areality.global }
 
 let fresh_meta_id =
   let counter = ref 0 in
@@ -996,6 +1001,11 @@ let rec infer_with_env env expr =
     let ty' = infer_with_env env e in
     assert_subtype ty' ty;
     ty'
+  | Ast.Region e ->
+    let ty = infer_with_env env e in
+    let mode_vars = global_mode_vars () in
+    assert_in ty mode_vars;
+    ty
 
 let infer expr =
   try infer_with_env [] expr with

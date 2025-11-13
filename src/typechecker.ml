@@ -92,6 +92,7 @@ let rec free_vars expr =
       StringSet.union (free_vars left) (free_vars right)
   | Inl (_, e) -> free_vars e
   | Inr (_, e) -> free_vars e
+  | Region e -> free_vars e
   | Match (scrut, x1, e1, x2, e2) ->
       let fv_scrut = free_vars scrut in
       let fv_e1 = free_vars_without e1 [ x1 ] in
@@ -154,6 +155,18 @@ let rec check_mode ty expected =
 
 let ensure_well_formed ty =
   check_mode ty Modes.Mode.top_in
+
+let ensure_global_return ty =
+  let open Modes in
+  let top = Mode.top_in in
+  let global_future =
+    Future.make
+      ~linearity:top.future.Future.linearity
+      ~portability:top.future.Future.portability
+      ~areality:Areality.global
+  in
+  let expected = Mode.make ~past:top.past ~future:global_future in
+  check_mode ty expected
 
 (* -------------------------------------------------------------------------- *)
 (* Subtyping                                                                   *)
@@ -380,6 +393,10 @@ let rec infer_expr env expr =
       | _ -> raise (Error (Expected_pair t)))
   | Inl _ -> raise (Error (Cannot_infer "left"))
   | Inr _ -> raise (Error (Cannot_infer "right"))
+  | Region e ->
+      let ty = infer_expr env e in
+      ensure_global_return ty;
+      ty
   | Match (scrutinee, x1, e1, x2, e2) ->
       let fv_scrut = free_vars scrutinee in
       let fv_e1 = free_vars_without e1 [ x1 ] in
@@ -437,6 +454,9 @@ and check_expr env expr ty =
           check_expr env_left left left_ty;
           check_expr env_right right right_ty
       | _ -> raise (Error (Expected_pair ty)))
+  | Region e ->
+      ensure_global_return ty;
+      check_expr env e ty
   | Let (x, e1, e2) ->
       let fv_e1 = free_vars e1 in
       let fv_e2 = free_vars_without e2 [ x ] in

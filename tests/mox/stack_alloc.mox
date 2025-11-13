@@ -13,3 +13,14 @@ $fun x => x
 > mode vars
 >   p1 ∈ {non-portable, portable}
 >   l1 ∈ {many, never, once}
+
+region unit
+> unit
+
+region $(unit, unit)
+> error: relation became empty
+
+region
+  let x = $(unit, unit) in 
+  let (a,b) = x in a
+> unit

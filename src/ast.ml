@@ -34,5 +34,6 @@ type expr =
   | LetPair of ident * ident * expr * expr
   | Inl of alloc * expr
   | Inr of alloc * expr
+  | Region of expr
   | Match of expr * ident * expr * ident * expr
   | Annot of expr * ty

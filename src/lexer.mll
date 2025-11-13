@@ -28,6 +28,7 @@ rule token = parse
   | "left"               { LEFT }
   | "right"              { RIGHT }
   | "absurd"             { ABSURD }
+  | "region"             { REGION }
   | "unit"               { UNIT }
   | "empty"              { EMPTY }
   | "("                  { LPAREN }

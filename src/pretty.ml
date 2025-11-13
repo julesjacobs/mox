@@ -19,6 +19,7 @@ let rec string_of_expr = function
       Printf.sprintf "(let (%s, %s) = %s in %s)" x1 x2 (string_of_expr e1) (string_of_expr e2)
   | Inl (stack, e) -> Printf.sprintf "%sleft(%s)" (stack_prefix stack) (string_of_expr e)
   | Inr (stack, e) -> Printf.sprintf "%sright(%s)" (stack_prefix stack) (string_of_expr e)
+  | Region e -> Printf.sprintf "(region %s)" (string_of_expr e)
   | Match (scrutinee, x1, e1, x2, e2) ->
       Printf.sprintf "(match %s with left(%s) => %s | right(%s) => %s)"
         (string_of_expr scrutinee) x1 (string_of_expr e1) x2 (string_of_expr e2)
