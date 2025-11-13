@@ -516,6 +516,7 @@ and assert_lock original locked future =
       Modesolver.Uniqueness.assert_leq_to original_storage.uniqueness locked_storage.uniqueness;
       Modesolver.assert_linearity_dagger future.linearity locked_storage.uniqueness;
       Modesolver.Areality.assert_leq_to original_storage.areality locked_storage.areality;
+      Modesolver.Areality.assert_leq_to original_storage.areality future.areality;
       assert_lock original_left locked_left future;
       assert_lock original_right locked_right future
   | TyArrow (original_domain, original_future, original_codomain), TyArrow (locked_domain, locked_future, locked_codomain) ->

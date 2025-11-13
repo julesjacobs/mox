@@ -270,6 +270,22 @@ let rec lock_type mode ty =
     let open Modes.Future in
     mode.linearity
   in
+  let mode_areality =
+    let open Modes.Future in
+    mode.areality
+  in
+  let ensure_storage_supported storage context =
+    if Modes.Areality.leq_to storage.areality mode_areality then
+      Ok ()
+    else
+      let storage_str = Modes.Areality.to_string storage.areality in
+      let future_str = Modes.Areality.to_string mode_areality in
+      Error
+        (empty_lock_failure
+           (Printf.sprintf
+              "captured %s with %s areality cannot escape a closure whose future areality is %s"
+              context storage_str future_str))
+  in
   match ty with
   | TyUnit -> Ok TyUnit
   | TyEmpty -> Ok TyEmpty
@@ -283,32 +299,38 @@ let rec lock_type mode ty =
                 (string_of_future arrow_mode) (string_of_future mode)))
   | TyPair (left, storage, right) ->
       let open Result in
-      (match lock_type mode left with
-      | Ok left_locked -> (
-          match lock_type mode right with
-          | Ok right_locked ->
-              let uniqueness =
-                Modes.Uniqueness.join_to storage.uniqueness
-                  (linearity_dagger linearity)
-              in
-              let storage' = { storage with uniqueness } in
-              Ok (TyPair (left_locked, storage', right_locked))
-          | Error failure -> Error (push_lock_path "pair.right" failure))
-      | Error failure -> Error (push_lock_path "pair.left" failure))
+      (match ensure_storage_supported storage "pair" with
+      | Error failure -> Error failure
+      | Ok () -> (
+          match lock_type mode left with
+          | Ok left_locked -> (
+              match lock_type mode right with
+              | Ok right_locked ->
+                  let uniqueness =
+                    Modes.Uniqueness.join_to storage.uniqueness
+                      (linearity_dagger linearity)
+                  in
+                  let storage' = { storage with uniqueness } in
+                  Ok (TyPair (left_locked, storage', right_locked))
+              | Error failure -> Error (push_lock_path "pair.right" failure))
+          | Error failure -> Error (push_lock_path "pair.left" failure)))
   | TySum (left, storage, right) ->
       let open Result in
-      (match lock_type mode left with
-      | Ok left_locked -> (
-          match lock_type mode right with
-          | Ok right_locked ->
-              let uniqueness =
-                Modes.Uniqueness.join_to storage.uniqueness
-                  (linearity_dagger linearity)
-              in
-              let storage' = { storage with uniqueness } in
-              Ok (TySum (left_locked, storage', right_locked))
-          | Error failure -> Error (push_lock_path "sum.right" failure))
-      | Error failure -> Error (push_lock_path "sum.left" failure))
+      (match ensure_storage_supported storage "sum" with
+      | Error failure -> Error failure
+      | Ok () -> (
+          match lock_type mode left with
+          | Ok left_locked -> (
+              match lock_type mode right with
+              | Ok right_locked ->
+                  let uniqueness =
+                    Modes.Uniqueness.join_to storage.uniqueness
+                      (linearity_dagger linearity)
+                  in
+                  let storage' = { storage with uniqueness } in
+                  Ok (TySum (left_locked, storage', right_locked))
+              | Error failure -> Error (push_lock_path "sum.right" failure))
+          | Error failure -> Error (push_lock_path "sum.left" failure)))
 
 let lock_env mode env =
   List.map (fun (name, binding) ->
