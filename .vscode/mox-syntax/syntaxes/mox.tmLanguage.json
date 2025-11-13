@@ -56,13 +56,13 @@
     },
     "keywords": {
       "name": "keyword.control.mox",
-      "match": "\\b(let|in|fun|match|with|left|right|absurd)\\b"
+      "match": "(?:let!|match!|\\$|!|\\b(let|in|fun|match|with|left|right|absurd|region|unit)\\b)"
     },
     "builtins": {
       "patterns": [
         {
           "name": "constant.language.mox",
-          "match": "\\b(unit|empty|true|false)\\b"
+          "match": "\\b(empty|true|false)\\b"
         },
         {
           "name": "storage.type.mox",
@@ -75,7 +75,8 @@
         { "name": "keyword.operator.arrow.mox", "match": "=>|->" },
         { "name": "keyword.operator.sum.mox", "match": "\\+|\\|" },
         { "name": "keyword.operator.assignment.mox", "match": ":" },
-        { "name": "keyword.operator.pair.mox", "match": "," }
+        { "name": "keyword.operator.pair.mox", "match": "," },
+        { "name": "keyword.operator.stack.mox", "match": "\\$" }
       ]
     },
     "mode-annotations": {
