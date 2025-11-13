@@ -149,7 +149,7 @@ let fresh_meta ?solution ?(constraints = []) () : meta =
 (* Constraint management. *)
 
 let add_constraint meta constraint_ =
-  if List.exists (fun existing -> existing = constraint_) meta.constraints then ()
+  if List.exists (fun existing -> existing.constraint_ = constraint_.constraint_) meta.constraints then ()
   else meta.constraints <- constraint_ :: meta.constraints
 
 let add_constraints meta constraints =
@@ -255,6 +255,33 @@ let rec assert_in ty mode_vars =
     assert_in domain top_mode;
     assert_in codomain top_mode
 
+let debug_lock_enabled =
+  match Sys.getenv_opt "MOX_DEBUG_LOCK" with
+  | Some ("0" | "" ) -> false
+  | Some _ -> true
+  | None -> false
+
+let log_lock fmt =
+  if debug_lock_enabled then
+    Printf.ksprintf (fun s -> prerr_endline ("[lock] " ^ s)) fmt
+  else
+    Printf.ksprintf (fun _ -> ()) fmt
+
+let rec string_of_ty ty =
+  match zonk ty with
+  | TyUnit -> "unit"
+  | TyEmpty -> "empty"
+  | TyArrow (domain, _, codomain) ->
+      Printf.sprintf "(%s -> %s)" (string_of_ty domain) (string_of_ty codomain)
+  | TyPair (left, _, right) ->
+      Printf.sprintf "(%s * %s)" (string_of_ty left) (string_of_ty right)
+  | TySum (left, _, right) ->
+      Printf.sprintf "(%s + %s)" (string_of_ty left) (string_of_ty right)
+  | TyMeta meta ->
+      (match meta.solution with
+      | Some solution -> string_of_ty solution
+      | None -> Printf.sprintf "?%d" meta.id)
+
 (* Core constraint propagation and meta assignment. *)
 let rec outer_equiv ty1 ty2 =
   match (zonk ty1, zonk ty2) with
@@ -339,15 +366,18 @@ and assert_alias source target =
       type_error "assert_alias: not equivalent"
 
 and assert_lock original locked future =
+  log_lock "lock %s into %s" (string_of_ty original) (string_of_ty locked);
   outer_equiv original locked;
   match (zonk original, zonk locked) with
   | TyMeta original_meta, TyMeta locked_meta ->
+      log_lock "record meta constraint original=?%d locked=?%d" original_meta.id locked_meta.id;
       let constraint_ = mk_constraint (Lock { original = original_meta; locked = locked_meta; future = future }) in
       add_constraint original_meta constraint_;
       add_constraint locked_meta constraint_
   | TyUnit, TyUnit -> ()
   | TyEmpty, TyEmpty -> ()
   | TyPair (original_left, original_storage, original_right), TyPair (locked_left, locked_storage, locked_right) ->
+      log_lock "pair storage lock";
       (* Unique component joins with dagger(future), areality unchanged. *)
       Modesolver.Uniqueness.assert_leq_to original_storage.uniqueness locked_storage.uniqueness;
       Modesolver.assert_linearity_dagger future.linearity locked_storage.uniqueness;
@@ -355,12 +385,14 @@ and assert_lock original locked future =
       assert_lock original_left locked_left future;
       assert_lock original_right locked_right future
   | TySum (original_left, original_storage, original_right), TySum (locked_left, locked_storage, locked_right) ->
+      log_lock "sum storage lock";
       Modesolver.Uniqueness.assert_leq_to original_storage.uniqueness locked_storage.uniqueness;
       Modesolver.assert_linearity_dagger future.linearity locked_storage.uniqueness;
       assert_equal_areality original_storage.areality locked_storage.areality;
       assert_lock original_left locked_left future;
       assert_lock original_right locked_right future
   | TyArrow (original_domain, original_future, original_codomain), TyArrow (locked_domain, locked_future, locked_codomain) ->
+      log_lock "arrow lock enforcement";
       (* Locking leaves functions untouched provided ambient future ≤ function future. *)
       assert_future_leq_to future original_future;
       assert_future_leq_to original_future locked_future;
@@ -435,21 +467,6 @@ let top_mode_vars () : mode_vars =
 
 (* -------------------------------------------------------------------------- *)
 (* Pretty-printing inference types.                                           *)
-
-let rec string_of_ty ty =
-  match zonk ty with
-  | TyUnit -> "unit"
-  | TyEmpty -> "empty"
-  | TyArrow (domain, _, codomain) ->
-      Printf.sprintf "(%s -> %s)" (string_of_ty domain) (string_of_ty codomain)
-  | TyPair (left, _, right) ->
-      Printf.sprintf "(%s * %s)" (string_of_ty left) (string_of_ty right)
-  | TySum (left, _, right) ->
-      Printf.sprintf "(%s + %s)" (string_of_ty left) (string_of_ty right)
-  | TyMeta meta ->
-      (match meta.solution with
-      | Some solution -> string_of_ty solution
-      | None -> Printf.sprintf "?%d" meta.id)
 
 (* -------------------------------------------------------------------------- *)
 (* Environments                                                               *)

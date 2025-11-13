@@ -11,4 +11,8 @@ case "$ENGINE" in
     ;;
  esac
 cd "$SCRIPT_DIR"
+OCAMLRUNPARAM=${OCAMLRUNPARAM:-v=63}
+export OCAMLRUNPARAM
+MOX_DEBUG_LOCK=${MOX_DEBUG_LOCK:-}
+export MOX_DEBUG_LOCK
 dune exec bin/main.exe -- --engine "$ENGINE" record tests/mox

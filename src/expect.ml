@@ -89,6 +89,9 @@ let process_chunk ~filename ~infer chunk =
   match chunk with
   | Blank line -> PBlank line
   | Expr { start_line; lines } ->
+      (if Sys.getenv_opt "MOX_DEBUG_TEST" = Some "1" then
+         let snippet = String.concat "\n" lines in
+         Printf.eprintf "\n=== %s:%d ===\n%s\n%!" filename start_line snippet);
       let expr = parse_expr_from_lines ~filename ~start_line lines in
       (match infer expr with
       | Ok ty -> PExpr (lines, Type ty)
