@@ -127,7 +127,7 @@ let rec assert_in ty mode_vars =
   match zonk ty with
   | TyMeta meta ->
     (* Add constraint to meta *)
-    add_constraint meta (In { target = meta; mode_vars = mode_vars })
+    add_constraint meta (mk_constraint (In { target = meta; mode_vars = mode_vars }))
   | TyUnit -> ()
   | TyEmpty -> ()
   | TyPair (left, storage, right) ->
@@ -202,11 +202,22 @@ let assert_alias source target =
   | TyUnit, TyUnit -> ()
   | TyEmpty, TyEmpty -> ()
   | TyPair (source_left, source_storage, source_right), TyPair (target_left, target_storage, target_right) ->
-    failwith "TODO"
+    (* Make sure target_storage is aliased, areality is copied. *)
+    assert_aliased target_storage.uniqueness;
+    assert_equal_areality source_storage.areality target_storage.areality;
+    assert_alias source_left target_left;
+    assert_alias source_right target_right;
   | TySum (source_left, source_storage, source_right), TySum (target_left, target_storage, target_right) ->
-    failwith "TODO"
+    (* Similar to pair. *)
+    assert_aliased target_storage.uniqueness;
+    assert_equal_areality source_storage.areality target_storage.areality;
+    assert_alias source_left target_left;
+    assert_alias source_right target_right;
   | TyArrow (source_domain, source_future, source_codomain), TyArrow (target_domain, target_future, target_codomain) ->
-    failwith "TODO"
+    (* Make sure that source_future is many. *)
+    assert_many source_future.linearity;
+    assert_equal_areality source_future.areality target_future.areality;
+    assert_equal_portability source_future.portability target_future.portability;
   | _ ->
     type_error "assert_alias: not equivalent"
 
@@ -228,4 +239,90 @@ let assert_lock original locked future =
   | _ ->
     type_error "assert_lock: not equivalent"
 
-let infer _expr = raise (Error "type inference (new solver) not implemented yet")
+
+let rec infer env expr = 
+  match expr with
+  | Ast.Var x ->
+    (match lookup env x with
+    | Some ty -> ty
+    | None -> raise (Error (Unbound_variable x)))
+  | Ast.Unit -> TyUnit
+  | Ast.Pair (e1, e2) ->
+    let ty1 = infer env e1 in
+    let ty2 = infer env e2 in
+    let storage = fresh_storage_mode () in
+    let ty = TyPair (ty1, storage, ty2) in
+    ty
+  | Ast.Inl e ->
+    let ty_left = infer env e in
+    let ty_right = TyMeta (fresh_meta ()) in
+    let storage = fresh_storage_mode () in
+    let ty = TySum (ty_left, storage, ty_right) in
+    ty
+  | Ast.Inr e ->
+    let ty_left = TyMeta (fresh_meta ()) in
+    let ty_right = infer env e in
+    let storage = fresh_storage_mode () in
+    let ty = TySum (ty_left, storage, ty_right) in
+    ty
+  | Ast.Hole -> TyMeta (fresh_meta ())
+  | Ast.Absurd e ->
+    let ty = infer env e in
+    assert_subtype ty TyEmpty;
+    TyMeta (fresh_meta ())
+  | Ast.Let (x, e1, e2) ->
+    let ty1 = infer env e1 in
+    let env' = (x, ty1) :: env in
+    infer env' e2
+    (* TODO: aliasing *)
+  | Ast.LetPair (x1, x2, e1, e2) ->
+    let ty1 = infer env e1 in
+    let ty_left = TyMeta (fresh_meta ()) in
+    let ty_right = TyMeta (fresh_meta ()) in
+    let storage = fresh_storage_mode () in
+    let ty_pair = TyPair (ty_left, storage, ty_right) in
+    assert_subtype ty1 ty_pair;
+    let env' = (x1, ty_left) :: (x2, ty_right) :: env in
+    infer env' e2
+    (* TODO: aliasing *)
+  | Ast.Match (e, x1, e1, x2, e2) ->
+    let ty_scrut = infer env e in
+    let ty_left = TyMeta (fresh_meta ()) in
+    let ty_right = TyMeta (fresh_meta ()) in
+    let storage = fresh_storage_mode () in
+    let ty_sum = TySum (ty_left, storage, ty_right) in
+    assert_subtype ty_scrut ty_sum;
+    let env1 = (x1, ty_left) :: env in
+    let env2 = (x2, ty_right) :: env in
+    let ty1 = infer env1 e1 in
+    let ty2 = infer env2 e2 in
+    let ty_join = TyMeta (fresh_meta ()) in
+    assert_subtype ty1 ty_join;
+    assert_subtype ty2 ty_join;
+    ty_join
+    (* TODO: aliasing *)
+  | Ast.App (e1, e2) ->
+    let ty1 = infer env e1 in
+    let ty2 = infer env e2 in
+    let ty_dom = TyMeta (fresh_meta ()) in
+    let ty_cod = TyMeta (fresh_meta ()) in
+    let future = fresh_future_mode () in
+    let ty_f = TyArrow (ty_dom, future, ty_cod) in
+    assert_subtype ty1 ty_f;
+    assert_subtype ty2 ty_dom;
+    ty_cod
+  | Ast.Fun (x, e) ->
+    let ty_param = TyMeta (fresh_meta ()) in
+    let env' = (x, ty_param) :: env in
+    let ty_body = infer env' e in
+    let future = fresh_future_mode () in
+    let ty_arrow = TyArrow (ty_param, future, ty_body) in
+    ty_arrow
+    (* TODO: aliasing + locking *)
+  | Ast.Annot (e, ty_syntax) ->
+    let ty = ty_of_ast ty_syntax in
+    let ty' = infer env e in
+    assert_subtype ty' ty;
+    ty'
+
+let infer_toplevel expr = infer [] expr
