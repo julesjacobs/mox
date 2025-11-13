@@ -514,6 +514,7 @@ and assert_lock original locked future =
   | TyArrow (original_domain, original_future, original_codomain), TyArrow (locked_domain, locked_future, locked_codomain) ->
       log_lock "arrow lock enforcement";
       (* Locking leaves functions untouched provided ambient future ≤ function future. *)
+      (* CR jujacobs: check this carefully. *)
       assert_future_leq_to future original_future;
       assert_future_leq_to original_future locked_future;
       assert_future_leq_to locked_future original_future;
