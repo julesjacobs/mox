@@ -26,6 +26,8 @@ type bind_kind =
   | Regular
   | Destructive
 
+(* CR jujacobs: add mutable references *)
+(* CR jujacobs: add fork (takes expression returns unit) *)
 type expr =
   | Var of ident
   | Let of bind_kind * ident * expr * expr

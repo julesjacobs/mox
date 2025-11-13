@@ -29,6 +29,8 @@ let non_shared2 = ((unit, unit) : (unit *[unique] unit)) in
 >   a6 ∈ {global, local, regional}
 >   a7 ∈ {global, local, regional}
 >   u3 ∈ {aliased, unique}
+> mode rels
+>   (a5,a4) ∉ {(regional,global), (local,global), (local,regional)}
 
 (* application: non-shared variables used in both functions, but one is many *)
 let non_shared1 = ((unit, unit) : (unit *[unique] unit)) in
@@ -55,6 +57,8 @@ let non_shared2 = ((unit, unit) : (unit *[unique] unit)) in
 >   a6 ∈ {global, local, regional}
 >   a7 ∈ {global, local, regional}
 >   u3 ∈ {aliased, unique}
+> mode rels
+>   (a5,a4) ∉ {(regional,global), (local,global), (local,regional)}
 
 (* application: shared variable used in both function and argument *)
 let shared = ((unit, unit) : (unit *[unique] unit)) in
@@ -103,6 +107,9 @@ let (x, y) = pair in
 >   u2 ∈ {aliased, unique}
 >   a3 ∈ {global, local, regional}
 >   u3 ∈ {aliased, unique}
+> mode rels
+>   (u3,u2) ∉ {(unique,aliased)}
+>   (a3,a2) ∉ {(regional,global), (local,global), (local,regional)}
 
 (* match: shared variable used in both branches *)
 let shared = ((unit, unit) : (unit *[unique local] unit)) in
@@ -144,6 +151,9 @@ let (x, y) = pair in
 >   u2 ∈ {aliased, unique}
 >   a3 ∈ {global, local, regional}
 >   u3 ∈ {aliased, unique}
+> mode rels
+>   (u3,u2) ∉ {(unique,aliased)}
+>   (a3,a2) ∉ {(regional,global), (local,global), (local,regional)}
 
 (* match with aliasable shared value still fails: need better inference *)
 let shared = ((unit, unit) : (unit *[aliased local] unit)) in

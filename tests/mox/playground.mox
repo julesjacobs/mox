@@ -2,7 +2,7 @@ unit
 > unit
 
 fun x => x
-> (?421 ->[a=a1 l=l1 p=p1] ?421)
+> (?411 ->[a=a1 l=l1 p=p1] ?411)
 > mode vars
 >   p1 ∈ {non-portable, portable}
 >   l1 ∈ {many, never, once}
@@ -16,9 +16,9 @@ fun x => x
 >   a1 ∈ {global, local, regional}
 
 (fun x => (fun y => x))
-> (?423 ->[a=a2 l=l2 p=p2] (?424 ->[a=a1 l=l1 p=p1] ?425))
+> (?413 ->[a=a2 l=l2 p=p2] (?414 ->[a=a1 l=l1 p=p1] ?415))
 > where
->   lock ?423 -> ?425 with a=a1 l=l1 p=p1
+>   lock ?413 -> ?415 with a=a1 l=l1 p=p1
 > mode vars
 >   p1 ∈ {non-portable, portable}
 >   l1 ∈ {many, never, once}
@@ -28,7 +28,7 @@ fun x => x
 >   a2 ∈ {global, local, regional}
 
 (fun x => (fun y => y))
-> (?426 ->[a=a2 l=l2 p=p2] (?427 ->[a=a1 l=l1 p=p1] ?427))
+> (?416 ->[a=a2 l=l2 p=p2] (?417 ->[a=a1 l=l1 p=p1] ?417))
 > mode vars
 >   p1 ∈ {non-portable, portable}
 >   l1 ∈ {many, never, once}
@@ -46,9 +46,9 @@ fun x => x
 (fun p =>
 let f = (fun x => x p) in
 (f, f))
-> (?428 ->[a=a3 l=l2 p=p2] ((?436 ->[a=a1 l=l1 p=p1] ?437) *[u=u1 a=a2] (?436 ->[a=a1 l=l1 p=p1] ?437)))
+> (?418 ->[a=a3 l=l2 p=p2] ((?426 ->[a=a1 l=l1 p=p1] ?427) *[u=u1 a=a2] (?426 ->[a=a1 l=l1 p=p1] ?427)))
 > where
->   lock ?428 -> ?430 with a=a4 l=many p=p3
+>   lock ?418 -> ?420 with a=a4 l=many p=p3
 > mode vars
 >   p1 ∈ {non-portable, portable}
 >   l1 ∈ {many, never, once}
@@ -61,5 +61,6 @@ let f = (fun x => x p) in
 >   p3 ∈ {non-portable, portable}
 >   a4 ∈ {global, local, regional}
 > mode rels
+>   (a4,a2) ∉ {(regional,global), (local,global), (local,regional)}
 >   (a4,a1) ∉ {(regional,global), (local,global), (local,regional)}
 >   (p3,p1) ∉ {(non-portable,portable)}

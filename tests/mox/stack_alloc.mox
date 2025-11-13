@@ -4,12 +4,21 @@ $(unit, unit)
 >   u1 ∈ {aliased, unique}
 
 $left(unit)
-> (unit +[u=u1 a=local] ?438)
+> (unit +[u=u1 a=local] ?428)
+> where
+>   ?428 in {u=u2; c=c1; l=l1; p=p1; a=a1}
 > mode vars
 >   u1 ∈ {aliased, unique}
+>   a1 ∈ {global, local, regional}
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   c1 ∈ {contended, shared, uncontended}
+>   u2 ∈ {aliased, unique}
+> mode rels
+>   (u2,u1) ∉ {(unique,aliased)}
 
 $fun x => x
-> (?439 ->[a=local l=l1 p=p1] ?439)
+> (?429 ->[a=local l=l1 p=p1] ?429)
 > mode vars
 >   p1 ∈ {non-portable, portable}
 >   l1 ∈ {many, never, once}
@@ -58,7 +67,7 @@ region
 region
   let x = $(unit, unit) in
   fun y => x
-> (?469 ->[a=a2 l=l1 p=p1] (unit *[u=u1 a=a1] unit))
+> (?459 ->[a=a2 l=l1 p=p1] (unit *[u=u1 a=a1] unit))
 > mode vars
 >   a1 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}

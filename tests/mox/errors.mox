@@ -1,8 +1,18 @@
 left(unit)
 > (unit +[u=u1 a=a1] ?151)
+> where
+>   ?151 in {u=u2; c=c1; l=l1; p=p1; a=a2}
 > mode vars
 >   a1 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}
+>   a2 ∈ {global, local, regional}
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   c1 ∈ {contended, shared, uncontended}
+>   u2 ∈ {aliased, unique}
+> mode rels
+>   (u2,u1) ∉ {(unique,aliased)}
+>   (a2,a1) ∉ {(regional,global), (local,global), (local,regional)}
 
 unit unit
 > error: outer_equiv: not equivalent

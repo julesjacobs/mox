@@ -225,6 +225,8 @@ in
 >   a3 ∈ {global, local, regional}
 > mode rels
 >   (a3,a2) ∉ {(regional,global), (local,global), (local,regional)}
+>   (a3,a1) ∉ {(regional,global), (local,global), (local,regional)}
+>   (a2,a1) ∉ {(regional,global), (local,global), (local,regional)}
 >   (l2,l1) ∉ {(once,many), (never,many), (never,once)}
 >   (p2,p1) ∉ {(non-portable,portable)}
 
@@ -247,6 +249,7 @@ in
 >   l2 ∈ {many, never, once}
 >   a3 ∈ {global, local, regional}
 > mode rels
+>   (a3,a2) ∉ {(regional,global), (local,global), (local,regional)}
 >   (a3,a1) ∉ {(regional,global), (local,global), (local,regional)}
 >   (l2,l1) ∉ {(once,many), (never,many), (never,once)}
 >   (p2,p1) ∉ {(non-portable,portable)}
@@ -270,6 +273,8 @@ in
 >   a3 ∈ {global, local, regional}
 > mode rels
 >   (a3,a2) ∉ {(regional,global), (local,global), (local,regional)}
+>   (a3,a1) ∉ {(regional,global), (local,global), (local,regional)}
+>   (a2,a1) ∉ {(regional,global), (local,global), (local,regional)}
 >   (l2,l1) ∉ {(once,many), (never,many), (never,once)}
 >   (p2,p1) ∉ {(non-portable,portable)}
 
@@ -291,6 +296,7 @@ in
 >   l2 ∈ {many, never, once}
 >   a3 ∈ {global, local, regional}
 > mode rels
+>   (a3,a2) ∉ {(regional,global), (local,global), (local,regional)}
 >   (a3,a1) ∉ {(regional,global), (local,global), (local,regional)}
 >   (l2,l1) ∉ {(once,many), (never,many), (never,once)}
 >   (p2,p1) ∉ {(non-portable,portable)}
@@ -322,7 +328,12 @@ in
 >   l2 ∈ {many, never, once}
 >   a4 ∈ {global, local, regional}
 > mode rels
+>   (u2,u1) ∉ {(unique,aliased)}
+>   (a4,a3) ∉ {(regional,global), (local,global), (local,regional)}
 >   (a4,a2) ∉ {(regional,global), (local,global), (local,regional)}
+>   (a4,a1) ∉ {(regional,global), (local,global), (local,regional)}
+>   (a3,a1) ∉ {(regional,global), (local,global), (local,regional)}
+>   (a2,a1) ∉ {(regional,global), (local,global), (local,regional)}
 >   (l2,l1) ∉ {(once,many), (never,many), (never,once)}
 >   (p2,p1) ∉ {(non-portable,portable)}
 
@@ -352,7 +363,10 @@ in
 >   l2 ∈ {many, never, once}
 >   a4 ∈ {global, local, regional}
 > mode rels
+>   (a4,a3) ∉ {(regional,global), (local,global), (local,regional)}
 >   (a4,a2) ∉ {(regional,global), (local,global), (local,regional)}
+>   (a4,a1) ∉ {(regional,global), (local,global), (local,regional)}
+>   (a2,a1) ∉ {(regional,global), (local,global), (local,regional)}
 >   (l2,l1) ∉ {(once,many), (never,many), (never,once)}
 >   (p2,p1) ∉ {(non-portable,portable)}
 
@@ -383,7 +397,12 @@ in
 >   l2 ∈ {many, never, once}
 >   a4 ∈ {global, local, regional}
 > mode rels
+>   (u2,u1) ∉ {(unique,aliased)}
+>   (a4,a3) ∉ {(regional,global), (local,global), (local,regional)}
 >   (a4,a2) ∉ {(regional,global), (local,global), (local,regional)}
+>   (a4,a1) ∉ {(regional,global), (local,global), (local,regional)}
+>   (a3,a1) ∉ {(regional,global), (local,global), (local,regional)}
+>   (a2,a1) ∉ {(regional,global), (local,global), (local,regional)}
 >   (l2,l1) ∉ {(once,many), (never,many), (never,once)}
 >   (p2,p1) ∉ {(non-portable,portable)}
 
@@ -413,7 +432,10 @@ in
 >   l2 ∈ {many, never, once}
 >   a4 ∈ {global, local, regional}
 > mode rels
+>   (a4,a3) ∉ {(regional,global), (local,global), (local,regional)}
 >   (a4,a2) ∉ {(regional,global), (local,global), (local,regional)}
+>   (a4,a1) ∉ {(regional,global), (local,global), (local,regional)}
+>   (a2,a1) ∉ {(regional,global), (local,global), (local,regional)}
 >   (l2,l1) ∉ {(once,many), (never,many), (never,once)}
 >   (p2,p1) ∉ {(non-portable,portable)}
 

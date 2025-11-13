@@ -8,14 +8,7 @@
 >   u2 ∈ {aliased, unique}
 
 (((left(unit)), (right(unit))) : ((unit +[unique local] empty) * (unit +[unique local] unit)))
-> ((unit +[u=u3 a=a3] empty) *[u=u2 a=a2] (unit +[u=u1 a=a1] unit))
-> mode vars
->   a1 ∈ {global, local, regional}
->   u1 ∈ {aliased, unique}
->   a2 ∈ {global, local, regional}
->   u2 ∈ {aliased, unique}
->   a3 ∈ {global, local, regional}
->   u3 ∈ {aliased, unique}
+> error: relation became empty
 
 (* arrow annotations roundtrip *)
 ((fun f => f) : ((unit ->[local once portable] unit) -> (unit ->[local once portable] unit)))

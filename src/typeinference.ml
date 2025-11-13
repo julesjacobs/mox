@@ -382,6 +382,16 @@ let rec assert_in ty mode_vars =
     Modesolver.Linearity.assert_leq_in future.linearity mode_vars.linearity;
     Modesolver.Portability.assert_leq_in future.portability mode_vars.portability
 
+let mk_pair left storage right =
+  let ty = TyPair (left, storage, right) in
+  assert_in ty (top_mode_vars ());
+  ty
+
+let mk_sum left storage right =
+  let ty = TySum (left, storage, right) in
+  assert_in ty (top_mode_vars ());
+  ty
+
 let debug_lock_enabled =
   match Sys.getenv_opt "MOX_DEBUG_LOCK" with
   | Some ("0" | "" ) -> false
@@ -426,12 +436,12 @@ let rec outer_equiv ty1 ty2 =
       let storage = fresh_storage_mode () in
       let left = fresh_meta () in
       let right = fresh_meta () in
-      set_meta_solution meta (TyPair (TyMeta left, storage, TyMeta right))
+      set_meta_solution meta (mk_pair (TyMeta left) storage (TyMeta right))
   | TySum _, TyMeta meta | TyMeta meta, TySum _ ->
       let storage = fresh_storage_mode () in
       let left = fresh_meta () in
       let right = fresh_meta () in
-      set_meta_solution meta (TySum (TyMeta left, storage, TyMeta right))
+      set_meta_solution meta (mk_sum (TyMeta left) storage (TyMeta right))
   | TyArrow _, TyMeta meta | TyMeta meta, TyArrow _ ->
       let future = fresh_future_mode () in
       let domain = fresh_meta () in
@@ -562,12 +572,12 @@ let rec ty_of_ast (ty_syntax : Ast.ty) : ty =
       let left' = ty_of_ast left in
       let right' = ty_of_ast right in
       let storage' = storage_mode_of_ast storage in
-      TyPair (left', storage', right')
+      mk_pair left' storage' right'
   | Ast.TySum (left, storage, right) ->
       let left' = ty_of_ast left in
       let right' = ty_of_ast right in
       let storage' = storage_mode_of_ast storage in
-      TySum (left', storage', right')
+      mk_sum left' storage' right'
   | Ast.TyArrow (domain, future, codomain) ->
       let domain' = ty_of_ast domain in
       let codomain' = ty_of_ast codomain in
@@ -902,21 +912,21 @@ let rec infer_with_env env expr =
     let ty2 = infer_with_env env_right e2 in
     let storage = fresh_storage_mode () in
     let () = match alloc with Ast.Stack -> force_storage_local storage | Ast.Heap -> () in
-    let ty = TyPair (ty1, storage, ty2) in
+    let ty = mk_pair ty1 storage ty2 in
     ty
   | Ast.Inl (alloc, e) ->
     let ty_left = infer_with_env env e in
     let ty_right = TyMeta (fresh_meta ()) in
     let storage = fresh_storage_mode () in
     let () = match alloc with Ast.Stack -> force_storage_local storage | Ast.Heap -> () in
-    let ty = TySum (ty_left, storage, ty_right) in
+    let ty = mk_sum ty_left storage ty_right in
     ty
   | Ast.Inr (alloc, e) ->
     let ty_left = TyMeta (fresh_meta ()) in
     let ty_right = infer_with_env env e in
     let storage = fresh_storage_mode () in
     let () = match alloc with Ast.Stack -> force_storage_local storage | Ast.Heap -> () in
-    let ty = TySum (ty_left, storage, ty_right) in
+    let ty = mk_sum ty_left storage ty_right in
     ty
   | Ast.Hole -> TyMeta (fresh_meta ())
   | Ast.Absurd e ->
@@ -937,7 +947,7 @@ let rec infer_with_env env expr =
     let ty_left = TyMeta (fresh_meta ()) in
     let ty_right = TyMeta (fresh_meta ()) in
     let storage = fresh_storage_mode () in
-    let ty_pair = TyPair (ty_left, storage, ty_right) in
+    let ty_pair = mk_pair ty_left storage ty_right in
     assert_subtype ty1 ty_pair;
     (match kind with
      | Ast.Destructive -> force_storage_unique storage
@@ -954,7 +964,7 @@ let rec infer_with_env env expr =
     let ty_left = TyMeta (fresh_meta ()) in
     let ty_right = TyMeta (fresh_meta ()) in
     let storage = fresh_storage_mode () in
-    let ty_sum = TySum (ty_left, storage, ty_right) in
+    let ty_sum = mk_sum ty_left storage ty_right in
     assert_subtype ty_scrut ty_sum;
     (match kind with
      | Ast.Destructive -> force_storage_unique storage
