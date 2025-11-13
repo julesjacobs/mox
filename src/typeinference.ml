@@ -484,7 +484,7 @@ and assert_alias source target =
       assert_alias source_left target_left;
       assert_alias source_right target_right;
   | TyArrow (_source_domain, source_future, _source_codomain), TyArrow (_target_domain, target_future, _target_codomain) ->
-      (* Assert that linearity is many *)
+      (* Assert that linearity is many for aliased functions.*)
       Modesolver.Linearity.restrict_domain [Linearity.many] source_future.linearity;
       Modesolver.Areality.assert_leq_to source_future.areality target_future.areality;
       Modesolver.Portability.assert_leq_to source_future.portability target_future.portability;
@@ -502,19 +502,13 @@ and assert_lock original locked future =
       add_constraint locked_meta constraint_
   | TyUnit, TyUnit -> ()
   | TyEmpty, TyEmpty -> ()
-  | TyPair (original_left, original_storage, original_right), TyPair (locked_left, locked_storage, locked_right) ->
-      log_lock "pair storage lock";
+  | TyPair (original_left, original_storage, original_right), TyPair (locked_left, locked_storage, locked_right) 
+  | TySum (original_left, original_storage, original_right), TySum (locked_left, locked_storage, locked_right) ->
+      log_lock "pair/sum storage lock";
       (* Unique component joins with dagger(future), areality unchanged. *)
       Modesolver.Uniqueness.assert_leq_to original_storage.uniqueness locked_storage.uniqueness;
       Modesolver.assert_linearity_dagger future.linearity locked_storage.uniqueness;
-      assert_equal_areality original_storage.areality locked_storage.areality;
-      assert_lock original_left locked_left future;
-      assert_lock original_right locked_right future
-  | TySum (original_left, original_storage, original_right), TySum (locked_left, locked_storage, locked_right) ->
-      log_lock "sum storage lock";
-      Modesolver.Uniqueness.assert_leq_to original_storage.uniqueness locked_storage.uniqueness;
-      Modesolver.assert_linearity_dagger future.linearity locked_storage.uniqueness;
-      assert_equal_areality original_storage.areality locked_storage.areality;
+      Modesolver.Areality.assert_leq_to original_storage.areality locked_storage.areality;
       assert_lock original_left locked_left future;
       assert_lock original_right locked_right future
   | TyArrow (original_domain, original_future, original_codomain), TyArrow (locked_domain, locked_future, locked_codomain) ->
