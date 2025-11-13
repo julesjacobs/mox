@@ -740,14 +740,14 @@ let render_constraints state metas =
   in
   List.rev constraints
 
-let string_of_relation_values describe relation =
-  let pairs =
-    relation
-    |> Relations.to_list
+let string_of_pairs describe pairs =
+  let body =
+    pairs
     |> List.map (fun (left, right) ->
            Printf.sprintf "(%s,%s)" (describe left) (describe right))
+    |> String.concat ", "
   in
-  Printf.sprintf "{%s}" (String.concat ", " pairs)
+  Printf.sprintf "{%s}" body
 
 let cartesian_relation left_domain right_domain =
   left_domain
@@ -762,6 +762,22 @@ let relation_is_cartesian left right relation =
   left_domain <> []
   && right_domain <> []
   && Relations.equal relation (cartesian_relation left_domain right_domain)
+
+let relation_display describe left right relation =
+  let left_domain = Modesolver.get_domain left in
+  let right_domain = Modesolver.get_domain right in
+  let present_pairs = Relations.to_list relation in
+  let present_str = string_of_pairs describe present_pairs in
+  let complement_pairs =
+    cartesian_relation left_domain right_domain
+    |> Relations.to_list
+    |> List.filter (fun pair -> not (List.mem pair present_pairs))
+  in
+  let complement_str = string_of_pairs describe complement_pairs in
+  if String.length present_str <= String.length complement_str then
+    `Present present_str
+  else
+    `Complement complement_str
 
 let axis_relation_lines names vars describe get_relation =
   let vars = List.rev vars in
@@ -780,11 +796,14 @@ let axis_relation_lines names vars describe get_relation =
         let relation = get_relation left right in
         if relation_is_cartesian left right relation then acc
         else
-          let relation_str = string_of_relation_values describe relation in
           let left_name = ModeName.name names left in
           let right_name = ModeName.name names right in
           let line =
-            Printf.sprintf "(%s,%s) ∈ %s" left_name right_name relation_str
+            match relation_display describe left right relation with
+            | `Present relation_str ->
+                Printf.sprintf "(%s,%s) ∈ %s" left_name right_name relation_str
+            | `Complement relation_str ->
+                Printf.sprintf "(%s,%s) ∉ %s" left_name right_name relation_str
           in
           line :: acc)
       [] all_pairs

@@ -35,6 +35,6 @@ let aliased_fun = ((fun x => x) : (unit ->[local many] unit)) in
 >   l2 ∈ {many, never, once}
 >   a2 ∈ {global, local, regional}
 > mode rels
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local)}
->   (l2,l1) ∈ {(many,many), (many,once), (many,never), (once,once), (once,never), (never,never)}
->   (p2,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,non-portable)}
+>   (a2,a1) ∉ {(regional,global), (local,global), (local,regional)}
+>   (l2,l1) ∉ {(once,many), (never,many), (never,once)}
+>   (p2,p1) ∉ {(non-portable,portable)}
