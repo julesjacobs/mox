@@ -59,6 +59,18 @@ let assert_relation = assert_relation_generic
 let get_relation = get_relation_generic
 let assert_predicate = assert_predicate_generic
 let restrict_domain = restrict_domain_generic
+let describe_var show var =
+  let rel = get_relation_generic var var in
+  let values =
+    rel
+    |> Relations.to_list
+    |> List.filter_map (fun (a, b) -> if a = b then Some (show a) else None)
+    |> List.sort_uniq String.compare
+  in
+  match values with
+  | [] -> "<unsat>"
+  | [ single ] -> single
+  | vs -> Printf.sprintf "{%s}" (String.concat ", " vs)
 
 let linearity_uniqueness_dagger_relation =
   Relations.make

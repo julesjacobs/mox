@@ -10,6 +10,7 @@ val assert_relation : ('a, 'b) Relations.t -> 'a var -> 'b var -> unit
 val get_relation : 'a var -> 'b var -> ('a, 'b) Relations.t
 val assert_predicate : ('a, 'a) Relations.t -> 'a var -> unit
 val restrict_domain : 'a list -> 'a var -> unit
+val describe_var : ('a -> string) -> 'a var -> string
 val assert_linearity_dagger :
   Modes.Linearity.t mode_var -> Modes.Uniqueness.t mode_var -> unit
 val assert_portability_dagger :

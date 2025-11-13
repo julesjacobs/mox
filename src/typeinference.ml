@@ -203,6 +203,14 @@ let assert_callable (future : future_mode) =
   | Modesolver.Inconsistent _ ->
       type_error "cannot call a function whose linearity is never"
 
+module IntSet = Set.Make (Int)
+
+let describe_uniqueness var = Modesolver.describe_var Modes.Uniqueness.to_string var
+let describe_areality var = Modesolver.describe_var Modes.Areality.to_string var
+let describe_linearity var = Modesolver.describe_var Modes.Linearity.to_string var
+let describe_portability var = Modesolver.describe_var Modes.Portability.to_string var
+let describe_contention var = Modesolver.describe_var Modes.Contention.to_string var
+
 (* -------------------------------------------------------------------------- *)
 
 
@@ -466,6 +474,137 @@ let top_mode_vars () : mode_vars =
 
 (* -------------------------------------------------------------------------- *)
 (* Pretty-printing inference types.                                           *)
+
+let string_of_storage_mode (storage : storage_mode) =
+  Printf.sprintf "u=%s a=%s"
+    (describe_uniqueness storage.uniqueness)
+    (describe_areality storage.areality)
+
+let string_of_future_mode (future : future_mode) =
+  Printf.sprintf "a=%s l=%s p=%s"
+    (describe_areality future.areality)
+    (describe_linearity future.linearity)
+    (describe_portability future.portability)
+
+let string_of_mode_vars (mode_vars : mode_vars) =
+  Printf.sprintf "{u=%s; c=%s; l=%s; p=%s; a=%s}"
+    (describe_uniqueness mode_vars.uniqueness)
+    (describe_contention mode_vars.contention)
+    (describe_linearity mode_vars.linearity)
+    (describe_portability mode_vars.portability)
+    (describe_areality mode_vars.areality)
+
+let rec string_of_ty_core ty =
+  match zonk ty with
+  | TyUnit -> "unit"
+  | TyEmpty -> "empty"
+  | TyArrow (domain, future, codomain) ->
+      Printf.sprintf "(%s ->[%s] %s)"
+        (string_of_ty_core domain)
+        (string_of_future_mode future)
+        (string_of_ty_core codomain)
+  | TyPair (left, storage, right) ->
+      Printf.sprintf "(%s *[%s] %s)"
+        (string_of_ty_core left)
+        (string_of_storage_mode storage)
+        (string_of_ty_core right)
+  | TySum (left, storage, right) ->
+      Printf.sprintf "(%s +[%s] %s)"
+        (string_of_ty_core left)
+        (string_of_storage_mode storage)
+        (string_of_ty_core right)
+  | TyMeta meta ->
+      (match meta.solution with
+      | Some solution -> string_of_ty_core solution
+      | None -> Printf.sprintf "?%d" meta.id)
+
+let collect_metas ty =
+  let rec aux set acc ty =
+    match zonk ty with
+    | TyMeta meta ->
+        if IntSet.mem meta.id set then
+          set, acc
+        else
+          let set = IntSet.add meta.id set in
+          (match meta.solution with
+          | Some solution -> aux set acc solution
+          | None -> set, meta :: acc)
+    | TyPair (left, _, right) | TySum (left, _, right) ->
+        let set, acc = aux set acc left in
+        aux set acc right
+    | TyArrow (domain, _, codomain) ->
+        let set, acc = aux set acc domain in
+        aux set acc codomain
+    | TyUnit | TyEmpty -> set, acc
+  in
+  let _, metas = aux IntSet.empty [] ty in
+  List.rev metas
+
+let render_constraints ty =
+  let metas = collect_metas ty in
+  let meta_ids =
+    List.fold_left (fun acc meta -> IntSet.add meta.id acc) IntSet.empty metas
+  in
+  let seen = ref [] in
+  let remember cr =
+    if List.exists (fun existing -> existing == cr) !seen then false
+    else (
+      seen := cr :: !seen;
+      true)
+  in
+  let meta_ref meta = Printf.sprintf "?%d" meta.id in
+  let describe_future future = string_of_future_mode future in
+  let describe_constraint cr =
+    match cr.constraint_ with
+    | Sub { lower; upper } ->
+        if IntSet.mem lower.id meta_ids || IntSet.mem upper.id meta_ids then
+          Some (Printf.sprintf "%s <= %s" (meta_ref lower) (meta_ref upper))
+        else
+          None
+    | Alias { source; target } ->
+        if IntSet.mem source.id meta_ids || IntSet.mem target.id meta_ids then
+          Some (Printf.sprintf "%s alias %s" (meta_ref source) (meta_ref target))
+        else
+          None
+    | Lock { original; locked; future } ->
+        if IntSet.mem original.id meta_ids || IntSet.mem locked.id meta_ids then
+          Some
+            (Printf.sprintf "lock %s -> %s with %s"
+               (meta_ref original) (meta_ref locked) (describe_future future))
+        else
+          None
+    | In { target; mode_vars } ->
+        if IntSet.mem target.id meta_ids then
+          Some
+            (Printf.sprintf "%s in %s" (meta_ref target)
+               (string_of_mode_vars mode_vars))
+        else
+          None
+  in
+  let constraints =
+    List.fold_left
+      (fun acc meta ->
+        List.fold_left
+          (fun acc cr ->
+            if remember cr then
+              match describe_constraint cr with
+              | Some text -> text :: acc
+              | None -> acc
+            else acc)
+          acc meta.constraints)
+      [] metas
+  in
+  List.rev constraints
+
+let string_of_ty ty =
+  let base = string_of_ty_core ty in
+  match render_constraints ty with
+  | [] -> base
+  | constraints ->
+      let indented =
+        constraints |> List.map (fun line -> "  " ^ line) |> String.concat "\n"
+      in
+      Printf.sprintf "%s\nwhere\n%s" base indented
 
 (* -------------------------------------------------------------------------- *)
 (* Environments                                                               *)
