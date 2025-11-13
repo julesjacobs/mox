@@ -310,6 +310,24 @@ let rec ty_of_ast (ty_syntax : Ast.ty) : ty =
       TyArrow (domain', future', codomain')
 
 (* -------------------------------------------------------------------------- *)
+(* Pretty-printing inference types.                                           *)
+
+let rec string_of_ty ty =
+  match zonk ty with
+  | TyUnit -> "unit"
+  | TyEmpty -> "empty"
+  | TyArrow (domain, _, codomain) ->
+      Printf.sprintf "(%s -> %s)" (string_of_ty domain) (string_of_ty codomain)
+  | TyPair (left, _, right) ->
+      Printf.sprintf "(%s * %s)" (string_of_ty left) (string_of_ty right)
+  | TySum (left, _, right) ->
+      Printf.sprintf "(%s + %s)" (string_of_ty left) (string_of_ty right)
+  | TyMeta meta ->
+      (match meta.solution with
+      | Some solution -> string_of_ty solution
+      | None -> Printf.sprintf "?%d" meta.id)
+
+(* -------------------------------------------------------------------------- *)
 (* Environments                                                               *)
 
 let rec lookup env name =
@@ -403,4 +421,6 @@ let rec infer_with_env env expr =
     assert_subtype ty' ty;
     ty'
 
-let infer expr = infer_with_env [] expr
+let infer expr =
+  try infer_with_env [] expr with
+  | Modesolver.Inconsistent msg -> type_error msg

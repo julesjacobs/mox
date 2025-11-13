@@ -27,11 +27,17 @@ let set_backend name =
 let infer_with_backend expr =
   match !backend with
   | Typechecker ->
-      (try Ok (Typechecker.infer expr) with
+      (try
+         let ty = Typechecker.infer expr in
+         Ok (Typechecker.string_of_ty ty)
+       with
       | Typechecker.Error err -> Error (Typechecker.string_of_error err)
       | Typechecker.Mode_error msg -> Error msg)
   | Typeinference ->
-      (try Ok (Typeinference.infer expr) with
+      (try
+         let ty = Typeinference.infer expr in
+         Ok (Typeinference.string_of_ty ty)
+       with
       | Typeinference.Error err -> Error (Typeinference.string_of_error err))
 
 let () =
@@ -73,7 +79,7 @@ let () =
     match result with
     | `Expr e -> (
         match infer_with_backend e with
-        | Ok ty -> Printf.printf "%s : %s\n" (string_of_expr e) (string_of_ty ty)
+        | Ok ty -> Printf.printf "%s : %s\n" (string_of_expr e) ty
         | Error msg ->
             prerr_endline msg;
             exit 1)

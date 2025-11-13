@@ -14,10 +14,13 @@ type processed =
   | PBlank of string
   | PExpr of string list * expectation
 
-type infer = expr -> (Ast.ty, string) result
+type infer = expr -> (string, string) result
 
 let default_infer (expr : expr) =
-  try Ok (Typechecker.infer expr) with
+  try
+    let ty = Typechecker.infer expr in
+    Ok (Typechecker.string_of_ty ty)
+  with
   | Typechecker.Error err -> Error (Typechecker.string_of_error err)
   | Typechecker.Mode_error msg -> Error msg
 
@@ -88,7 +91,7 @@ let process_chunk ~filename ~infer chunk =
   | Expr { start_line; lines } ->
       let expr = parse_expr_from_lines ~filename ~start_line lines in
       (match infer expr with
-      | Ok ty -> PExpr (lines, Type (Pretty.string_of_ty ty))
+      | Ok ty -> PExpr (lines, Type ty)
       | Error msg -> PExpr (lines, Error msg))
 
 let render processed =
