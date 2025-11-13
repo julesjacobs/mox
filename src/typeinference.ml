@@ -89,16 +89,16 @@ let rec free_vars expr =
   | Ast.Annot (e, _) -> free_vars e
   | Ast.Fun (_, x, body) -> free_vars_without body [ x ]
   | Ast.App (fn, arg) -> StringSet.union (free_vars fn) (free_vars arg)
-  | Ast.Let (x, e1, e2) ->
+  | Ast.Let (_, x, e1, e2) ->
       StringSet.union (free_vars e1) (free_vars_without e2 [ x ])
-  | Ast.LetPair (x1, x2, e1, e2) ->
+  | Ast.LetPair (_, x1, x2, e1, e2) ->
       StringSet.union (free_vars e1) (free_vars_without e2 [ x1; x2 ])
   | Ast.Pair (_, left, right) ->
       StringSet.union (free_vars left) (free_vars right)
   | Ast.Inl (_, e) -> free_vars e
   | Ast.Inr (_, e) -> free_vars e
   | Ast.Region e -> free_vars e
-  | Ast.Match (scrut, x1, e1, x2, e2) ->
+  | Ast.Match (_, scrut, x1, e1, x2, e2) ->
       let fv_scrut = free_vars scrut in
       let fv_e1 = free_vars_without e1 [ x1 ] in
       let fv_e2 = free_vars_without e2 [ x2 ] in
@@ -190,6 +190,9 @@ let force_storage_local (storage : storage_mode) =
 
 let force_future_local (future : future_mode) =
   Modesolver.Areality.restrict_domain [Areality.local] future.areality
+
+let force_storage_unique (storage : storage_mode) =
+  Modesolver.Uniqueness.restrict_domain [Uniqueness.unique] storage.uniqueness
 let const_uniqueness_var value =
   Modesolver.Uniqueness.new_var ~domain:[value] ()
 
@@ -934,13 +937,13 @@ let rec infer_with_env env expr =
     let ty = infer_with_env env e in
     assert_subtype ty TyEmpty;
     TyMeta (fresh_meta ())
-  | Ast.Let (x, e1, e2) ->
+  | Ast.Let (_, x, e1, e2) ->
     let fv_e1 = free_vars e1 in
     let fv_e2 = free_vars_without e2 [ x ] in
     let env_e1, env_e2 = split_env env fv_e1 fv_e2 in
     let ty1 = infer_with_env env_e1 e1 in
     infer_with_env ((x, ty1) :: env_e2) e2
-  | Ast.LetPair (x1, x2, e1, e2) ->
+  | Ast.LetPair (kind, x1, x2, e1, e2) ->
     let fv_e1 = free_vars e1 in
     let fv_e2 = free_vars_without e2 [ x1; x2 ] in
     let env_e1, env_e2 = split_env env fv_e1 fv_e2 in
@@ -950,9 +953,12 @@ let rec infer_with_env env expr =
     let storage = fresh_storage_mode () in
     let ty_pair = TyPair (ty_left, storage, ty_right) in
     assert_subtype ty1 ty_pair;
+    (match kind with
+     | Ast.Destructive -> force_storage_unique storage
+     | Ast.Regular -> ());
     let env' = (x1, ty_left) :: (x2, ty_right) :: env_e2 in
     infer_with_env env' e2
-  | Ast.Match (e, x1, e1, x2, e2) ->
+  | Ast.Match (kind, e, x1, e1, x2, e2) ->
     let fv_scrut = free_vars e in
     let fv_e1 = free_vars_without e1 [ x1 ] in
     let fv_e2 = free_vars_without e2 [ x2 ] in
@@ -964,6 +970,9 @@ let rec infer_with_env env expr =
     let storage = fresh_storage_mode () in
     let ty_sum = TySum (ty_left, storage, ty_right) in
     assert_subtype ty_scrut ty_sum;
+    (match kind with
+     | Ast.Destructive -> force_storage_unique storage
+     | Ast.Regular -> ());
     let env1, env2 = split_env env_rest fv_e1 fv_e2 in
     let ty1 = infer_with_env ((x1, ty_left) :: env1) e1 in
     let ty2 = infer_with_env ((x2, ty_right) :: env2) e2 in

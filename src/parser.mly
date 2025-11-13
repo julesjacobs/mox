@@ -14,7 +14,7 @@ let storage_mode_from_list names =
   { uniqueness; areality }
 %}
 
-%token LET IN FUN MATCH WITH LEFT RIGHT ABSURD UNIT EMPTY QUESTION STACK REGION
+%token LET LETBANG IN FUN MATCH MATCHBANG WITH LEFT RIGHT ABSURD UNIT EMPTY QUESTION STACK REGION
 %token LPAREN RPAREN LBRACKET RBRACKET COMMA EQUAL BAR ARROW FATARROW PLUS TIMES COLON
 %token <string> IDENT
 %token EOF
@@ -38,13 +38,13 @@ expr:
   | expr_base COLON ty { Annot ($1, $3) }
 
 expr_base:
-  | LET IDENT EQUAL expr IN expr { Let ($2, $4, $6) }
-  | LET LPAREN IDENT COMMA IDENT RPAREN EQUAL expr IN expr
-      { LetPair ($3, $5, $8, $10) }
+  | bind_prefix IDENT EQUAL expr IN expr { Let ($1, $2, $4, $6) }
+  | bind_prefix LPAREN IDENT COMMA IDENT RPAREN EQUAL expr IN expr
+      { LetPair ($1, $3, $5, $8, $10) }
   | stack_prefix FUN IDENT FATARROW expr { Fun ($1, $3, $5) }
-  | MATCH expr WITH LEFT LPAREN IDENT RPAREN FATARROW expr
+  | match_prefix expr WITH LEFT LPAREN IDENT RPAREN FATARROW expr
       BAR RIGHT LPAREN IDENT RPAREN FATARROW expr
-      { Match ($2, $6, $9, $13, $16) }
+      { Match ($1, $2, $6, $9, $13, $16) }
   | expr_app { $1 }
 
 expr_app:
@@ -68,6 +68,14 @@ expr_atom:
 stack_prefix:
   | STACK { Stack }
   | /* empty */ { Heap }
+
+bind_prefix:
+  | LET { Regular }
+  | LETBANG { Destructive }
+
+match_prefix:
+  | MATCH { Regular }
+  | MATCHBANG { Destructive }
 
 (* Type grammar *)
 

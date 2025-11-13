@@ -22,18 +22,22 @@ type alloc =
   | Stack
   | Heap
 
+type bind_kind =
+  | Regular
+  | Destructive
+
 type expr =
   | Var of ident
-  | Let of ident * expr * expr
+  | Let of bind_kind * ident * expr * expr
   | Unit
   | Hole
   | Absurd of expr
   | Fun of alloc * ident * expr
   | App of expr * expr
   | Pair of alloc * expr * expr
-  | LetPair of ident * ident * expr * expr
+  | LetPair of bind_kind * ident * ident * expr * expr
   | Inl of alloc * expr
   | Inr of alloc * expr
   | Region of expr
-  | Match of expr * ident * expr * ident * expr
+  | Match of bind_kind * expr * ident * expr * ident * expr
   | Annot of expr * ty

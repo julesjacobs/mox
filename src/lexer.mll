@@ -20,9 +20,11 @@ rule token = parse
       token lexbuf
     }
   | "(*"                 { comment lexbuf; token lexbuf }
+  | "let!"               { LETBANG }
   | "let"                { LET }
   | "in"                 { IN }
   | "fun"                { FUN }
+  | "match!"             { MATCHBANG }
   | "match"              { MATCH }
   | "with"               { WITH }
   | "left"               { LEFT }

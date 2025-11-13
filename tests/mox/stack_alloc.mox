@@ -20,7 +20,28 @@ region unit
 region $(unit, unit)
 > error: relation became empty
 
-region
-  let x = $(unit, unit) in 
-  let (a,b) = x in a
+let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
+let! (x, y) = unique_pair in
+x
 > unit
+
+let unique_sum = ((left(unit)) : (unit +[unique local] unit)) in
+match! unique_sum with left(x) => x | right(y) => y
+> unit
+
+let p = (unit, unit) in
+let q = (p,p) in
+let! (x,y) = p in x
+> error: relation became empty
+
+let p = (unit, unit) in
+let q = (p,p) in
+let! (x,y) = q in 
+let (a,b) = x in a
+> unit
+
+let p = (unit, unit) in
+let q = (p,p) in
+let! (x,y) = q in 
+let! (a,b) = x in a
+> error: relation became empty

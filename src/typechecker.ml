@@ -84,16 +84,16 @@ let rec free_vars expr =
   | Annot (e, _) -> free_vars e
   | Fun (_, x, body) -> free_vars_without body [ x ]
   | App (fn, arg) -> StringSet.union (free_vars fn) (free_vars arg)
-  | Let (x, e1, e2) ->
+  | Let (_, x, e1, e2) ->
       StringSet.union (free_vars e1) (free_vars_without e2 [ x ])
-  | LetPair (x1, x2, e1, e2) ->
+  | LetPair (_, x1, x2, e1, e2) ->
       StringSet.union (free_vars e1) (free_vars_without e2 [ x1; x2 ])
   | Pair (_, left, right) ->
       StringSet.union (free_vars left) (free_vars right)
   | Inl (_, e) -> free_vars e
   | Inr (_, e) -> free_vars e
   | Region e -> free_vars e
-  | Match (scrut, x1, e1, x2, e2) ->
+  | Match (_, scrut, x1, e1, x2, e2) ->
       let fv_scrut = free_vars scrut in
       let fv_e1 = free_vars_without e1 [ x1 ] in
       let fv_e2 = free_vars_without e2 [ x2 ] in
@@ -344,6 +344,16 @@ let require_local_future alloc context future =
              (Printf.sprintf "Stack-allocated %s must have local areality" context))
   | Heap -> ()
 
+let require_unique_storage_kind kind storage context =
+  match kind with
+  | Destructive ->
+      if not (Modes.Uniqueness.equal storage.uniqueness Modes.Uniqueness.unique)
+      then
+        raise
+          (Mode_error
+             (Printf.sprintf "Destructive %s requires unique storage" context))
+  | Regular -> ()
+
 let rec infer_expr env expr =
   match expr with
   | Var x -> lookup env x
@@ -374,19 +384,20 @@ let rec infer_expr env expr =
         match alloc with Stack -> stack_storage_mode | Heap -> default_storage_mode
       in
       make_pair_ty left_ty storage right_ty
-  | Let (x, e1, e2) ->
+  | Let (_, x, e1, e2) ->
       let fv_e1 = free_vars e1 in
       let fv_e2 = free_vars_without e2 [ x ] in
       let env_e1, env_e2 = split_env env fv_e1 fv_e2 in
       let t1 = infer_expr env_e1 e1 in
       infer_expr ((x, Available t1) :: env_e2) e2
-  | LetPair (x1, x2, e1, e2) ->
+  | LetPair (kind, x1, x2, e1, e2) ->
       let fv_e1 = free_vars e1 in
       let fv_e2 = free_vars_without e2 [ x1; x2 ] in
       let env_e1, env_e2 = split_env env fv_e1 fv_e2 in
       let t = infer_expr env_e1 e1 in
       (match t with
-      | TyPair (t_left, _, t_right) ->
+      | TyPair (t_left, storage, t_right) ->
+          require_unique_storage_kind kind storage "pair binding";
           infer_expr
             ((x2, Available t_right) :: (x1, Available t_left) :: env_e2)
             e2
@@ -397,7 +408,7 @@ let rec infer_expr env expr =
       let ty = infer_expr env e in
       ensure_global_return ty;
       ty
-  | Match (scrutinee, x1, e1, x2, e2) ->
+  | Match (kind, scrutinee, x1, e1, x2, e2) ->
       let fv_scrut = free_vars scrutinee in
       let fv_e1 = free_vars_without e1 [ x1 ] in
       let fv_e2 = free_vars_without e2 [ x2 ] in
@@ -406,6 +417,7 @@ let rec infer_expr env expr =
       let scrut_ty = infer_expr env_scrut scrutinee in
       (match scrut_ty with
       | TySum (left_ty, storage, right_ty) ->
+          require_unique_storage_kind kind storage "match scrutinee";
           let env_branch1, env_branch2 = split_env env_rest fv_e1 fv_e2 in
           let branch_ty =
             infer_expr ((x1, Available left_ty) :: env_branch1) e1 in
@@ -457,24 +469,25 @@ and check_expr env expr ty =
   | Region e ->
       ensure_global_return ty;
       check_expr env e ty
-  | Let (x, e1, e2) ->
+  | Let (_, x, e1, e2) ->
       let fv_e1 = free_vars e1 in
       let fv_e2 = free_vars_without e2 [ x ] in
       let env_e1, env_e2 = split_env env fv_e1 fv_e2 in
       let t1 = infer_expr env_e1 e1 in
       check_expr ((x, Available t1) :: env_e2) e2 ty
-  | LetPair (x1, x2, e1, e2) ->
+  | LetPair (kind, x1, x2, e1, e2) ->
       let fv_e1 = free_vars e1 in
       let fv_e2 = free_vars_without e2 [ x1; x2 ] in
       let env_e1, env_e2 = split_env env fv_e1 fv_e2 in
       let t = infer_expr env_e1 e1 in
       (match t with
-      | TyPair (t_left, _, t_right) ->
+      | TyPair (t_left, storage, t_right) ->
+          require_unique_storage_kind kind storage "pair binding";
           check_expr
             ((x2, Available t_right) :: (x1, Available t_left) :: env_e2)
             e2 ty
       | _ -> raise (Error (Expected_pair t)))
-  | Match (scrutinee, x1, e1, x2, e2) ->
+  | Match (kind, scrutinee, x1, e1, x2, e2) ->
       let fv_scrut = free_vars scrutinee in
       let fv_e1 = free_vars_without e1 [ x1 ] in
       let fv_e2 = free_vars_without e2 [ x2 ] in
@@ -482,7 +495,8 @@ and check_expr env expr ty =
       let env_scrut, env_rest = split_env env fv_scrut branches_fv in
       let scrut_ty = infer_expr env_scrut scrutinee in
       (match scrut_ty with
-      | TySum (left_ty, _, right_ty) ->
+      | TySum (left_ty, storage, right_ty) ->
+          require_unique_storage_kind kind storage "match scrutinee";
           let env_e1, env_e2 = split_env env_rest fv_e1 fv_e2 in
           check_expr ((x1, Available left_ty) :: env_e1) e1 ty;
           check_expr ((x2, Available right_ty) :: env_e2) e2 ty
