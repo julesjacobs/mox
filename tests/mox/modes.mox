@@ -6,11 +6,6 @@
 >   u1 ∈ {aliased, unique}
 >   a2 ∈ {global, local, regional}
 >   u2 ∈ {aliased, unique}
-> mode rels
->   (u2,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u1,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (((left(unit)), (right(unit))) : ((unit +[unique local] empty) * (unit +[unique local] unit)))
 > ((unit +[u=u3 a=a3] empty) *[u=u2 a=a2] (unit +[u=u1 a=a1] unit))
@@ -21,19 +16,6 @@
 >   u2 ∈ {aliased, unique}
 >   a3 ∈ {global, local, regional}
 >   u3 ∈ {aliased, unique}
-> mode rels
->   (u3,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u3,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u2,u3) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u2,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u1,u3) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u1,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (a3,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a2,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* arrow annotations roundtrip *)
 ((fun f => f) : ((unit ->[local once portable] unit) -> (unit ->[local once portable] unit)))
@@ -45,13 +27,6 @@
 >   p2 ∈ {non-portable, portable}
 >   l2 ∈ {many, never, once}
 >   a2 ∈ {global, local, regional}
-> mode rels
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (l2,l1) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (l1,l2) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (p2,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
->   (p1,p2) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
 
 (* redundant mode annotation *)
 ((unit, unit) : (unit *[global] unit))

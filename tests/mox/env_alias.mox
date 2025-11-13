@@ -29,79 +29,6 @@ let non_shared2 = ((unit, unit) : (unit *[unique] unit)) in
 >   a6 ∈ {global, local, regional}
 >   a7 ∈ {global, local, regional}
 >   u3 ∈ {aliased, unique}
-> mode rels
->   (u3,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u3,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u2,u3) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u2,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u1,u3) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u1,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (a7,a6) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a7,a5) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a7,a4) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a7,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a7,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a7,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a6,a7) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a6,a5) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a6,a4) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a6,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a6,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a6,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a5,a7) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a5,a6) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a5,a4) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a5,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a5,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a5,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a4,a7) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a4,a6) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a4,a5) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a4,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a4,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a4,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a3,a7) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a3,a6) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a3,a5) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a3,a4) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a3,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a2,a7) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a2,a6) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a2,a5) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a2,a4) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a2,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a7) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a6) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a5) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a4) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (l4,l3) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (l4,l2) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (l4,l1) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (l3,l4) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (l3,l2) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (l3,l1) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (l2,l4) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (l2,l3) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (l2,l1) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (l1,l4) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (l1,l3) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (l1,l2) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (p4,p3) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
->   (p4,p2) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
->   (p4,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
->   (p3,p4) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
->   (p3,p2) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
->   (p3,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
->   (p2,p4) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
->   (p2,p3) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
->   (p2,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
->   (p1,p4) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
->   (p1,p3) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
->   (p1,p2) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
 
 (* application: non-shared variables used in both functions, but one is many *)
 let non_shared1 = ((unit, unit) : (unit *[unique] unit)) in
@@ -128,79 +55,6 @@ let non_shared2 = ((unit, unit) : (unit *[unique] unit)) in
 >   a6 ∈ {global, local, regional}
 >   a7 ∈ {global, local, regional}
 >   u3 ∈ {aliased, unique}
-> mode rels
->   (u3,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u3,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u2,u3) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u2,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u1,u3) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u1,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (a7,a6) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a7,a5) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a7,a4) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a7,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a7,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a7,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a6,a7) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a6,a5) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a6,a4) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a6,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a6,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a6,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a5,a7) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a5,a6) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a5,a4) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a5,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a5,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a5,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a4,a7) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a4,a6) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a4,a5) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a4,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a4,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a4,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a3,a7) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a3,a6) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a3,a5) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a3,a4) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a3,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a2,a7) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a2,a6) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a2,a5) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a2,a4) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a2,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a7) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a6) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a5) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a4) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (l4,l3) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (l4,l2) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (l4,l1) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (l3,l4) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (l3,l2) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (l3,l1) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (l2,l4) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (l2,l3) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (l2,l1) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (l1,l4) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (l1,l3) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (l1,l2) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
->   (p4,p3) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
->   (p4,p2) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
->   (p4,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
->   (p3,p4) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
->   (p3,p2) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
->   (p3,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
->   (p2,p4) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
->   (p2,p3) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
->   (p2,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
->   (p1,p4) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
->   (p1,p3) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
->   (p1,p2) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
 
 (* application: shared variable used in both function and argument *)
 let shared = ((unit, unit) : (unit *[unique] unit)) in
@@ -216,11 +70,6 @@ let shared = ((unit, unit) : (unit *[unique local] unit)) in
 >   a1 ∈ {global, local, regional}
 >   a2 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}
-> mode rels
->   (u1,u2) ∈ {(unique,aliased), (aliased,aliased)}
->   (u2,u1) ∈ {(aliased,unique), (aliased,aliased)}
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* pair: shared variable appears in both components *)
 let shared = ((unit, unit) : (unit *[unique] unit)) in
@@ -230,11 +79,6 @@ let shared = ((unit, unit) : (unit *[unique] unit)) in
 >   a1 ∈ {global, local, regional}
 >   a2 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}
-> mode rels
->   (u1,u2) ∈ {(unique,aliased), (aliased,aliased)}
->   (u2,u1) ∈ {(aliased,unique), (aliased,aliased)}
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* let-binding: shared variable used in initializer and body *)
 let shared = ((unit, unit) : (unit *[local] unit)) in
@@ -245,11 +89,6 @@ let alias = shared in
 >   a1 ∈ {global, local, regional}
 >   a2 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}
-> mode rels
->   (u1,u2) ∈ {(unique,aliased), (aliased,aliased)}
->   (u2,u1) ∈ {(aliased,unique), (aliased,aliased)}
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* let-pair: shared variable used alongside destructured pair *)
 let shared = ((unit, unit) : (unit *[unique local] unit)) in
@@ -264,19 +103,6 @@ let (x, y) = pair in
 >   u2 ∈ {aliased, unique}
 >   a3 ∈ {global, local, regional}
 >   u3 ∈ {aliased, unique}
-> mode rels
->   (u3,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u3,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u2,u3) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u2,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u1,u3) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u1,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (a3,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a2,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* match: shared variable used in both branches *)
 let shared = ((unit, unit) : (unit *[unique local] unit)) in
@@ -294,11 +120,6 @@ let shared = ((unit, unit) : (unit *[aliased] unit)) in
 >   a1 ∈ {global, local, regional}
 >   a2 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}
-> mode rels
->   (u1,u2) ∈ {(unique,aliased), (aliased,aliased)}
->   (u2,u1) ∈ {(aliased,unique), (aliased,aliased)}
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* let-binding success with aliasable shared value *)
 let shared = ((unit, unit) : (unit *[aliased] unit)) in
@@ -309,11 +130,6 @@ let alias = shared in
 >   a1 ∈ {global, local, regional}
 >   a2 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}
-> mode rels
->   (u1,u2) ∈ {(unique,aliased), (aliased,aliased)}
->   (u2,u1) ∈ {(aliased,unique), (aliased,aliased)}
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* let-pair success with aliasable shared value *)
 let shared = ((unit, unit) : (unit *[aliased] unit)) in
@@ -328,19 +144,6 @@ let (x, y) = pair in
 >   u2 ∈ {aliased, unique}
 >   a3 ∈ {global, local, regional}
 >   u3 ∈ {aliased, unique}
-> mode rels
->   (u3,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u3,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u2,u3) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u2,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u1,u3) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u1,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (a3,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a2,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* match with aliasable shared value still fails: need better inference *)
 let shared = ((unit, unit) : (unit *[aliased local] unit)) in

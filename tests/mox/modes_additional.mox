@@ -6,11 +6,6 @@
 >   u1 ∈ {aliased, unique}
 >   a2 ∈ {global, local, regional}
 >   u2 ∈ {aliased, unique}
-> mode rels
->   (u2,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u1,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* sum distributing modes across branches *)
 (((left(unit)), (left(unit))) : ((unit +[unique local] empty) * (unit +[unique local] empty)))
@@ -22,19 +17,6 @@
 >   u2 ∈ {aliased, unique}
 >   a3 ∈ {global, local, regional}
 >   u3 ∈ {aliased, unique}
-> mode rels
->   (u3,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u3,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u2,u3) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u2,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u1,u3) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u1,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (a3,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a2,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* nested arrow with modes *)
 ((fun f => fun x => f (fun y => x))
@@ -49,11 +31,6 @@
 >   u1 ∈ {aliased, unique}
 >   a2 ∈ {global, local, regional}
 >   u2 ∈ {aliased, unique}
-> mode rels
->   (u2,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u1,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* invalid sum: uniqueness violation across branches *)
 (((left(unit)), (right(unit))) : ((unit +[unique local] empty) *[aliased] (unit +[aliased local] unit)))
@@ -65,16 +42,3 @@
 >   u2 ∈ {aliased, unique}
 >   a3 ∈ {global, local, regional}
 >   u3 ∈ {aliased, unique}
-> mode rels
->   (u3,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u3,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u2,u3) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u2,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u1,u3) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u1,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (a3,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a2,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}

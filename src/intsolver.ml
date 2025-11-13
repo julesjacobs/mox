@@ -143,8 +143,11 @@ let newvar domain_values =
   v
 
 let assert_rel rel v1 v2 =
-  let queue = Queue.create () in
   let rel = clamp_relation v1 v2 rel in
-  if ensure_relation queue v1 v2 rel then saturate queue
+  let top = full_relation v1 v2 in
+  if Relations.equal rel top then ()
+  else (
+    let queue = Queue.create () in
+    if ensure_relation queue v1 v2 rel then saturate queue )
 
 let get_rel v1 v2 = current_relation v1 v2

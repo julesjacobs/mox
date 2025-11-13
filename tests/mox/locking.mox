@@ -9,9 +9,6 @@ let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
 >   p1 ∈ {non-portable, portable}
 >   l1 ∈ {many, never, once}
 >   a2 ∈ {global, local, regional}
-> mode rels
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* once-qualified closures can retain unique storage *)
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
@@ -24,9 +21,6 @@ let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
 >   p1 ∈ {non-portable, portable}
 >   l1 ∈ {many, never, once}
 >   a2 ∈ {global, local, regional}
-> mode rels
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* closures reject functions that exceed their mode budget *)
 let aliased_fun = ((fun x => x) : (unit ->[local many] unit)) in
@@ -42,8 +36,5 @@ let aliased_fun = ((fun x => x) : (unit ->[local many] unit)) in
 >   a2 ∈ {global, local, regional}
 > mode rels
 >   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local)}
->   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 >   (l2,l1) ∈ {(many,many), (many,once), (many,never), (once,once), (once,never), (never,never)}
->   (l1,l2) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
 >   (p2,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,non-portable)}
->   (p1,p2) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}

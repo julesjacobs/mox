@@ -6,8 +6,3 @@
 >   u1 ∈ {aliased, unique}
 >   a2 ∈ {global, local, regional}
 >   u2 ∈ {aliased, unique}
-> mode rels
->   (u2,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (u1,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
->   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}

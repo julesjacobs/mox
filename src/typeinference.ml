@@ -749,6 +749,20 @@ let string_of_relation_values describe relation =
   in
   Printf.sprintf "{%s}" (String.concat ", " pairs)
 
+let cartesian_relation left_domain right_domain =
+  left_domain
+  |> List.map (fun left ->
+         List.map (fun right -> (left, right)) right_domain)
+  |> List.concat
+  |> Relations.make
+
+let relation_is_cartesian left right relation =
+  let left_domain = Modesolver.get_domain left in
+  let right_domain = Modesolver.get_domain right in
+  left_domain <> []
+  && right_domain <> []
+  && Relations.equal relation (cartesian_relation left_domain right_domain)
+
 let axis_relation_lines names vars describe get_relation =
   let vars = List.rev vars in
   let all_pairs =
@@ -756,14 +770,24 @@ let axis_relation_lines names vars describe get_relation =
     |> List.map (fun left -> List.map (fun right -> (left, right)) vars)
     |> List.concat
   in
-  all_pairs
-  |> List.filter (fun (left, right) -> left != right)
-  |> List.map (fun (left, right) ->
-         let relation = get_relation left right in
-         let relation_str = string_of_relation_values describe relation in
-         let left_name = ModeName.name names left in
-         let right_name = ModeName.name names right in
-         Printf.sprintf "(%s,%s) ∈ %s" left_name right_name relation_str)
+  let lines =
+    List.fold_left
+      (fun acc (left, right) ->
+        if left == right then acc
+        else
+          let relation = get_relation left right in
+          if relation_is_cartesian left right relation then acc
+          else
+            let relation_str = string_of_relation_values describe relation in
+            let left_name = ModeName.name names left in
+            let right_name = ModeName.name names right in
+            let line =
+              Printf.sprintf "(%s,%s) ∈ %s" left_name right_name relation_str
+            in
+            line :: acc)
+      [] all_pairs
+  in
+  List.rev lines
 
 let render_mode_relations state =
   List.concat
