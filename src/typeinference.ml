@@ -1,5 +1,35 @@
 open Modes
 
+module StringSet = Set.Make (String)
+
+let remove_vars vars set =
+  List.fold_left (fun acc var -> StringSet.remove var acc) set vars
+
+let rec free_vars expr =
+  match expr with
+  | Ast.Var x -> StringSet.singleton x
+  | Ast.Unit -> StringSet.empty
+  | Ast.Hole -> StringSet.empty
+  | Ast.Absurd e -> free_vars e
+  | Ast.Annot (e, _) -> free_vars e
+  | Ast.Fun (x, body) -> free_vars_without body [ x ]
+  | Ast.App (fn, arg) -> StringSet.union (free_vars fn) (free_vars arg)
+  | Ast.Let (x, e1, e2) ->
+      StringSet.union (free_vars e1) (free_vars_without e2 [ x ])
+  | Ast.LetPair (x1, x2, e1, e2) ->
+      StringSet.union (free_vars e1) (free_vars_without e2 [ x1; x2 ])
+  | Ast.Pair (left, right) ->
+      StringSet.union (free_vars left) (free_vars right)
+  | Ast.Inl e -> free_vars e
+  | Ast.Inr e -> free_vars e
+  | Ast.Match (scrut, x1, e1, x2, e2) ->
+      let fv_scrut = free_vars scrut in
+      let fv_e1 = free_vars_without e1 [ x1 ] in
+      let fv_e2 = free_vars_without e2 [ x2 ] in
+      StringSet.union fv_scrut (StringSet.union fv_e1 fv_e2)
+
+and free_vars_without expr vars = remove_vars vars (free_vars expr)
+
 (* -------------------------------------------------------------------------- *)
 (* Mode descriptions shared by types and constraints. *)
 
@@ -429,6 +459,26 @@ let rec lookup env name =
   | [] -> None
   | (bound, ty) :: rest -> if String.equal bound name then Some ty else lookup rest name
 
+let alias_binding ty =
+  let alias_meta = fresh_meta () in
+  let alias_ty = TyMeta alias_meta in
+  assert_alias ty alias_ty;
+  alias_ty
+
+let alias_env_for env vars =
+  if StringSet.is_empty vars then env
+  else
+    List.map
+      (fun (name, ty) ->
+        if StringSet.mem name vars then
+          (name, alias_binding ty)
+        else
+          (name, ty))
+      env
+
+let alias_env_between env fv1 fv2 =
+  alias_env_for env (StringSet.inter fv1 fv2)
+
 let lock_env env future =
   (* Apply the lock constraint to every binding so the function body only sees
      weakened capabilities allowed by [future]. *)
@@ -450,8 +500,11 @@ let rec infer_with_env env expr =
     | None -> type_error (Printf.sprintf "Unbound variable %s" x))
   | Ast.Unit -> TyUnit
   | Ast.Pair (e1, e2) ->
-    let ty1 = infer_with_env env e1 in
-    let ty2 = infer_with_env env e2 in
+    let left_fv = free_vars e1 in
+    let right_fv = free_vars e2 in
+    let shared_env = alias_env_between env left_fv right_fv in
+    let ty1 = infer_with_env shared_env e1 in
+    let ty2 = infer_with_env shared_env e2 in
     let storage = fresh_storage_mode () in
     let ty = TyPair (ty1, storage, ty2) in
     ty
@@ -473,36 +526,51 @@ let rec infer_with_env env expr =
     assert_subtype ty TyEmpty;
     TyMeta (fresh_meta ())
   | Ast.Let (x, e1, e2) ->
-    let ty1 = infer_with_env env e1 in
-    let env' = (x, ty1) :: env in
-    infer_with_env env' e2
+    let fv_e1 = free_vars e1 in
+    let fv_e2 = free_vars_without e2 [ x ] in
+    let shared_env = alias_env_between env fv_e1 fv_e2 in
+    let ty1 = infer_with_env shared_env e1 in
+    infer_with_env ((x, ty1) :: shared_env) e2
   | Ast.LetPair (x1, x2, e1, e2) ->
-    let ty1 = infer_with_env env e1 in
+    let fv_e1 = free_vars e1 in
+    let fv_e2 = free_vars_without e2 [ x1; x2 ] in
+    let shared_env = alias_env_between env fv_e1 fv_e2 in
+    let ty1 = infer_with_env shared_env e1 in
     let ty_left = TyMeta (fresh_meta ()) in
     let ty_right = TyMeta (fresh_meta ()) in
     let storage = fresh_storage_mode () in
     let ty_pair = TyPair (ty_left, storage, ty_right) in
     assert_subtype ty1 ty_pair;
-    let env' = (x1, ty_left) :: (x2, ty_right) :: env in
+    let env' = (x1, ty_left) :: (x2, ty_right) :: shared_env in
     infer_with_env env' e2
   | Ast.Match (e, x1, e1, x2, e2) ->
-    let ty_scrut = infer_with_env env e in
+    let fv_scrut = free_vars e in
+    let fv_e1 = free_vars_without e1 [ x1 ] in
+    let fv_e2 = free_vars_without e2 [ x2 ] in
+    let branches_fv = StringSet.union fv_e1 fv_e2 in
+    let shared_with_scrut = StringSet.inter fv_scrut branches_fv in
+    let env_branches = alias_env_for env shared_with_scrut in
+    let env_scrut = alias_env_between env branches_fv fv_scrut in
+    let ty_scrut = infer_with_env env_scrut e in
     let ty_left = TyMeta (fresh_meta ()) in
     let ty_right = TyMeta (fresh_meta ()) in
     let storage = fresh_storage_mode () in
     let ty_sum = TySum (ty_left, storage, ty_right) in
     assert_subtype ty_scrut ty_sum;
-    let env1 = (x1, ty_left) :: env in
-    let env2 = (x2, ty_right) :: env in
+    let env1 = (x1, ty_left) :: env_branches in
     let ty1 = infer_with_env env1 e1 in
+    let env2 = (x2, ty_right) :: env_branches in
     let ty2 = infer_with_env env2 e2 in
     let ty_join = TyMeta (fresh_meta ()) in
     assert_subtype ty1 ty_join;
     assert_subtype ty2 ty_join;
     ty_join
   | Ast.App (e1, e2) ->
-    let ty1 = infer_with_env env e1 in
-    let ty2 = infer_with_env env e2 in
+    let fn_fv = free_vars e1 in
+    let arg_fv = free_vars e2 in
+    let shared_env = alias_env_between env fn_fv arg_fv in
+    let ty1 = infer_with_env shared_env e1 in
+    let ty2 = infer_with_env shared_env e2 in
     let ty_dom = TyMeta (fresh_meta ()) in
     let ty_cod = TyMeta (fresh_meta ()) in
     let future = fresh_future_mode () in
@@ -519,7 +587,6 @@ let rec infer_with_env env expr =
     let ty_body = infer_with_env env' e in
     let ty_arrow = TyArrow (ty_param, future, ty_body) in
     ty_arrow
-    (* TODO: aliasing *)
   | Ast.Annot (e, ty_syntax) ->
     let ty = ty_of_ast ty_syntax in
     let ty' = infer_with_env env e in

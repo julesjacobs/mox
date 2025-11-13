@@ -311,57 +311,57 @@ let rec infer_expr env expr =
   | App (fn, arg) ->
       let fn_fv = free_vars fn in
       let arg_fv = free_vars arg in
-      let fn_ty = infer_expr env fn in
+      let shared_env = alias_env_between env fn_fv arg_fv in
+      let fn_ty = infer_expr shared_env fn in
       (match fn_ty with
       | TyArrow (param, future, result) ->
           let linearity = future.Modes.Future.linearity in
           if Modes.Linearity.equal linearity Modes.Linearity.top_to then
             raise (Mode_error "Cannot call a never-qualified function");
-          let arg_env = alias_env_between env fn_fv arg_fv in
-          check_expr arg_env arg param;
+          check_expr shared_env arg param;
           result
       | _ -> raise (Error (Expected_function fn_ty)))
   | Pair (left, right) ->
       let left_fv = free_vars left in
       let right_fv = free_vars right in
-      let left_ty = infer_expr env left in
-      let right_env = alias_env_between env left_fv right_fv in
-      let right_ty = infer_expr right_env right in
+      let shared_env = alias_env_between env left_fv right_fv in
+      let left_ty = infer_expr shared_env left in
+      let right_ty = infer_expr shared_env right in
       make_pair_ty left_ty default_storage_mode right_ty
   | Let (x, e1, e2) ->
       let fv_e1 = free_vars e1 in
       let fv_e2 = free_vars_without e2 [ x ] in
-      let env_e2 = alias_env_between env fv_e1 fv_e2 in
-      let t1 = infer_expr env e1 in
-      infer_expr ((x, Available t1) :: env_e2) e2
+      let shared_env = alias_env_between env fv_e1 fv_e2 in
+      let t1 = infer_expr shared_env e1 in
+      infer_expr ((x, Available t1) :: shared_env) e2
   | LetPair (x1, x2, e1, e2) ->
       let fv_e1 = free_vars e1 in
       let fv_e2 = free_vars_without e2 [ x1; x2 ] in
-      let env_e2 = alias_env_between env fv_e1 fv_e2 in
-      let t = infer_expr env e1 in
+      let shared_env = alias_env_between env fv_e1 fv_e2 in
+      let t = infer_expr shared_env e1 in
       (match t with
       | TyPair (t_left, _, t_right) ->
           infer_expr
-            ((x2, Available t_right) :: (x1, Available t_left) :: env_e2)
+            ((x2, Available t_right) :: (x1, Available t_left) :: shared_env)
             e2
       | _ -> raise (Error (Expected_pair t)))
   | Inl _ -> raise (Error (Cannot_infer "left"))
   | Inr _ -> raise (Error (Cannot_infer "right"))
   | Match (scrutinee, x1, e1, x2, e2) ->
       let fv_scrut = free_vars scrutinee in
-      let scrut_ty = infer_expr env scrutinee in
+      let fv_e1 = free_vars_without e1 [ x1 ] in
+      let fv_e2 = free_vars_without e2 [ x2 ] in
+      let branches_fv = StringSet.union fv_e1 fv_e2 in
+      let env_branches = alias_env_between env fv_scrut branches_fv in
+      let scrut_env = alias_env_between env branches_fv fv_scrut in
+      let scrut_ty = infer_expr scrut_env scrutinee in
       (match scrut_ty with
       | TySum (left_ty, storage, right_ty) ->
-          let fv_e1 = free_vars_without e1 [ x1 ] in
-          let env_e1 = alias_env_between env fv_scrut fv_e1 in
           let branch_ty =
-            infer_expr ((x1, Available left_ty) :: env_e1) e1
+            infer_expr ((x1, Available left_ty) :: env_branches) e1
           in
           ensure_well_formed branch_ty;
-          let used = StringSet.union fv_scrut fv_e1 in
-          let fv_e2 = free_vars_without e2 [ x2 ] in
-          let env_e2 = alias_env_between env used fv_e2 in
-          check_expr ((x2, Available right_ty) :: env_e2) e2 branch_ty;
+          check_expr ((x2, Available right_ty) :: env_branches) e2 branch_ty;
           branch_ty
       | _ -> raise (Error (Expected_sum scrut_ty)))
   | Annot (expr, ty) ->
@@ -393,39 +393,40 @@ and check_expr env expr ty =
       | TyPair (left_ty, _, right_ty) ->
           let left_fv = free_vars left in
           let right_fv = free_vars right in
-          check_expr env left left_ty;
-          let env_right = alias_env_between env left_fv right_fv in
-          check_expr env_right right right_ty
+          let shared_env = alias_env_between env left_fv right_fv in
+          check_expr shared_env left left_ty;
+          check_expr shared_env right right_ty
       | _ -> raise (Error (Expected_pair ty)))
   | Let (x, e1, e2) ->
       let fv_e1 = free_vars e1 in
       let fv_e2 = free_vars_without e2 [ x ] in
-      let env_e2 = alias_env_between env fv_e1 fv_e2 in
-      let t1 = infer_expr env e1 in
-      check_expr ((x, Available t1) :: env_e2) e2 ty
+      let shared_env = alias_env_between env fv_e1 fv_e2 in
+      let t1 = infer_expr shared_env e1 in
+      check_expr ((x, Available t1) :: shared_env) e2 ty
   | LetPair (x1, x2, e1, e2) ->
       let fv_e1 = free_vars e1 in
       let fv_e2 = free_vars_without e2 [ x1; x2 ] in
-      let env_e2 = alias_env_between env fv_e1 fv_e2 in
-      let t = infer_expr env e1 in
+      let shared_env = alias_env_between env fv_e1 fv_e2 in
+      let t = infer_expr shared_env e1 in
       (match t with
       | TyPair (t_left, _, t_right) ->
           check_expr
-            ((x2, Available t_right) :: (x1, Available t_left) :: env_e2)
+            ((x2, Available t_right) :: (x1, Available t_left) :: shared_env)
             e2 ty
       | _ -> raise (Error (Expected_pair t)))
   | Match (scrutinee, x1, e1, x2, e2) ->
       let fv_scrut = free_vars scrutinee in
-      let scrut_ty = infer_expr env scrutinee in
+      let fv_e1 = free_vars_without e1 [ x1 ] in
+      let fv_e2 = free_vars_without e2 [ x2 ] in
+      let branches_fv = StringSet.union fv_e1 fv_e2 in
+      let shared_with_scrut = StringSet.inter fv_scrut branches_fv in
+      let env_branches = alias_env_for env shared_with_scrut in
+      let scrut_env = alias_env_between env branches_fv fv_scrut in
+      let scrut_ty = infer_expr scrut_env scrutinee in
       (match scrut_ty with
       | TySum (left_ty, _, right_ty) ->
-          let fv_e1 = free_vars_without e1 [ x1 ] in
-          let env_e1 = alias_env_between env fv_scrut fv_e1 in
-          check_expr ((x1, Available left_ty) :: env_e1) e1 ty;
-          let used = StringSet.union fv_scrut fv_e1 in
-          let fv_e2 = free_vars_without e2 [ x2 ] in
-          let env_e2 = alias_env_between env used fv_e2 in
-          check_expr ((x2, Available right_ty) :: env_e2) e2 ty
+          check_expr ((x1, Available left_ty) :: env_branches) e1 ty;
+          check_expr ((x2, Available right_ty) :: env_branches) e2 ty
       | _ -> raise (Error (Expected_sum scrut_ty)))
   | Annot (expr, ty') ->
       check_expr env expr ty';
