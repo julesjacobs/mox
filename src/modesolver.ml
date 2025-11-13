@@ -79,8 +79,7 @@ let describe_var show var =
 
 let linearity_uniqueness_dagger_relation =
   Relations.make
-    [ (Modes.Linearity.never, Modes.Uniqueness.unique);
-      (Modes.Linearity.never, Modes.Uniqueness.aliased);
+    [ (Modes.Linearity.many, Modes.Uniqueness.aliased);
       (Modes.Linearity.once, Modes.Uniqueness.unique);
       (Modes.Linearity.once, Modes.Uniqueness.aliased) ]
 
