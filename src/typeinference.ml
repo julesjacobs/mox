@@ -517,10 +517,8 @@ and assert_lock original locked future =
       assert_future_leq_to future original_future;
       assert_future_leq_to original_future locked_future;
       assert_future_leq_to locked_future original_future;
-      assert_subtype original_domain locked_domain;
       assert_subtype locked_domain original_domain;
-      assert_subtype original_codomain locked_codomain;
-      assert_subtype locked_codomain original_codomain
+      assert_subtype original_codomain locked_codomain
   | _ ->
       type_error "assert_lock: not equivalent"
 
