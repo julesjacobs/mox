@@ -11,6 +11,7 @@ type type_error =
   | Expected_function of ty
   | Expected_pair of ty
   | Expected_sum of ty
+  | Expected_ref of ty
   | Cannot_infer of string
   | Not_a_subtype of ty * ty
 
@@ -66,6 +67,8 @@ let string_of_error = function
       Printf.sprintf "Expected a pair type, found %s" (string_of_ty ty)
   | Expected_sum ty ->
       Printf.sprintf "Expected a sum type, found %s" (string_of_ty ty)
+  | Expected_ref ty ->
+      Printf.sprintf "Expected a reference type, found %s" (string_of_ty ty)
   | Cannot_infer what ->
       Printf.sprintf "Cannot infer the type of %s; add a type annotation" what
   | Not_a_subtype (t1, t2) ->
@@ -93,6 +96,10 @@ let rec free_vars expr =
   | Inl (_, e) -> free_vars e
   | Inr (_, e) -> free_vars e
   | Region e -> free_vars e
+  | Ref e -> free_vars e
+  | Deref e -> free_vars e
+  | Assign (lhs, rhs) -> StringSet.union (free_vars lhs) (free_vars rhs)
+  | Fork e -> free_vars e
   | Match (_, scrut, x1, e1, x2, e2) ->
       let fv_scrut = free_vars scrut in
       let fv_e1 = free_vars_without e1 [ x1 ] in
@@ -105,9 +112,24 @@ and free_vars_without expr vars = remove_vars vars (free_vars expr)
 (* Modes and well-formedness                                                   *)
 (* -------------------------------------------------------------------------- *)
 
-let mode_of_storage { uniqueness; areality } =
+let mode_of_storage ({ uniqueness; areality } : storage_mode) =
   let past = { Modes.Past.bottom_in with uniqueness } in
   let future = { Modes.Future.bottom_in with areality } in
+  Modes.Mode.make ~past ~future
+
+let mode_of_ref ({ contention } : ref_mode) =
+  let past =
+    Modes.Past.make
+      ~uniqueness:Modes.Uniqueness.bottom_in
+      ~contention
+  in
+  let bottom_future = Modes.Future.bottom_in in
+  let future =
+    Modes.Future.make
+      ~linearity:bottom_future.Modes.Future.linearity
+      ~portability:bottom_future.Modes.Future.portability
+      ~areality:bottom_future.Modes.Future.areality
+  in
   Modes.Mode.make ~past ~future
 
 let mode_violation actual expected =
@@ -118,7 +140,7 @@ let mode_violation actual expected =
 let ensure_mode_within actual expected =
   if Modes.Mode.leq_in actual expected then () else raise (mode_violation actual expected)
 
-let component_expectation storage expected =
+let component_expectation (storage : storage_mode) expected =
   let storage_mode = mode_of_storage storage in
   ensure_mode_within storage_mode expected;
   let open Modes in
@@ -136,6 +158,24 @@ let component_expectation storage expected =
   in
   Mode.make ~past:component_past ~future:component_future
 
+let reference_expectation (ref_mode : ref_mode) expected =
+  let ref_mode_as_mode = mode_of_ref ref_mode in
+  ensure_mode_within ref_mode_as_mode expected;
+  let open Modes in
+  let { Mode.past = expected_past; future = expected_future } = expected in
+  let payload_past =
+    Past.make
+      ~uniqueness:Uniqueness.aliased
+      ~contention:(Contention.meet_in expected_past.Past.contention ref_mode.contention)
+  in
+  let payload_future =
+    Future.make
+      ~linearity:expected_future.Future.linearity
+      ~portability:expected_future.Future.portability
+      ~areality:Areality.global
+  in
+  Mode.make ~past:payload_past ~future:payload_future
+
 let rec check_mode ty expected =
   match ty with
   | TyUnit | TyEmpty -> ()
@@ -152,6 +192,9 @@ let rec check_mode ty expected =
       let component_expected = component_expectation storage expected in
       check_mode left component_expected;
       check_mode right component_expected
+  | TyRef (payload, mode) ->
+      let payload_expected = reference_expectation mode expected in
+      check_mode payload payload_expected
 
 let ensure_well_formed ty =
   check_mode ty Modes.Mode.top_in
@@ -188,6 +231,10 @@ let rec subtype t1 t2 =
       if not (Modes.Uniqueness.leq_to mode1.uniqueness mode2.uniqueness)
          || not (Modes.Areality.leq_to mode1.areality mode2.areality)
       then raise (Error (Not_a_subtype (t1, t2)))
+  | TyRef (payload1, mode1), TyRef (payload2, mode2) ->
+      subtype payload1 payload2;
+      if not (Modes.Contention.leq_to mode1.contention mode2.contention)
+      then raise (Error (Not_a_subtype (t1, t2)))
   | _ -> raise (Error (Not_a_subtype (t1, t2)))
 
 (* -------------------------------------------------------------------------- *)
@@ -206,6 +253,9 @@ let default_storage_mode =
 let stack_storage_mode =
   { uniqueness = Unique; areality = Modes.Areality.local }
 
+let precise_ref_mode =
+  { contention = Modes.Contention.uncontended }
+
 let make_pair_ty left storage right =
   let ty = TyPair (left, storage, right) in
   ensure_well_formed ty;
@@ -213,6 +263,11 @@ let make_pair_ty left storage right =
 
 let make_sum_ty left storage right =
   let ty = TySum (left, storage, right) in
+  ensure_well_formed ty;
+  ty
+
+let make_ref_ty payload mode =
+  let ty = TyRef (payload, mode) in
   ensure_well_formed ty;
   ty
 
@@ -239,6 +294,10 @@ let rec alias_type ty =
       let right' = alias_type right in
       let storage' = { storage with uniqueness = Modes.Uniqueness.default } in
       make_sum_ty left' storage' right'
+  | TyRef (payload, mode) ->
+      let payload' = alias_type payload in
+      let mode' = { contention = Modes.Contention.contended } in
+      make_ref_ty payload' mode'
 
 let alias_env_for env vars =
   List.map
@@ -265,16 +324,26 @@ let linearity_dagger linearity =
   else
     Modes.Uniqueness.top_in
 
+let portability_dagger portability =
+  if Modes.Portability.equal portability Modes.Portability.portable then
+    Modes.Contention.contended
+  else
+    Modes.Contention.uncontended
+
 let rec lock_type mode ty =
   let linearity =
     let open Modes.Future in
     mode.linearity
   in
+  let portability =
+    let open Modes.Future in
+    mode.portability
+  in
   let mode_areality =
     let open Modes.Future in
     mode.areality
   in
-  let ensure_storage_supported storage context =
+  let ensure_storage_supported (storage : storage_mode) context =
     if Modes.Areality.leq_to storage.areality mode_areality then
       Ok ()
     else
@@ -331,6 +400,17 @@ let rec lock_type mode ty =
                   Ok (TySum (left_locked, storage', right_locked))
               | Error failure -> Error (push_lock_path "sum.right" failure))
           | Error failure -> Error (push_lock_path "sum.left" failure)))
+  | TyRef (payload, ref_mode) ->
+      let open Result in
+      (match lock_type mode payload with
+      | Ok locked_payload ->
+          let contention =
+            Modes.Contention.join_to ref_mode.contention
+              (portability_dagger portability)
+          in
+          let ref_mode' = { contention } in
+          Ok (TyRef (locked_payload, ref_mode'))
+      | Error failure -> Error (push_lock_path "ref.payload" failure))
 
 let lock_env mode env =
   List.map (fun (name, binding) ->
@@ -345,7 +425,7 @@ let lock_env mode env =
       | Tombstone _ -> (name, binding))
     env
 
-let require_local_storage alloc context storage =
+let require_local_storage alloc context (storage : storage_mode) =
   match alloc with
   | Stack ->
       if not (Modes.Areality.equal storage.areality Modes.Areality.local) then
@@ -366,7 +446,7 @@ let require_local_future alloc context future =
              (Printf.sprintf "Stack-allocated %s must have local areality" context))
   | Heap -> ()
 
-let require_unique_storage_kind kind storage context =
+let require_unique_storage_kind kind (storage : storage_mode) context =
   match kind with
   | Destructive ->
       if not (Modes.Uniqueness.equal storage.uniqueness Modes.Uniqueness.unique)
@@ -430,6 +510,51 @@ let rec infer_expr env expr =
       let ty = infer_expr env e in
       ensure_global_return ty;
       ty
+  | Ref e ->
+      let payload = infer_expr env e in
+      make_ref_ty payload precise_ref_mode
+  | Deref e ->
+      let ref_ty = infer_expr env e in
+      (match ref_ty with
+      | TyRef (payload, mode) ->
+          if Modes.Contention.leq_to mode.contention Modes.Contention.shared then
+            payload
+          else
+            raise
+              (Mode_error
+                 "Cannot read from a contended reference; capability must be shared or uncontended")
+      | _ -> raise (Error (Expected_ref ref_ty)))
+  | Assign (lhs, rhs) ->
+      let fv_lhs = free_vars lhs in
+      let fv_rhs = free_vars rhs in
+      let env_lhs, env_rhs = split_env env fv_lhs fv_rhs in
+      let lhs_ty = infer_expr env_lhs lhs in
+      (match lhs_ty with
+      | TyRef (payload, mode) ->
+          if Modes.Contention.equal mode.contention Modes.Contention.uncontended then (
+            check_expr env_rhs rhs payload;
+            TyUnit)
+          else
+            raise
+              (Mode_error
+                 "Cannot write through a shared/contended reference; handle must be uncontended")
+      | _ -> raise (Error (Expected_ref lhs_ty)))
+  | Fork e ->
+      let fv = free_vars e in
+      let captured_env = restrict_env env fv in
+      let rest_env =
+        List.filter (fun (name, _) -> not (StringSet.mem name fv)) env
+      in
+      let port_mode =
+        Modes.Future.make
+          ~linearity:Modes.Linearity.many
+          ~portability:Modes.Portability.portable
+          ~areality:Modes.Areality.global
+      in
+      let locked_env = lock_env port_mode captured_env in
+      let env' = locked_env @ rest_env in
+      check_expr env' e TyUnit;
+      TyUnit
   | Match (kind, scrutinee, x1, e1, x2, e2) ->
       let fv_scrut = free_vars scrutinee in
       let fv_e1 = free_vars_without e1 [ x1 ] in
@@ -537,3 +662,4 @@ and check_expr env expr ty =
 let infer expr = infer_expr [] expr
 
 let check_top expr ty = check_expr [] expr ty
+exception Type_error of string

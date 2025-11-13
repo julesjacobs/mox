@@ -18,11 +18,10 @@ type infer = expr -> (string, string) result
 
 let default_infer (expr : expr) =
   try
-    let ty = Typechecker.infer expr in
-    Ok (Typechecker.string_of_ty ty)
+    let ty = Typeinference.infer expr in
+    Ok (Typeinference.string_of_ty ty)
   with
-  | Typechecker.Error err -> Error (Typechecker.string_of_error err)
-  | Typechecker.Mode_error msg -> Error msg
+  | Typeinference.Error err -> Error (Typeinference.string_of_error err)
 
 let is_type_line line =
   let trimmed = String.trim line in

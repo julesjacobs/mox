@@ -8,37 +8,12 @@ let set_mode m () = mode := m
 
 let positionals = ref []
 
-type backend = Typechecker | Typeinference
-
-let backend = ref Typeinference
-
-let set_backend name =
-  let value =
-    match String.lowercase_ascii name with
-    | "typechecker" | "checker" -> Typechecker
-    | "typeinference" | "inference" | "infer" -> Typeinference
-    | _ ->
-        raise
-          (Arg.Bad
-             (Printf.sprintf "Unknown engine %s (expected typechecker or typeinference)" name))
-  in
-  backend := value
-
 let infer_with_backend expr =
-  match !backend with
-  | Typechecker ->
-      (try
-         let ty = Typechecker.infer expr in
-         Ok (Typechecker.string_of_ty ty)
-       with
-      | Typechecker.Error err -> Error (Typechecker.string_of_error err)
-      | Typechecker.Mode_error msg -> Error msg)
-  | Typeinference ->
-      (try
-         let ty = Typeinference.infer expr in
-         Ok (Typeinference.string_of_ty ty)
-       with
-      | Typeinference.Error err -> Error (Typeinference.string_of_error err))
+  try
+    let ty = Typeinference.infer expr in
+    Ok (Typeinference.string_of_ty ty)
+  with
+  | Typeinference.Error err -> Error (Typeinference.string_of_error err)
 
 let () =
   let usage_msg =
@@ -46,10 +21,7 @@ let () =
   in
   let spec =
     [ "--type", Arg.Unit (set_mode Ty), "Parse input as a type instead of an expression";
-      "--expr", Arg.Unit (set_mode Expr), "Parse input as an expression (default)";
-      ( "--engine",
-        Arg.String set_backend,
-        "Select typing backend: typeinference (default) or typechecker" ) ]
+      "--expr", Arg.Unit (set_mode Expr), "Parse input as an expression (default)" ]
   in
   let handle_anon arg = positionals := arg :: !positionals in
   Arg.parse spec handle_anon usage_msg;

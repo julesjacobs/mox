@@ -10,12 +10,16 @@ type storage_mode =
   { uniqueness : Modes.Uniqueness.t;
     areality : Modes.Areality.t }
 
+type ref_mode =
+  { contention : Modes.Contention.t }
+
 type ty =
   | TyUnit
   | TyEmpty
   | TyArrow of ty * Modes.Future.t * ty
   | TyPair of ty * storage_mode * ty
   | TySum of ty * storage_mode * ty
+  | TyRef of ty * ref_mode
 
 (** Expressions as described in tex/mox.tex. *)
 type alloc =
@@ -26,8 +30,6 @@ type bind_kind =
   | Regular
   | Destructive
 
-(* CR jujacobs: add mutable references *)
-(* CR jujacobs: add fork (takes expression returns unit) *)
 type expr =
   | Var of ident
   | Let of bind_kind * ident * expr * expr
@@ -42,4 +44,8 @@ type expr =
   | Inr of alloc * expr
   | Region of expr
   | Match of bind_kind * expr * ident * expr * ident * expr
+  | Ref of expr
+  | Deref of expr
+  | Assign of expr * expr
+  | Fork of expr
   | Annot of expr * ty

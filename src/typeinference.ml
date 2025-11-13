@@ -98,6 +98,10 @@ let rec free_vars expr =
   | Ast.Inl (_, e) -> free_vars e
   | Ast.Inr (_, e) -> free_vars e
   | Ast.Region e -> free_vars e
+  | Ast.Ref e -> free_vars e
+  | Ast.Deref e -> free_vars e
+  | Ast.Assign (lhs, rhs) -> StringSet.union (free_vars lhs) (free_vars rhs)
+  | Ast.Fork e -> free_vars e
   | Ast.Match (_, scrut, x1, e1, x2, e2) ->
       let fv_scrut = free_vars scrut in
       let fv_e1 = free_vars_without e1 [ x1 ] in
@@ -113,6 +117,9 @@ and free_vars_without expr vars = remove_vars vars (free_vars expr)
 type storage_mode =
   { uniqueness : Modesolver.Uniqueness.var;
     areality : Modesolver.Areality.var }
+
+type ref_mode =
+  { contention : Modesolver.Contention.var }
 
 (* Used on function types and lock constraints. *)
 type future_mode =
@@ -137,6 +144,7 @@ type ty =
   | TyArrow of ty * future_mode * ty
   | TyPair of ty * storage_mode * ty
   | TySum of ty * storage_mode * ty
+  | TyRef of ty * ref_mode
   | TyMeta of meta
 
 and meta =
@@ -173,6 +181,9 @@ let fresh_storage_mode () : storage_mode =
   { uniqueness = Modesolver.Uniqueness.new_var ();
     areality = Modesolver.Areality.new_var () }
 
+let fresh_ref_mode () : ref_mode =
+  { contention = Modesolver.Contention.new_var () }
+
 let fresh_future_mode () : future_mode =
   { linearity = Modesolver.Linearity.new_var ();
     portability = Modesolver.Portability.new_var ();
@@ -207,6 +218,12 @@ let const_linearity_var value =
 
 let const_portability_var value =
   Modesolver.Portability.new_var ~domain:[value] ()
+
+let const_ref_mode ~contention : ref_mode =
+  { contention = const_contention_var contention }
+
+let precise_ref_mode () =
+  const_ref_mode ~contention:Contention.uncontended
 
 let top_mode_vars () : mode_vars =
   (* Mode lattice top: type unrestricted on every axis. Useful when rules require
@@ -249,6 +266,9 @@ let assert_storage_leq_to (lower : storage_mode) (upper : storage_mode) =
   Modesolver.Uniqueness.assert_leq_to lower.uniqueness upper.uniqueness;
   Modesolver.Areality.assert_leq_to lower.areality upper.areality
 
+let assert_ref_leq_to (lower : ref_mode) (upper : ref_mode) =
+  Modesolver.Contention.assert_leq_to lower.contention upper.contention
+
 let assert_future_leq_to (lower : future_mode) (upper : future_mode) =
   Modesolver.Linearity.assert_leq_to lower.linearity upper.linearity;
   Modesolver.Portability.assert_leq_to lower.portability upper.portability;
@@ -256,6 +276,9 @@ let assert_future_leq_to (lower : future_mode) (upper : future_mode) =
 
 let assert_aliased (uniqueness : Modesolver.Uniqueness.var) =
   Modesolver.Uniqueness.restrict_domain [Uniqueness.aliased] uniqueness
+
+let assert_contended (contention : Modesolver.Contention.var) =
+  Modesolver.Contention.restrict_domain [Contention.contended] contention
 
 let alias_linearity_relation =
   Relations.make
@@ -363,6 +386,19 @@ let push_storage_to_components (storage : storage_mode) (container_mode : mode_v
   assert_equal_in Modesolver.Portability.assert_leq_in component_mode.portability container_mode.portability;
   component_mode
 
+let assert_ref_within (ref_mode : ref_mode) (mode_vars : mode_vars) =
+  Modesolver.Contention.assert_leq_in ref_mode.contention mode_vars.contention
+
+let push_ref_to_payload (ref_mode : ref_mode) (container_mode : mode_vars) =
+  let payload_mode = fresh_mode_vars () in
+  Modesolver.Contention.assert_leq_in payload_mode.contention ref_mode.contention;
+  Modesolver.Contention.assert_leq_in payload_mode.contention container_mode.contention;
+  Modesolver.Uniqueness.restrict_domain [Uniqueness.aliased] payload_mode.uniqueness;
+  Modesolver.Areality.restrict_domain [Areality.global] payload_mode.areality;
+  assert_equal_in Modesolver.Linearity.assert_leq_in payload_mode.linearity container_mode.linearity;
+  assert_equal_in Modesolver.Portability.assert_leq_in payload_mode.portability container_mode.portability;
+  payload_mode
+
 let rec assert_in ty mode_vars =
   match zonk ty with
   | TyMeta meta ->
@@ -376,6 +412,10 @@ let rec assert_in ty mode_vars =
     let component_mode = push_storage_to_components storage mode_vars in
     assert_in left component_mode;
     assert_in right component_mode
+  | TyRef (payload, ref_mode) ->
+    assert_ref_within ref_mode mode_vars;
+    let payload_mode = push_ref_to_payload ref_mode mode_vars in
+    assert_in payload payload_mode
   | TyArrow (domain, future, codomain) ->
     (* \hat{f} ≤₍in₎ m *)
     Modesolver.Areality.assert_leq_in future.areality mode_vars.areality;
@@ -389,6 +429,11 @@ let mk_pair left storage right =
 
 let mk_sum left storage right =
   let ty = TySum (left, storage, right) in
+  assert_in ty (top_mode_vars ());
+  ty
+
+let mk_ref payload ref_mode =
+  let ty = TyRef (payload, ref_mode) in
   assert_in ty (top_mode_vars ());
   ty
 
@@ -414,6 +459,8 @@ let rec string_of_ty ty =
       Printf.sprintf "(%s * %s)" (string_of_ty left) (string_of_ty right)
   | TySum (left, _, right) ->
       Printf.sprintf "(%s + %s)" (string_of_ty left) (string_of_ty right)
+  | TyRef (payload, _) ->
+      Printf.sprintf "(ref %s)" (string_of_ty payload)
   | TyMeta meta ->
       (match meta.solution with
       | Some solution -> string_of_ty solution
@@ -427,6 +474,7 @@ let rec outer_equiv ty1 ty2 =
   | TyEmpty, TyEmpty -> ()
   | TyPair _, TyPair _ -> ()
   | TySum _, TySum _ -> ()
+  | TyRef _, TyRef _ -> ()
   | TyArrow _, TyArrow _ -> ()
   | TyUnit, TyMeta meta | TyMeta meta, TyUnit ->
       set_meta_solution meta TyUnit
@@ -442,6 +490,10 @@ let rec outer_equiv ty1 ty2 =
       let left = fresh_meta () in
       let right = fresh_meta () in
       set_meta_solution meta (mk_sum (TyMeta left) storage (TyMeta right))
+  | TyRef _, TyMeta meta | TyMeta meta, TyRef _ ->
+      let payload = fresh_meta () in
+      let ref_mode = fresh_ref_mode () in
+      set_meta_solution meta (mk_ref (TyMeta payload) ref_mode)
   | TyArrow _, TyMeta meta | TyMeta meta, TyArrow _ ->
       let future = fresh_future_mode () in
       let domain = fresh_meta () in
@@ -467,6 +519,9 @@ and assert_subtype lower upper =
       assert_subtype lower_left upper_left;
       assert_subtype lower_right upper_right;
       assert_storage_leq_to lower_storage upper_storage
+  | TyRef (lower_payload, lower_mode), TyRef (upper_payload, upper_mode) ->
+      assert_subtype lower_payload upper_payload;
+      assert_ref_leq_to lower_mode upper_mode
   | TyArrow (lower_domain, lower_future, lower_codomain), TyArrow (upper_domain, upper_future, upper_codomain) ->
       assert_subtype upper_domain lower_domain;
       assert_subtype lower_codomain upper_codomain;
@@ -490,6 +545,9 @@ and assert_alias source target =
       Modesolver.Areality.assert_leq_to source_storage.areality target_storage.areality;
       assert_alias source_left target_left;
       assert_alias source_right target_right;
+  | TyRef (source_payload, source_mode), TyRef (target_payload, target_mode) ->
+      assert_contended target_mode.contention;
+      assert_alias source_payload target_payload;
   | TyArrow (_source_domain, source_future, _source_codomain), TyArrow (_target_domain, target_future, _target_codomain) ->
       (* Assert that linearity is many for aliased functions.*)
       Modesolver.Linearity.restrict_domain [Linearity.many] source_future.linearity;
@@ -519,6 +577,11 @@ and assert_lock original locked future =
       Modesolver.Areality.assert_leq_to original_storage.areality future.areality;
       assert_lock original_left locked_left future;
       assert_lock original_right locked_right future
+  | TyRef (original_payload, original_mode), TyRef (locked_payload, locked_mode) ->
+      log_lock "ref lock enforcement";
+      Modesolver.Contention.assert_leq_to original_mode.contention locked_mode.contention;
+      Modesolver.assert_portability_dagger future.portability locked_mode.contention;
+      assert_lock original_payload locked_payload future
   | TyArrow (original_domain, original_future, original_codomain), TyArrow (locked_domain, locked_future, locked_codomain) ->
       log_lock "arrow lock enforcement";
       (* Locking leaves functions untouched provided ambient future ≤ function future. *)
@@ -560,6 +623,9 @@ let storage_mode_of_ast (storage : Ast.storage_mode) : storage_mode =
   { uniqueness = const_uniqueness_var storage.uniqueness;
     areality = const_areality_var storage.areality }
 
+let ref_mode_of_ast (mode : Ast.ref_mode) : ref_mode =
+  { contention = const_contention_var mode.contention }
+
 let future_mode_of_ast (future : Future.t) : future_mode =
   { linearity = const_linearity_var future.linearity;
     portability = const_portability_var future.portability;
@@ -579,6 +645,10 @@ let rec ty_of_ast (ty_syntax : Ast.ty) : ty =
       let right' = ty_of_ast right in
       let storage' = storage_mode_of_ast storage in
       mk_sum left' storage' right'
+  | Ast.TyRef (payload, mode) ->
+      let payload' = ty_of_ast payload in
+      let mode' = ref_mode_of_ast mode in
+      mk_ref payload' mode'
   | Ast.TyArrow (domain, future, codomain) ->
       let domain' = ty_of_ast domain in
       let codomain' = ty_of_ast codomain in
@@ -599,6 +669,9 @@ let string_of_storage_mode state (storage : storage_mode) =
   Printf.sprintf "u=%s a=%s"
     (render_uni state storage.uniqueness)
     (render_are state storage.areality)
+
+let string_of_ref_mode state (mode : ref_mode) =
+  Printf.sprintf "c=%s" (render_cont state mode.contention)
 
 let string_of_future_mode state (future : future_mode) =
   Printf.sprintf "a=%s l=%s p=%s"
@@ -668,6 +741,10 @@ let rec string_of_ty_core state ty =
         (string_of_ty_core state left)
         (string_of_storage_mode state storage)
         (string_of_ty_core state right)
+  | TyRef (payload, mode) ->
+      Printf.sprintf "(ref[%s] %s)"
+        (string_of_ref_mode state mode)
+        (string_of_ty_core state payload)
   | TyMeta meta ->
       (match meta.solution with
       | Some solution -> string_of_ty_core state solution
@@ -687,6 +764,7 @@ let collect_metas ty =
     | TyPair (left, _, right) | TySum (left, _, right) ->
         let set, acc = aux set acc left in
         aux set acc right
+    | TyRef (payload, _) -> aux set acc payload
     | TyArrow (domain, _, codomain) ->
         let set, acc = aux set acc domain in
         aux set acc codomain
@@ -1012,6 +1090,42 @@ let rec infer_with_env env expr =
     let mode_vars = global_mode_vars () in
     assert_in ty mode_vars;
     ty
+  | Ast.Ref e ->
+    let payload = infer_with_env env e in
+    mk_ref payload (precise_ref_mode ())
+  | Ast.Deref e ->
+    let ref_ty = infer_with_env env e in
+    let payload = TyMeta (fresh_meta ()) in
+    let ref_mode =
+      { contention = const_contention_var Contention.shared }
+    in
+    let expected = mk_ref payload ref_mode in
+    assert_subtype ref_ty expected;
+    payload
+  | Ast.Assign (lhs, rhs) ->
+    let lhs_ty = infer_with_env env lhs in
+    let rhs_ty = infer_with_env env rhs in
+    let payload = TyMeta (fresh_meta ()) in
+    let ref_mode =
+      { contention = const_contention_var Contention.uncontended }
+    in
+    let expected = mk_ref payload ref_mode in
+    assert_subtype lhs_ty expected;
+    assert_subtype rhs_ty payload;
+    TyUnit
+  | Ast.Fork e ->
+    let fv = free_vars e in
+    let captured_env = restrict_env env fv in
+    let future =
+      { linearity = const_linearity_var Linearity.once;
+        portability = const_portability_var Portability.portable;
+        areality = const_areality_var Areality.global }
+    in
+    let locked_env = lock_env captured_env future in
+    let env' = locked_env in
+    let body_ty = infer_with_env env' e in
+    assert_subtype body_ty TyUnit;
+    TyUnit
 
 let infer expr =
   try infer_with_env [] expr with

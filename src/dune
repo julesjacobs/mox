@@ -1,6 +1,6 @@
 (library
  (name mox)
- (modules ast lexer parser pretty typechecker typeinference expect modes relations
+ (modules ast lexer parser pretty typeinference expect modes relations
    intsolver modesolver)
  (wrapped false)
  (flags (:standard -w -9-27-32-33-37-39)))

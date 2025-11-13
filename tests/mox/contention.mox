@@ -1,0 +1,23 @@
+let r = ref unit in r
+> (ref[c=uncontended] unit)
+
+let r = ref unit in !r
+> unit
+
+let r = ref unit in r := unit
+> unit
+
+let r = ref unit in fork (r := unit)
+> error: relation became empty
+
+let r = ref unit in fork (let x = !r in unit)
+> error: relation became empty
+
+(* CR jujacobs: bug! *)
+let r = ref (unit, unit) in
+let x = !r in 
+let! (a,b) = x in unit
+> unit
+
+ref $(unit, unit)
+> error: relation became empty

@@ -35,6 +35,11 @@ let rec string_of_expr = function
       Printf.sprintf "(%s %s with left(%s) => %s | right(%s) => %s)"
         (match_prefix kind) (string_of_expr scrutinee)
         x1 (string_of_expr e1) x2 (string_of_expr e2)
+  | Ref e -> Printf.sprintf "(ref %s)" (string_of_expr e)
+  | Deref e -> Printf.sprintf "(!%s)" (string_of_expr e)
+  | Assign (lhs, rhs) ->
+      Printf.sprintf "(%s := %s)" (string_of_expr lhs) (string_of_expr rhs)
+  | Fork e -> Printf.sprintf "(fork %s)" (string_of_expr e)
   | Annot (e, ty) -> Printf.sprintf "(%s : %s)" (string_of_expr e) (string_of_ty ty)
 
 and string_of_ty = function
@@ -77,3 +82,14 @@ and string_of_ty = function
         | _ -> Printf.sprintf " +[%s] " (String.concat " " parts)
       in
       Printf.sprintf "(%s%s%s)" (string_of_ty t1) sep (string_of_ty t2)
+  | TyRef (payload, mode) ->
+      let parts =
+        [ Modes.Contention.to_short_string mode.contention ]
+        |> List.filter (fun s -> String.trim s <> "")
+      in
+      let suffix =
+        match parts with
+        | [] -> "ref "
+        | _ -> Printf.sprintf "ref[%s] " (String.concat " " parts)
+      in
+      Printf.sprintf "(%s%s)" suffix (string_of_ty payload)

@@ -27,6 +27,8 @@ rule token = parse
   | "match!"             { MATCHBANG }
   | "match"              { MATCH }
   | "with"               { WITH }
+  | "ref"                { REF }
+  | "fork"               { FORK }
   | "left"               { LEFT }
   | "right"              { RIGHT }
   | "absurd"             { ABSURD }
@@ -44,9 +46,11 @@ rule token = parse
   | ":"                  { COLON }
   | "=>"                 { FATARROW }
   | "->"                 { ARROW }
+  | ":="                 { ASSIGN }
   | "+"                  { PLUS }
   | "*"                  { TIMES }
   | "?"                  { QUESTION }
+  | "!"                  { BANG }
   | ident_start ident_continue* as id { IDENT id }
   | eof                  { EOF }
   | _ as c               { raise (Lexing_error (Printf.sprintf "unexpected character %c at %s" c (location lexbuf))) }

@@ -4,6 +4,9 @@ open Ast
 let default_storage_mode =
   { uniqueness = Modes.Uniqueness.default; areality = Modes.Areality.default }
 
+let default_ref_mode =
+  { contention = Modes.Contention.default }
+
 let storage_mode_from_list names =
   let uniqueness, remaining = Modes.Uniqueness.extract names in
   let areality, remaining = Modes.Areality.extract remaining in
@@ -12,9 +15,18 @@ let storage_mode_from_list names =
       (Printf.sprintf "Modes [%s] not allowed on products/sums"
          (String.concat ", " remaining));
   { uniqueness; areality }
+
+let ref_mode_from_list names =
+  let contention, remaining = Modes.Contention.extract names in
+  if remaining <> [] then
+    invalid_arg
+      (Printf.sprintf "Only contention modes are allowed on references, but saw [%s]"
+         (String.concat ", " remaining));
+  { contention }
 %}
 
 %token LET LETBANG IN FUN MATCH MATCHBANG WITH LEFT RIGHT ABSURD UNIT EMPTY QUESTION STACK REGION
+%token REF FORK BANG ASSIGN
 %token LPAREN RPAREN LBRACKET RBRACKET COMMA EQUAL BAR ARROW FATARROW PLUS TIMES COLON
 %token <string> IDENT
 %token EOF
@@ -45,6 +57,12 @@ expr_base:
   | match_prefix expr WITH LEFT LPAREN IDENT RPAREN FATARROW expr
       BAR RIGHT LPAREN IDENT RPAREN FATARROW expr
       { Match ($1, $2, $6, $9, $13, $16) }
+  | REF expr { Ref $2 }
+  | FORK expr { Fork $2 }
+  | expr_assign { $1 }
+
+expr_assign:
+  | expr_assign ASSIGN expr_app { Assign ($1, $3) }
   | expr_app { $1 }
 
 expr_app:
@@ -52,6 +70,7 @@ expr_app:
   | expr_atom { $1 }
 
 expr_atom:
+  | BANG expr_atom { Deref $2 }
   | IDENT { Var $1 }
   | UNIT { Unit }
   | QUESTION { Hole }
@@ -120,4 +139,6 @@ ty_prod:
 ty_atom:
   | UNIT { TyUnit }
   | EMPTY { TyEmpty }
+  | REF ty_atom { TyRef ($2, default_ref_mode) }
+  | REF mode_list ty_atom { TyRef ($3, ref_mode_from_list $2) }
   | LPAREN ty RPAREN { $2 }
