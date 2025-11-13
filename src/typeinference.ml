@@ -116,6 +116,12 @@ let assert_future_leq_to (lower : future_mode) (upper : future_mode) =
 let assert_aliased (uniqueness : Modesolver.Uniqueness.var) =
   Modesolver.Uniqueness.restrict_domain [Uniqueness.aliased] uniqueness
 
+let alias_linearity_relation =
+  Relations.make
+    [ (Linearity.many, Linearity.many);
+      (Linearity.once, Linearity.never);
+      (Linearity.never, Linearity.never) ]
+
 let assert_equal_areality (left : Modesolver.Areality.var) (right : Modesolver.Areality.var) =
   Modesolver.Areality.assert_leq_to left right;
   Modesolver.Areality.assert_leq_to right left
@@ -123,9 +129,6 @@ let assert_equal_areality (left : Modesolver.Areality.var) (right : Modesolver.A
 let assert_equal_portability (left : Modesolver.Portability.var) (right : Modesolver.Portability.var) =
   Modesolver.Portability.assert_leq_to left right;
   Modesolver.Portability.assert_leq_to right left
-
-let assert_many (linearity : Modesolver.Linearity.var) =
-  Modesolver.Linearity.restrict_domain [Linearity.many] linearity
 
 (* -------------------------------------------------------------------------- *)
 (* Error reporting.                                                           *)
@@ -137,6 +140,11 @@ exception Error of error
 let string_of_error err = err
 
 let type_error message = raise (Error message)
+
+let assert_callable (future : future_mode) =
+  try Modesolver.Linearity.restrict_domain [Linearity.many; Linearity.once] future.linearity with
+  | Modesolver.Inconsistent _ ->
+      type_error "cannot call a function whose linearity is never"
 
 (* -------------------------------------------------------------------------- *)
 
@@ -239,9 +247,8 @@ let rec assert_alias source target =
     assert_equal_areality source_storage.areality target_storage.areality;
     assert_alias source_left target_left;
     assert_alias source_right target_right;
-  | TyArrow (source_domain, source_future, source_codomain), TyArrow (target_domain, target_future, target_codomain) ->
-    (* Make sure that source_future is many. *)
-    assert_many source_future.linearity;
+  | TyArrow (_source_domain, source_future, _source_codomain), TyArrow (_target_domain, target_future, _target_codomain) ->
+    Modesolver.Linearity.assert_relation alias_linearity_relation source_future.linearity target_future.linearity;
     assert_equal_areality source_future.areality target_future.areality;
     assert_equal_portability source_future.portability target_future.portability;
   | _ ->
@@ -405,6 +412,7 @@ let rec infer_with_env env expr =
     let future = fresh_future_mode () in
     let ty_f = TyArrow (ty_dom, future, ty_cod) in
     assert_subtype ty1 ty_f;
+    assert_callable future;
     assert_subtype ty2 ty_dom;
     ty_cod
   | Ast.Fun (x, e) ->
