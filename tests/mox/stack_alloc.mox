@@ -59,8 +59,6 @@ region
   let x = $(unit, unit) in
   fun y => x
 > (?469 ->[a=a2 l=l1 p=p1] (unit *[u=u1 a=a1] unit))
-> where
->   ?469 in {u=unique; c=uncontended; l=never; p=non-portable; a=local}
 > mode vars
 >   a1 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}

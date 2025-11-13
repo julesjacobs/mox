@@ -380,10 +380,7 @@ let rec assert_in ty mode_vars =
     (* \hat{f} ≤₍in₎ m *)
     Modesolver.Areality.assert_leq_in future.areality mode_vars.areality;
     Modesolver.Linearity.assert_leq_in future.linearity mode_vars.linearity;
-    Modesolver.Portability.assert_leq_in future.portability mode_vars.portability;
-    let top_mode = top_mode_vars () in
-    assert_in domain top_mode;
-    assert_in codomain top_mode
+    Modesolver.Portability.assert_leq_in future.portability mode_vars.portability
 
 let debug_lock_enabled =
   match Sys.getenv_opt "MOX_DEBUG_LOCK" with
