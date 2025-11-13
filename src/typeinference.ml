@@ -480,13 +480,14 @@ and assert_alias source target =
   | TySum (source_left, source_storage, source_right), TySum (target_left, target_storage, target_right) ->
       (* Make sure target_storage is aliased, areality is copied. *)
       assert_aliased target_storage.uniqueness;
-      assert_equal_areality source_storage.areality target_storage.areality;
+      Modesolver.Areality.assert_leq_to source_storage.areality target_storage.areality;
       assert_alias source_left target_left;
       assert_alias source_right target_right;
   | TyArrow (_source_domain, source_future, _source_codomain), TyArrow (_target_domain, target_future, _target_codomain) ->
-      Modesolver.Linearity.assert_relation alias_linearity_relation source_future.linearity target_future.linearity;
-      assert_equal_areality source_future.areality target_future.areality;
-      assert_equal_portability source_future.portability target_future.portability;
+      (* Assert that linearity is many *)
+      Modesolver.Linearity.restrict_domain [Linearity.many] source_future.linearity;
+      Modesolver.Areality.assert_leq_to source_future.areality target_future.areality;
+      Modesolver.Portability.assert_leq_to source_future.portability target_future.portability;
   | _ ->
       type_error "assert_alias: not equivalent"
 
