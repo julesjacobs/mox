@@ -382,7 +382,9 @@ and check_expr env expr ty =
   | Fun (x, body) ->
       (match ty with
       | TyArrow (param, mode, result) ->
-          let locked_env = lock_env mode env in
+          let captured_vars = free_vars_without body [ x ] in
+          let captured_env = restrict_env env captured_vars in
+          let locked_env = lock_env mode captured_env in
           check_expr ((x, Available param) :: locked_env) body result
       | _ -> raise (Error (Expected_function ty)))
   | Inl e ->

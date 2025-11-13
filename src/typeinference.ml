@@ -768,8 +768,6 @@ let lock_env env future =
     env
 
 
-(* TODO: add aliasing and locking *)
-(* For aliasing we want to implement proper context splitting. *)
 let rec infer_with_env env expr = 
   match expr with
   | Ast.Var x ->
@@ -857,7 +855,9 @@ let rec infer_with_env env expr =
   | Ast.Fun (x, e) ->
     let ty_param = TyMeta (fresh_meta ()) in
     let future = fresh_future_mode () in
-    let locked_env = lock_env env future in
+    let captured_vars = free_vars_without e [ x ] in
+    let captured_env = restrict_env env captured_vars in
+    let locked_env = lock_env captured_env future in
     let env' = (x, ty_param) :: locked_env in
     let ty_body = infer_with_env env' e in
     let ty_arrow = TyArrow (ty_param, future, ty_body) in
