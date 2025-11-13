@@ -24,6 +24,18 @@ let g = fun x => r := x in
 fork (g unit)
 > unit
 
+(* CR jujacobs: bug! *)
+ref unit : ref unit
+> error: outer_equiv: not equivalent
+
+(* CR jujacobs: bug! *)
+ref unit : ref[uncontended] unit
+> error: outer_equiv: not equivalent
+
+(* CR jujacobs: bug! *)
+ref unit : ref[contended] unit
+> error: outer_equiv: not equivalent
+
 let r = ref unit in
 (fun x => r := x) : unit ->[portable] unit
 > (unit ->[a=global l=many p=portable] unit)
