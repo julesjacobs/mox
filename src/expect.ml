@@ -98,13 +98,16 @@ let process_chunk ~filename ~infer chunk =
       | Error msg -> PExpr (lines, Error msg))
 
 let render processed =
-  let expectation_to_string = function
-    | Type ty -> "> " ^ ty
-    | Error msg -> "> error: " ^ msg
+  let expectation_to_lines = function
+    | Type ty ->
+        let raw = String.split_on_char '\n' ty in
+        let lines = match raw with [] -> [ "" ] | _ -> raw in
+        List.map (fun line -> "> " ^ line) lines
+    | Error msg -> [ "> error: " ^ msg ]
   in
   let render_chunk = function
     | PBlank line -> [ line ]
-    | PExpr (lines, expect) -> lines @ [ expectation_to_string expect ]
+    | PExpr (lines, expect) -> lines @ expectation_to_lines expect
   in
   List.concat (List.map render_chunk processed)
 

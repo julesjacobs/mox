@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-ENGINE="typechecker"
+ENGINE="typeinference"
 TARGET="tests/mox"
 
 if [ $# -ge 1 ]; then

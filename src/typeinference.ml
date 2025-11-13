@@ -1,6 +1,51 @@
 open Modes
 
 module StringSet = Set.Make (String)
+module ModeInfoSet = Set.Make (String)
+
+module ModeName = struct
+  type t =
+    { tbl : (Obj.t, string) Hashtbl.t;
+      mutable counter : int;
+      prefix : string }
+
+  let create prefix =
+    { tbl = Hashtbl.create 16; counter = 0; prefix }
+
+  let name t var =
+    let key = Obj.repr var in
+    match Hashtbl.find_opt t.tbl key with
+    | Some n -> n
+    | None ->
+        t.counter <- t.counter + 1;
+        let n = Printf.sprintf "%s%d" t.prefix t.counter in
+        Hashtbl.add t.tbl key n;
+        n
+end
+
+type mode_print_state =
+  { u : ModeName.t;
+    a : ModeName.t;
+    l : ModeName.t;
+    p : ModeName.t;
+    c : ModeName.t;
+    mutable info_set : ModeInfoSet.t;
+    mutable infos : string list }
+
+let make_mode_print_state () =
+  { u = ModeName.create "u";
+    a = ModeName.create "a";
+    l = ModeName.create "l";
+    p = ModeName.create "p";
+    c = ModeName.create "c";
+    info_set = ModeInfoSet.empty;
+    infos = [] }
+
+let register_mode_info state line =
+  if ModeInfoSet.mem line state.info_set then ()
+  else (
+    state.info_set <- ModeInfoSet.add line state.info_set;
+    state.infos <- line :: state.infos)
 
 let remove_vars vars set =
   List.fold_left (fun acc var -> StringSet.remove var acc) set vars
@@ -210,6 +255,31 @@ let describe_areality var = Modesolver.describe_var Modes.Areality.to_string var
 let describe_linearity var = Modesolver.describe_var Modes.Linearity.to_string var
 let describe_portability var = Modesolver.describe_var Modes.Portability.to_string var
 let describe_contention var = Modesolver.describe_var Modes.Contention.to_string var
+
+let domain_to_string describe values =
+  values
+  |> List.map describe
+  |> List.sort_uniq String.compare
+  |> String.concat ", "
+
+let render_mode_var state names describe var =
+  match Modesolver.get_domain var with
+  | [] ->
+      let name = ModeName.name names var in
+      register_mode_info state (Printf.sprintf "%s ∈ ∅" name);
+      name
+  | [value] -> describe value
+  | values ->
+      let name = ModeName.name names var in
+      register_mode_info state
+        (Printf.sprintf "%s ∈ {%s}" name (domain_to_string describe values));
+      name
+
+let render_uni state var = render_mode_var state state.u Modes.Uniqueness.to_string var
+let render_are state var = render_mode_var state state.a Modes.Areality.to_string var
+let render_lin state var = render_mode_var state state.l Modes.Linearity.to_string var
+let render_port state var = render_mode_var state state.p Modes.Portability.to_string var
+let render_cont state var = render_mode_var state state.c Modes.Contention.to_string var
 
 (* -------------------------------------------------------------------------- *)
 
@@ -475,47 +545,82 @@ let top_mode_vars () : mode_vars =
 (* -------------------------------------------------------------------------- *)
 (* Pretty-printing inference types.                                           *)
 
-let string_of_storage_mode (storage : storage_mode) =
+let string_of_storage_mode state (storage : storage_mode) =
   Printf.sprintf "u=%s a=%s"
-    (describe_uniqueness storage.uniqueness)
-    (describe_areality storage.areality)
+    (render_uni state storage.uniqueness)
+    (render_are state storage.areality)
 
-let string_of_future_mode (future : future_mode) =
+let string_of_future_mode state (future : future_mode) =
   Printf.sprintf "a=%s l=%s p=%s"
-    (describe_areality future.areality)
-    (describe_linearity future.linearity)
-    (describe_portability future.portability)
+    (render_are state future.areality)
+    (render_lin state future.linearity)
+    (render_port state future.portability)
 
-let string_of_mode_vars (mode_vars : mode_vars) =
+let string_of_mode_vars state (mode_vars : mode_vars) =
   Printf.sprintf "{u=%s; c=%s; l=%s; p=%s; a=%s}"
-    (describe_uniqueness mode_vars.uniqueness)
-    (describe_contention mode_vars.contention)
-    (describe_linearity mode_vars.linearity)
-    (describe_portability mode_vars.portability)
-    (describe_areality mode_vars.areality)
+    (render_uni state mode_vars.uniqueness)
+    (render_cont state mode_vars.contention)
+    (render_lin state mode_vars.linearity)
+    (render_port state mode_vars.portability)
+    (render_are state mode_vars.areality)
 
-let rec string_of_ty_core ty =
+let add_entry (set : ModeInfoSet.t) acc entry =
+  if ModeInfoSet.mem entry set then set, acc
+  else ModeInfoSet.add entry set, entry :: acc
+
+let add_uni_var (set : ModeInfoSet.t) acc var =
+  add_entry set acc (Printf.sprintf "u: %s" (describe_uniqueness var))
+
+let add_are_var (set : ModeInfoSet.t) acc var =
+  add_entry set acc (Printf.sprintf "a: %s" (describe_areality var))
+
+let add_lin_var (set : ModeInfoSet.t) acc var =
+  add_entry set acc (Printf.sprintf "l: %s" (describe_linearity var))
+
+let add_port_var (set : ModeInfoSet.t) acc var =
+  add_entry set acc (Printf.sprintf "p: %s" (describe_portability var))
+
+let add_cont_var (set : ModeInfoSet.t) acc var =
+  add_entry set acc (Printf.sprintf "c: %s" (describe_contention var))
+
+let add_storage_mode (set : ModeInfoSet.t) acc (storage : storage_mode) =
+  let set, acc = add_uni_var set acc storage.uniqueness in
+  add_are_var set acc storage.areality
+
+let add_future_mode (set : ModeInfoSet.t) acc (future : future_mode) =
+  let set, acc = add_are_var set acc future.areality in
+  let set, acc = add_lin_var set acc future.linearity in
+  add_port_var set acc future.portability
+
+let add_mode_vars_record (set : ModeInfoSet.t) acc (mode_vars : mode_vars) =
+  let set, acc = add_uni_var set acc mode_vars.uniqueness in
+  let set, acc = add_cont_var set acc mode_vars.contention in
+  let set, acc = add_lin_var set acc mode_vars.linearity in
+  let set, acc = add_port_var set acc mode_vars.portability in
+  add_are_var set acc mode_vars.areality
+
+let rec string_of_ty_core state ty =
   match zonk ty with
   | TyUnit -> "unit"
   | TyEmpty -> "empty"
   | TyArrow (domain, future, codomain) ->
       Printf.sprintf "(%s ->[%s] %s)"
-        (string_of_ty_core domain)
-        (string_of_future_mode future)
-        (string_of_ty_core codomain)
+        (string_of_ty_core state domain)
+        (string_of_future_mode state future)
+        (string_of_ty_core state codomain)
   | TyPair (left, storage, right) ->
       Printf.sprintf "(%s *[%s] %s)"
-        (string_of_ty_core left)
-        (string_of_storage_mode storage)
-        (string_of_ty_core right)
+        (string_of_ty_core state left)
+        (string_of_storage_mode state storage)
+        (string_of_ty_core state right)
   | TySum (left, storage, right) ->
       Printf.sprintf "(%s +[%s] %s)"
-        (string_of_ty_core left)
-        (string_of_storage_mode storage)
-        (string_of_ty_core right)
+        (string_of_ty_core state left)
+        (string_of_storage_mode state storage)
+        (string_of_ty_core state right)
   | TyMeta meta ->
       (match meta.solution with
-      | Some solution -> string_of_ty_core solution
+      | Some solution -> string_of_ty_core state solution
       | None -> Printf.sprintf "?%d" meta.id)
 
 let collect_metas ty =
@@ -540,8 +645,7 @@ let collect_metas ty =
   let _, metas = aux IntSet.empty [] ty in
   List.rev metas
 
-let render_constraints ty =
-  let metas = collect_metas ty in
+let render_constraints state metas =
   let meta_ids =
     List.fold_left (fun acc meta -> IntSet.add meta.id acc) IntSet.empty metas
   in
@@ -553,7 +657,7 @@ let render_constraints ty =
       true)
   in
   let meta_ref meta = Printf.sprintf "?%d" meta.id in
-  let describe_future future = string_of_future_mode future in
+  let describe_future future = string_of_future_mode state future in
   let describe_constraint cr =
     match cr.constraint_ with
     | Sub { lower; upper } ->
@@ -577,7 +681,7 @@ let render_constraints ty =
         if IntSet.mem target.id meta_ids then
           Some
             (Printf.sprintf "%s in %s" (meta_ref target)
-               (string_of_mode_vars mode_vars))
+               (string_of_mode_vars state mode_vars))
         else
           None
   in
@@ -596,15 +700,28 @@ let render_constraints ty =
   in
   List.rev constraints
 
-let string_of_ty ty =
-  let base = string_of_ty_core ty in
-  match render_constraints ty with
-  | [] -> base
-  | constraints ->
-      let indented =
-        constraints |> List.map (fun line -> "  " ^ line) |> String.concat "\n"
+let string_of_section label lines =
+  match lines with
+  | [] -> None
+  | _ ->
+      let body =
+        lines |> List.map (fun line -> "  " ^ line) |> String.concat "\n"
       in
-      Printf.sprintf "%s\nwhere\n%s" base indented
+      Some (Printf.sprintf "%s\n%s" label body)
+
+let string_of_ty ty =
+  let state = make_mode_print_state () in
+  let metas = collect_metas ty in
+  let base = string_of_ty_core state ty in
+  let constraints = render_constraints state metas in
+  let mode_infos = List.rev state.infos in
+  let sections =
+    [ string_of_section "where" constraints;
+      string_of_section "mode vars" mode_infos ]
+    |> List.filter_map (fun x -> x)
+    |> String.concat "\n"
+  in
+  if sections = "" then base else Printf.sprintf "%s\n%s" base sections
 
 (* -------------------------------------------------------------------------- *)
 (* Environments                                                               *)

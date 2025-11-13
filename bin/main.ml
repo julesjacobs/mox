@@ -10,7 +10,7 @@ let positionals = ref []
 
 type backend = Typechecker | Typeinference
 
-let backend = ref Typechecker
+let backend = ref Typeinference
 
 let set_backend name =
   let value =
@@ -49,7 +49,7 @@ let () =
       "--expr", Arg.Unit (set_mode Expr), "Parse input as an expression (default)";
       ( "--engine",
         Arg.String set_backend,
-        "Select typing backend: typechecker (default) or typeinference" ) ]
+        "Select typing backend: typeinference (default) or typechecker" ) ]
   in
   let handle_anon arg = positionals := arg :: !positionals in
   Arg.parse spec handle_anon usage_msg;

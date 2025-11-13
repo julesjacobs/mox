@@ -59,6 +59,11 @@ let assert_relation = assert_relation_generic
 let get_relation = get_relation_generic
 let assert_predicate = assert_predicate_generic
 let restrict_domain = restrict_domain_generic
+let get_domain var =
+  get_relation_generic var var
+  |> Relations.to_list
+  |> List.filter_map (fun (a, b) -> if a = b then Some a else None)
+  |> List.sort_uniq compare
 let describe_var show var =
   let rel = get_relation_generic var var in
   let values =
