@@ -42,3 +42,26 @@ fun x => x
 > mode vars
 >   a1 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}
+
+(fun p =>
+let f = (fun x => x p) in
+(f, f))
+> (?428 ->[a=a3 l=l2 p=p2] ((?436 ->[a=a1 l=l1 p=p1] ?437) *[u=u1 a=a2] (?436 ->[a=a1 l=l1 p=p1] ?437)))
+> where
+>   lock ?428 -> ?430 with a=a4 l=l3 p=p3
+> mode vars
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a1 ∈ {global, local, regional}
+>   a2 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   p2 ∈ {non-portable, portable}
+>   l2 ∈ {many, never, once}
+>   a3 ∈ {global, local, regional}
+>   p3 ∈ {non-portable, portable}
+>   l3 ∈ {many, never, once}
+>   a4 ∈ {global, local, regional}
+> mode rels
+>   (a4,a1) ∉ {(regional,global), (local,global), (local,regional)}
+>   (l3,l1) ∈ {(many,many), (once,never), (never,never)}
+>   (p3,p1) ∉ {(non-portable,portable)}
