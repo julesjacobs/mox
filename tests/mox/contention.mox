@@ -21,3 +21,10 @@ let! (a,b) = x in unit
 
 ref $(unit, unit)
 > error: relation became empty
+
+let r = ref left(unit) in
+let x = (region
+  let y = $right(unit) in
+  r := y) in
+!r
+> error: relation became empty

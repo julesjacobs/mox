@@ -521,6 +521,7 @@ and assert_subtype lower upper =
       assert_storage_leq_to lower_storage upper_storage
   | TyRef (lower_payload, lower_mode), TyRef (upper_payload, upper_mode) ->
       assert_subtype lower_payload upper_payload;
+      assert_subtype upper_payload lower_payload;
       assert_ref_leq_to lower_mode upper_mode
   | TyArrow (lower_domain, lower_future, lower_codomain), TyArrow (upper_domain, upper_future, upper_codomain) ->
       assert_subtype upper_domain lower_domain;
