@@ -977,7 +977,7 @@ let rec infer_with_env env expr =
     let future = fresh_future_mode () in
     let ty_f = TyArrow (ty_dom, future, ty_cod) in
     assert_subtype ty1 ty_f;
-    assert_callable future;
+    (* assert_callable future; -- disable `never` for now *)
     assert_subtype ty2 ty_dom;
     ty_cod
   | Ast.Fun (alloc, x, e) ->
