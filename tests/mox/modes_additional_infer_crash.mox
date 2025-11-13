@@ -1,0 +1,13 @@
+(* pair with stricter modes on both sides *)
+(((unit, unit), unit) : ((unit *[unique local] unit) *[unique local] unit))
+> ((unit *[u=u2 a=a2] unit) *[u=u1 a=a1] unit)
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   a2 ∈ {global, local, regional}
+>   u2 ∈ {aliased, unique}
+> mode rels
+>   (u2,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
+>   (u1,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}

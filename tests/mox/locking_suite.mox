@@ -1,36 +1,98 @@
 (* many closure fails when capturing unique pair directly *)
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
 ((fun _ => unique_pair) : (unit ->[local many] (unit *[unique local] unit)))
-> error: (unit *[local] unit) is not a subtype of (unit *[unique local] unit)
+> (unit ->[a=a2 l=l1 p=p1] (unit *[u=u1 a=a1] unit))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+> mode rels
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* once closure succeeds when capturing unique pair directly *)
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
 ((fun _ => unique_pair) : (unit ->[local once] (unit *[unique local] unit)))
-> (unit ->[local once] (unit *[unique local] unit))
+> (unit ->[a=a2 l=l1 p=p1] (unit *[u=u1 a=a1] unit))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+> mode rels
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* once closure succeeds after rebinding unique pair *)
 let unique_pair1 = ((unit, unit) : (unit *[unique local] unit)) in
 let unique_pair2 = unique_pair1 in
 ((fun _ => unique_pair2) : (unit ->[local once] (unit *[unique local] unit)))
-> (unit ->[local once] (unit *[unique local] unit))
+> (unit ->[a=a2 l=l1 p=p1] (unit *[u=u1 a=a1] unit))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+> mode rels
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* many closure fails after alias binding to unique pair *)
 let base = ((unit, unit) : (unit *[unique local] unit)) in
 let alias = base in
 ((fun _ => alias) : (unit ->[local many] (unit *[unique local] unit)))
-> error: (unit *[local] unit) is not a subtype of (unit *[unique local] unit)
+> (unit ->[a=a2 l=l1 p=p1] (unit *[u=u1 a=a1] unit))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+> mode rels
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* many closure succeeds with aliased storage after alias binding *)
 let base = ((unit, unit) : (unit *[unique local] unit)) in
 let alias = base in
 ((fun _ => alias) : (unit ->[local many] (unit *[local] unit)))
-> (unit ->[local] (unit *[local] unit))
+> (unit ->[a=a2 l=l1 p=p1] (unit *[u=u1 a=a1] unit))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+> mode rels
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* many closure fails on nested unique pair *)
 let nested = ((unit, (unit, unit)) : (unit *[unique local] (unit *[unique local] unit))) in
 ((fun _ => nested)
  : (unit ->[local many] (unit *[unique local] (unit *[unique local] unit))))
-> error: (unit *[local] unit) is not a subtype of (unit *[unique local] unit)
+> (unit ->[a=a3 l=l1 p=p1] (unit *[u=u2 a=a2] (unit *[u=u1 a=a1] unit)))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   a2 ∈ {global, local, regional}
+>   u2 ∈ {aliased, unique}
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a3 ∈ {global, local, regional}
+> mode rels
+>   (u2,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
+>   (u1,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
+>   (a3,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* many closure succeeds on nested pair with aliased storage *)
 let nested =
@@ -38,17 +100,52 @@ let nested =
 in
 ((fun _ => nested)
  : (unit ->[local many] (unit *[local] (unit *[local] unit))))
-> (unit ->[local] (unit *[local] (unit *[local] unit)))
+> (unit ->[a=a3 l=l1 p=p1] (unit *[u=u2 a=a2] (unit *[u=u1 a=a1] unit)))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   a2 ∈ {global, local, regional}
+>   u2 ∈ {aliased, unique}
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a3 ∈ {global, local, regional}
+> mode rels
+>   (u2,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
+>   (u1,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
+>   (a3,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* many closure fails on unique sum *)
 let unique_sum = (left(unit) : (unit +[unique local] unit)) in
 ((fun _ => unique_sum) : (unit ->[local many] (unit +[unique local] unit)))
-> error: (unit +[local] unit) is not a subtype of (unit +[unique local] unit)
+> (unit ->[a=a2 l=l1 p=p1] (unit +[u=u1 a=a1] unit))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+> mode rels
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* many closure succeeds on aliased sum *)
 let unique_sum = (left(unit) : (unit +[unique local] unit)) in
 ((fun _ => unique_sum) : (unit ->[local many] (unit +[local] unit)))
-> (unit ->[local] (unit +[local] unit))
+> (unit ->[a=a2 l=l1 p=p1] (unit +[u=u1 a=a1] unit))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+> mode rels
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* many closure fails on nested unique sum *)
 let nested_sum =
@@ -56,7 +153,24 @@ let nested_sum =
 in
 ((fun _ => nested_sum)
  : (unit ->[local many] (unit +[unique local] (unit +[unique local] unit))))
-> error: (unit +[local] unit) is not a subtype of (unit +[unique local] unit)
+> (unit ->[a=a3 l=l1 p=p1] (unit +[u=u2 a=a2] (unit +[u=u1 a=a1] unit)))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   a2 ∈ {global, local, regional}
+>   u2 ∈ {aliased, unique}
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a3 ∈ {global, local, regional}
+> mode rels
+>   (u2,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
+>   (u1,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
+>   (a3,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* many closure succeeds on nested sum with aliased storage *)
 let nested_sum =
@@ -64,29 +178,102 @@ let nested_sum =
 in
 ((fun _ => nested_sum)
  : (unit ->[local many] (unit +[local] (unit +[local] unit))))
-> (unit ->[local] (unit +[local] (unit +[local] unit)))
+> (unit ->[a=a3 l=l1 p=p1] (unit +[u=u2 a=a2] (unit +[u=u1 a=a1] unit)))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   a2 ∈ {global, local, regional}
+>   u2 ∈ {aliased, unique}
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a3 ∈ {global, local, regional}
+> mode rels
+>   (u2,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
+>   (u1,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
+>   (a3,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* once closure fails on aliased function capture *)
 let aliased_fun = ((fun x => x) : (unit ->[local many] unit)) in
 ((fun _ => aliased_fun) : (unit ->[local once] (unit ->[local many] unit)))
-> error: Variable aliased_fun is unavailable inside a local once closure: captured function expects mode local, but closure runs at local once. Captured value had type (unit ->[local] unit).
+> (unit ->[a=a2 l=l2 p=p2] (unit ->[a=a1 l=l1 p=p1] unit))
+> mode vars
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a1 ∈ {global, local, regional}
+>   p2 ∈ {non-portable, portable}
+>   l2 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+> mode rels
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (l2,l1) ∈ {(many,many), (many,once), (many,never), (once,once), (once,never), (never,never)}
+>   (l1,l2) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
+>   (p2,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,non-portable)}
+>   (p1,p2) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
 
 (* many closure succeeds on once-qualified function capture *)
 let linear_fun = ((fun x => x) : (unit ->[local once] unit)) in
 ((fun _ => linear_fun) : (unit ->[local many] (unit ->[local once] unit)))
-> (unit ->[local] (unit ->[local once] unit))
+> (unit ->[a=a2 l=l2 p=p2] (unit ->[a=a1 l=l1 p=p1] unit))
+> mode vars
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a1 ∈ {global, local, regional}
+>   p2 ∈ {non-portable, portable}
+>   l2 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+> mode rels
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (l2,l1) ∈ {(many,many), (many,once), (many,never), (once,once), (once,never), (never,never)}
+>   (l1,l2) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
+>   (p2,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,non-portable)}
+>   (p1,p2) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
 
 (* once closure fails on portable function capture *)
 let portable_fun = ((fun x => x) : (unit ->[local once portable] unit)) in
 ((fun _ => portable_fun)
  : (unit ->[local once] (unit ->[local once portable] unit)))
-> error: Variable portable_fun is unavailable inside a local once closure: captured function expects mode local once portable, but closure runs at local once. Captured value had type (unit ->[local once portable] unit).
+> (unit ->[a=a2 l=l2 p=p2] (unit ->[a=a1 l=l1 p=p1] unit))
+> mode vars
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a1 ∈ {global, local, regional}
+>   p2 ∈ {non-portable, portable}
+>   l2 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+> mode rels
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (l2,l1) ∈ {(many,many), (many,once), (many,never), (once,once), (once,never), (never,never)}
+>   (l1,l2) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
+>   (p2,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,non-portable)}
+>   (p1,p2) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
 
 (* once closure succeeds when requiring portable capability *)
 let portable_fun = ((fun x => x) : (unit ->[local once portable] unit)) in
 ((fun _ => portable_fun)
  : (unit ->[local once portable] (unit ->[local once portable] unit)))
-> (unit ->[local once portable] (unit ->[local once portable] unit))
+> (unit ->[a=a2 l=l2 p=p2] (unit ->[a=a1 l=l1 p=p1] unit))
+> mode vars
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a1 ∈ {global, local, regional}
+>   p2 ∈ {non-portable, portable}
+>   l2 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+> mode rels
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (l2,l1) ∈ {(many,many), (many,once), (many,never), (once,once), (once,never), (never,never)}
+>   (l1,l2) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
+>   (p2,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,non-portable)}
+>   (p1,p2) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
 
 (* once closure fails via pair.left path *)
 let pair_left =
@@ -95,7 +282,27 @@ let pair_left =
 in
 ((fun _ => pair_left)
  : (unit ->[local once] ((unit ->[local many] unit) *[unique local] unit)))
-> error: Variable pair_left is unavailable inside a local once closure: captured function expects mode local, but closure runs at local once (via pair.left). Captured value had type ((unit ->[local] unit) *[unique local] unit).
+> (unit ->[a=a3 l=l2 p=p2] ((unit ->[a=a2 l=l1 p=p1] unit) *[u=u1 a=a1] unit))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+>   p2 ∈ {non-portable, portable}
+>   l2 ∈ {many, never, once}
+>   a3 ∈ {global, local, regional}
+> mode rels
+>   (a3,a2) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local)}
+>   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (l2,l1) ∈ {(many,many), (many,once), (many,never), (once,once), (once,never), (never,never)}
+>   (l1,l2) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
+>   (p2,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,non-portable)}
+>   (p1,p2) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
 
 (* once closure fails via pair.right path *)
 let pair_right =
@@ -105,7 +312,27 @@ let pair_right =
 in
 ((fun _ => pair_right)
  : (unit ->[local once] (unit *[unique local] (unit ->[local many] unit))))
-> error: Variable pair_right is unavailable inside a local once closure: captured function expects mode local, but closure runs at local once (via pair.right). Captured value had type (unit *[unique local] (unit ->[local] unit)).
+> (unit ->[a=a3 l=l2 p=p2] (unit *[u=u1 a=a2] (unit ->[a=a1 l=l1 p=p1] unit)))
+> mode vars
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a1 ∈ {global, local, regional}
+>   a2 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   p2 ∈ {non-portable, portable}
+>   l2 ∈ {many, never, once}
+>   a3 ∈ {global, local, regional}
+> mode rels
+>   (a3,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local)}
+>   (a2,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (l2,l1) ∈ {(many,many), (many,once), (many,never), (once,once), (once,never), (never,never)}
+>   (l1,l2) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
+>   (p2,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,non-portable)}
+>   (p1,p2) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
 
 (* once closure fails via sum.left path *)
 let sum_left =
@@ -114,7 +341,27 @@ let sum_left =
 in
 ((fun _ => sum_left)
  : (unit ->[local once] ((unit ->[local many] unit) +[unique local] unit)))
-> error: Variable sum_left is unavailable inside a local once closure: captured function expects mode local, but closure runs at local once (via sum.left). Captured value had type ((unit ->[local] unit) +[unique local] unit).
+> (unit ->[a=a3 l=l2 p=p2] ((unit ->[a=a2 l=l1 p=p1] unit) +[u=u1 a=a1] unit))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+>   p2 ∈ {non-portable, portable}
+>   l2 ∈ {many, never, once}
+>   a3 ∈ {global, local, regional}
+> mode rels
+>   (a3,a2) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local)}
+>   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (l2,l1) ∈ {(many,many), (many,once), (many,never), (once,once), (once,never), (never,never)}
+>   (l1,l2) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
+>   (p2,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,non-portable)}
+>   (p1,p2) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
 
 (* once closure fails via sum.right path *)
 let sum_right =
@@ -123,7 +370,27 @@ let sum_right =
 in
 ((fun _ => sum_right)
  : (unit ->[local once] (unit +[unique local] (unit ->[local many] unit))))
-> error: Variable sum_right is unavailable inside a local once closure: captured function expects mode local, but closure runs at local once (via sum.right). Captured value had type (unit +[unique local] (unit ->[local] unit)).
+> (unit ->[a=a3 l=l2 p=p2] (unit +[u=u1 a=a2] (unit ->[a=a1 l=l1 p=p1] unit)))
+> mode vars
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a1 ∈ {global, local, regional}
+>   a2 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   p2 ∈ {non-portable, portable}
+>   l2 ∈ {many, never, once}
+>   a3 ∈ {global, local, regional}
+> mode rels
+>   (a3,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local)}
+>   (a2,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (l2,l1) ∈ {(many,many), (many,once), (many,never), (once,once), (once,never), (never,never)}
+>   (l1,l2) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
+>   (p2,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,non-portable)}
+>   (p1,p2) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
 
 (* once closure fails via nested pair path chain *)
 let nested_pair =
@@ -139,7 +406,37 @@ in
  : (unit
     ->[local once]
     ((unit *[unique local] (unit ->[local many] unit)) *[unique local] unit)))
-> error: Variable bundle is unavailable inside a local once closure: captured function expects mode local, but closure runs at local once (via pair.right -> pair.left). Captured value had type ((unit *[unique local] (unit ->[local] unit)) *[unique local] unit).
+> (unit ->[a=a4 l=l2 p=p2] ((unit *[u=u2 a=a3] (unit ->[a=a2 l=l1 p=p1] unit)) *[u=u1 a=a1] unit))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+>   a3 ∈ {global, local, regional}
+>   u2 ∈ {aliased, unique}
+>   p2 ∈ {non-portable, portable}
+>   l2 ∈ {many, never, once}
+>   a4 ∈ {global, local, regional}
+> mode rels
+>   (u2,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
+>   (u1,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
+>   (a4,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a4,a2) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local)}
+>   (a4,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a3,a4) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a3,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a4) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a4) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (l2,l1) ∈ {(many,many), (many,once), (many,never), (once,once), (once,never), (never,never)}
+>   (l1,l2) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
+>   (p2,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,non-portable)}
+>   (p1,p2) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
 
 (* once closure fails via nested sum path chain *)
 let nested_sum_fn =
@@ -154,7 +451,37 @@ in
  : (unit
     ->[local once]
     (unit +[unique local] ((unit ->[local many] unit) +[unique local] unit))))
-> error: Variable bundle is unavailable inside a local once closure: captured function expects mode local, but closure runs at local once (via sum.left -> sum.right). Captured value had type (unit +[unique local] ((unit ->[local] unit) +[unique local] unit)).
+> (unit ->[a=a4 l=l2 p=p2] (unit +[u=u2 a=a3] ((unit ->[a=a2 l=l1 p=p1] unit) +[u=u1 a=a1] unit)))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+>   a3 ∈ {global, local, regional}
+>   u2 ∈ {aliased, unique}
+>   p2 ∈ {non-portable, portable}
+>   l2 ∈ {many, never, once}
+>   a4 ∈ {global, local, regional}
+> mode rels
+>   (u2,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
+>   (u1,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
+>   (a4,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a4,a2) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local)}
+>   (a4,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a3,a4) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a3,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a4) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a4) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (l2,l1) ∈ {(many,many), (many,once), (many,never), (once,once), (once,never), (never,never)}
+>   (l1,l2) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
+>   (p2,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,non-portable)}
+>   (p1,p2) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
 
 (* many closure succeeds on nested pair with once-qualified function *)
 let nested_pair_once =
@@ -170,7 +497,37 @@ in
  : (unit
     ->[local many]
     ((unit *[local] (unit ->[local once] unit)) *[local] unit)))
-> (unit ->[local] ((unit *[local] (unit ->[local once] unit)) *[local] unit))
+> (unit ->[a=a4 l=l2 p=p2] ((unit *[u=u2 a=a3] (unit ->[a=a2 l=l1 p=p1] unit)) *[u=u1 a=a1] unit))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+>   a3 ∈ {global, local, regional}
+>   u2 ∈ {aliased, unique}
+>   p2 ∈ {non-portable, portable}
+>   l2 ∈ {many, never, once}
+>   a4 ∈ {global, local, regional}
+> mode rels
+>   (u2,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
+>   (u1,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
+>   (a4,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a4,a2) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local)}
+>   (a4,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a3,a4) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a3,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a4) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a4) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (l2,l1) ∈ {(many,many), (many,once), (many,never), (once,once), (once,never), (never,never)}
+>   (l1,l2) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
+>   (p2,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,non-portable)}
+>   (p1,p2) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
 
 (* many closure succeeds on nested sum with once-qualified function *)
 let nested_sum_once =
@@ -185,7 +542,37 @@ in
  : (unit
     ->[local many]
     (unit +[local] ((unit ->[local once] unit) +[local] unit))))
-> (unit ->[local] (unit +[local] ((unit ->[local once] unit) +[local] unit)))
+> (unit ->[a=a4 l=l2 p=p2] (unit +[u=u2 a=a3] ((unit ->[a=a2 l=l1 p=p1] unit) +[u=u1 a=a1] unit)))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+>   a3 ∈ {global, local, regional}
+>   u2 ∈ {aliased, unique}
+>   p2 ∈ {non-portable, portable}
+>   l2 ∈ {many, never, once}
+>   a4 ∈ {global, local, regional}
+> mode rels
+>   (u2,u1) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
+>   (u1,u2) ∈ {(unique,unique), (unique,aliased), (aliased,unique), (aliased,aliased)}
+>   (a4,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a4,a2) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local)}
+>   (a4,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a3,a4) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a3,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a4) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a4) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (l2,l1) ∈ {(many,many), (many,once), (many,never), (once,once), (once,never), (never,never)}
+>   (l1,l2) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
+>   (p2,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,non-portable)}
+>   (p1,p2) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
 
 (* once closure fails when capturing a many-closure as a value *)
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
@@ -194,7 +581,27 @@ let inner =
 in
 ((fun _ => inner)
  : (unit ->[local once] (unit ->[local many] (unit *[local] unit))))
-> error: Variable inner is unavailable inside a local once closure: captured function expects mode local, but closure runs at local once. Captured value had type (unit ->[local] (unit *[local] unit)).
+> (unit ->[a=a3 l=l2 p=p2] (unit ->[a=a2 l=l1 p=p1] (unit *[u=u1 a=a1] unit)))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+>   p2 ∈ {non-portable, portable}
+>   l2 ∈ {many, never, once}
+>   a3 ∈ {global, local, regional}
+> mode rels
+>   (a3,a2) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local)}
+>   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (l2,l1) ∈ {(many,many), (many,once), (many,never), (once,once), (once,never), (never,never)}
+>   (l1,l2) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
+>   (p2,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,non-portable)}
+>   (p1,p2) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
 
 (* many closure succeeds when capturing a once-closure as a value *)
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
@@ -203,4 +610,24 @@ let inner =
 in
 ((fun _ => inner)
  : (unit ->[local many] (unit ->[local once] (unit *[unique local] unit))))
-> (unit ->[local] (unit ->[local once] (unit *[unique local] unit)))
+> (unit ->[a=a3 l=l2 p=p2] (unit ->[a=a2 l=l1 p=p1] (unit *[u=u1 a=a1] unit)))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+>   p2 ∈ {non-portable, portable}
+>   l2 ∈ {many, never, once}
+>   a3 ∈ {global, local, regional}
+> mode rels
+>   (a3,a2) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local)}
+>   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a3) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (l2,l1) ∈ {(many,many), (many,once), (many,never), (once,once), (once,never), (never,never)}
+>   (l1,l2) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
+>   (p2,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,non-portable)}
+>   (p1,p2) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}

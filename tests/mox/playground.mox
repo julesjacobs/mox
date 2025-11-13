@@ -1,0 +1,58 @@
+unit
+> unit
+
+fun x => x
+> (?421 ->[a=a1 l=l1 p=p1] ?421)
+> mode vars
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a1 ∈ {global, local, regional}
+
+(fun x => x) : (unit -> unit)
+> (unit ->[a=a1 l=l1 p=p1] unit)
+> mode vars
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a1 ∈ {global, local, regional}
+
+(fun x => (fun y => x))
+> (?423 ->[a=a2 l=l2 p=p2] (?424 ->[a=a1 l=l1 p=p1] ?425))
+> where
+>   lock ?423 -> ?425 with a=a1 l=l1 p=p1
+> mode vars
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a1 ∈ {global, local, regional}
+>   p2 ∈ {non-portable, portable}
+>   l2 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+> mode rels
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (l2,l1) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
+>   (l1,l2) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
+>   (p2,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
+>   (p1,p2) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
+
+(fun x => (fun y => y))
+> (?426 ->[a=a2 l=l2 p=p2] (?427 ->[a=a1 l=l1 p=p1] ?427))
+> mode vars
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a1 ∈ {global, local, regional}
+>   p2 ∈ {non-portable, portable}
+>   l2 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+> mode rels
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (l2,l1) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
+>   (l1,l2) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
+>   (p2,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
+>   (p1,p2) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}
+
+(unit, unit) : (unit *[local unique] unit)
+> (unit *[u=u1 a=a1] unit)
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}

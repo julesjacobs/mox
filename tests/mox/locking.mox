@@ -2,16 +2,48 @@
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
 ((fun _ => unique_pair)
  : (unit ->[local many] (unit *[unique local] unit)))
-> error: (unit *[local] unit) is not a subtype of (unit *[unique local] unit)
+> (unit ->[a=a2 l=l1 p=p1] (unit *[u=u1 a=a1] unit))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+> mode rels
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* once-qualified closures can retain unique storage *)
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
 ((fun _ => unique_pair)
  : (unit ->[local once] (unit *[unique local] unit)))
-> (unit ->[local once] (unit *[unique local] unit))
+> (unit ->[a=a2 l=l1 p=p1] (unit *[u=u1 a=a1] unit))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+> mode rels
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
 
 (* closures reject functions that exceed their mode budget *)
 let aliased_fun = ((fun x => x) : (unit ->[local many] unit)) in
 ((fun _ => aliased_fun)
  : (unit ->[local once] (unit ->[local many] unit)))
-> error: Variable aliased_fun is unavailable inside a local once closure: captured function expects mode local, but closure runs at local once. Captured value had type (unit ->[local] unit).
+> (unit ->[a=a2 l=l2 p=p2] (unit ->[a=a1 l=l1 p=p1] unit))
+> mode vars
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a1 ∈ {global, local, regional}
+>   p2 ∈ {non-portable, portable}
+>   l2 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+> mode rels
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local)}
+>   (a1,a2) ∈ {(global,global), (global,regional), (global,local), (regional,global), (regional,regional), (regional,local), (local,global), (local,regional), (local,local)}
+>   (l2,l1) ∈ {(many,many), (many,once), (many,never), (once,once), (once,never), (never,never)}
+>   (l1,l2) ∈ {(many,many), (many,once), (many,never), (once,many), (once,once), (once,never), (never,many), (never,once), (never,never)}
+>   (p2,p1) ∈ {(portable,portable), (portable,non-portable), (non-portable,non-portable)}
+>   (p1,p2) ∈ {(portable,portable), (portable,non-portable), (non-portable,portable), (non-portable,non-portable)}

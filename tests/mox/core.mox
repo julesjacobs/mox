@@ -15,10 +15,20 @@ let (x, y) = pair in x
 > unit
 
 ((fun x => absurd x) : (empty -> unit))
-> (empty -> unit)
+> (empty ->[a=a1 l=l1 p=p1] unit)
+> mode vars
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a1 ∈ {global, local, regional}
 
 (left(unit) : (unit + empty))
-> (unit + empty)
+> (unit +[u=u1 a=a1] empty)
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
 
 (right(unit) : (empty + unit))
-> (empty + unit)
+> (empty +[u=u1 a=a1] unit)
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}

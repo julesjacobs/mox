@@ -29,6 +29,11 @@ type mode_print_state =
     l : ModeName.t;
     p : ModeName.t;
     c : ModeName.t;
+    mutable u_vars : Modesolver.Uniqueness.var list;
+    mutable a_vars : Modesolver.Areality.var list;
+    mutable l_vars : Modesolver.Linearity.var list;
+    mutable p_vars : Modesolver.Portability.var list;
+    mutable c_vars : Modesolver.Contention.var list;
     mutable info_set : ModeInfoSet.t;
     mutable infos : string list }
 
@@ -38,6 +43,11 @@ let make_mode_print_state () =
     l = ModeName.create "l";
     p = ModeName.create "p";
     c = ModeName.create "c";
+    u_vars = [];
+    a_vars = [];
+    l_vars = [];
+    p_vars = [];
+    c_vars = [];
     info_set = ModeInfoSet.empty;
     infos = [] }
 
@@ -46,6 +56,26 @@ let register_mode_info state line =
   else (
     state.info_set <- ModeInfoSet.add line state.info_set;
     state.infos <- line :: state.infos)
+
+let remember_uni_var state var =
+  if List.exists (fun existing -> existing == var) state.u_vars then ()
+  else state.u_vars <- state.u_vars @ [ var ]
+
+let remember_are_var state var =
+  if List.exists (fun existing -> existing == var) state.a_vars then ()
+  else state.a_vars <- state.a_vars @ [ var ]
+
+let remember_lin_var state var =
+  if List.exists (fun existing -> existing == var) state.l_vars then ()
+  else state.l_vars <- state.l_vars @ [ var ]
+
+let remember_port_var state var =
+  if List.exists (fun existing -> existing == var) state.p_vars then ()
+  else state.p_vars <- state.p_vars @ [ var ]
+
+let remember_cont_var state var =
+  if List.exists (fun existing -> existing == var) state.c_vars then ()
+  else state.c_vars <- state.c_vars @ [ var ]
 
 let remove_vars vars set =
   List.fold_left (fun acc var -> StringSet.remove var acc) set vars
@@ -262,7 +292,8 @@ let domain_to_string describe values =
   |> List.sort_uniq String.compare
   |> String.concat ", "
 
-let render_mode_var state names describe var =
+let render_mode_var state names remember describe var =
+  remember var;
   match Modesolver.get_domain var with
   | [] ->
       let name = ModeName.name names var in
@@ -275,11 +306,20 @@ let render_mode_var state names describe var =
         (Printf.sprintf "%s ∈ {%s}" name (domain_to_string describe values));
       name
 
-let render_uni state var = render_mode_var state state.u Modes.Uniqueness.to_string var
-let render_are state var = render_mode_var state state.a Modes.Areality.to_string var
-let render_lin state var = render_mode_var state state.l Modes.Linearity.to_string var
-let render_port state var = render_mode_var state state.p Modes.Portability.to_string var
-let render_cont state var = render_mode_var state state.c Modes.Contention.to_string var
+let render_uni state var =
+  render_mode_var state state.u (remember_uni_var state) Modes.Uniqueness.to_string var
+
+let render_are state var =
+  render_mode_var state state.a (remember_are_var state) Modes.Areality.to_string var
+
+let render_lin state var =
+  render_mode_var state state.l (remember_lin_var state) Modes.Linearity.to_string var
+
+let render_port state var =
+  render_mode_var state state.p (remember_port_var state) Modes.Portability.to_string var
+
+let render_cont state var =
+  render_mode_var state state.c (remember_cont_var state) Modes.Contention.to_string var
 
 (* -------------------------------------------------------------------------- *)
 
@@ -700,6 +740,39 @@ let render_constraints state metas =
   in
   List.rev constraints
 
+let string_of_relation_values describe relation =
+  let pairs =
+    relation
+    |> Relations.to_list
+    |> List.map (fun (left, right) ->
+           Printf.sprintf "(%s,%s)" (describe left) (describe right))
+  in
+  Printf.sprintf "{%s}" (String.concat ", " pairs)
+
+let axis_relation_lines names vars describe get_relation =
+  let vars = List.rev vars in
+  let all_pairs =
+    vars
+    |> List.map (fun left -> List.map (fun right -> (left, right)) vars)
+    |> List.concat
+  in
+  all_pairs
+  |> List.filter (fun (left, right) -> left != right)
+  |> List.map (fun (left, right) ->
+         let relation = get_relation left right in
+         let relation_str = string_of_relation_values describe relation in
+         let left_name = ModeName.name names left in
+         let right_name = ModeName.name names right in
+         Printf.sprintf "(%s,%s) ∈ %s" left_name right_name relation_str)
+
+let render_mode_relations state =
+  List.concat
+    [ axis_relation_lines state.u state.u_vars Modes.Uniqueness.to_string Modesolver.Uniqueness.get_relation;
+      axis_relation_lines state.a state.a_vars Modes.Areality.to_string Modesolver.Areality.get_relation;
+      axis_relation_lines state.l state.l_vars Modes.Linearity.to_string Modesolver.Linearity.get_relation;
+      axis_relation_lines state.p state.p_vars Modes.Portability.to_string Modesolver.Portability.get_relation;
+      axis_relation_lines state.c state.c_vars Modes.Contention.to_string Modesolver.Contention.get_relation ]
+
 let string_of_section label lines =
   match lines with
   | [] -> None
@@ -715,9 +788,11 @@ let string_of_ty ty =
   let base = string_of_ty_core state ty in
   let constraints = render_constraints state metas in
   let mode_infos = List.rev state.infos in
+  let mode_relations = render_mode_relations state in
   let sections =
     [ string_of_section "where" constraints;
-      string_of_section "mode vars" mode_infos ]
+      string_of_section "mode vars" mode_infos;
+      string_of_section "mode rels" mode_relations ]
     |> List.filter_map (fun x -> x)
     |> String.concat "\n"
   in

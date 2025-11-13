@@ -1,23 +1,26 @@
 left(unit)
-> error: Cannot infer the type of left; add a type annotation
+> (unit +[u=u1 a=a1] ?151)
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
 
 unit unit
-> error: Expected a function type, found unit
+> error: outer_equiv: not equivalent
 
 let (x, y) = unit in x
-> error: Expected a pair type, found unit
+> error: outer_equiv: not equivalent
 
 match unit with left(x) => x | right(y) => y
-> error: Expected a sum type, found unit
+> error: outer_equiv: not equivalent
 
 let x = unit in (x : empty)
-> error: unit is not a subtype of empty
+> error: outer_equiv: not equivalent
 
 x
 > error: Unbound variable x
 
 absurd unit
-> error: Cannot infer the type of absurd; add a type annotation
+> error: outer_equiv: not equivalent
 
 ((fun x => x) : (unit -> unit)) ((left(unit) : (unit + empty)))
-> error: (unit + empty) is not a subtype of unit
+> error: outer_equiv: not equivalent

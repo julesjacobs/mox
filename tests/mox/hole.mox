@@ -1,16 +1,26 @@
 (* Holes cannot be inferred *)
 ?
-> error: Cannot infer the type of hole; add a type annotation
+> ?162
 
 (* Holes check against any type *)
 (? : unit)
 > unit
 
 (? : (unit -> unit))
-> (unit -> unit)
+> (unit ->[a=a1 l=l1 p=p1] unit)
+> mode vars
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}
+>   a1 ∈ {global, local, regional}
 
 (left(?) : (unit + empty))
-> (unit + empty)
+> (unit +[u=u1 a=a1] empty)
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
 
 ((?, unit) : (unit * unit))
-> (unit * unit)
+> (unit *[u=u1 a=a1] unit)
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
