@@ -425,7 +425,7 @@ let push_ref_to_payload (ref_mode : ref_mode) (container_mode : mode_vars) =
   Modesolver.Contention.assert_leq_in payload_mode.contention container_mode.contention;
   Modesolver.Uniqueness.restrict_domain [Uniqueness.aliased] payload_mode.uniqueness;
   Modesolver.Areality.restrict_domain [Areality.global] payload_mode.areality;
-  assert_equal_in Modesolver.Linearity.assert_leq_in payload_mode.linearity container_mode.linearity;
+  Modesolver.Linearity.restrict_domain [Linearity.many] payload_mode.linearity;
   assert_equal_in Modesolver.Portability.assert_leq_in payload_mode.portability container_mode.portability;
   payload_mode
 
