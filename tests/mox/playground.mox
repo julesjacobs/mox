@@ -2,34 +2,34 @@ unit
 > unit
 
 fun x => x
-> (?465 ->[a=a1 l=l1 p=p1] ?465)
+> ('a ->[a=a1 l=l1 p=p1] 'a)
 > mode vars
->   p1 ∈ {non-portable, portable}
+>   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
 >   a1 ∈ {global, local, regional}
 
 (fun x => x) : (unit -> unit)
-> (unit ->[a=global l=many p=non-portable] unit)
+> (unit ->[a=global l=many p=nonportable] unit)
 
 (fun x => (fun y => x))
-> (?467 ->[a=a2 l=l2 p=p2] (?468 ->[a=a1 l=l1 p=p1] ?469))
+> ('c ->[a=a2 l=l2 p=p2] ('b ->[a=a1 l=l1 p=p1] 'a))
 > where
->   lock ?467 -> ?469 with a=a1 l=l1 p=p1
+>   lock 'c -> 'a with a=a1 l=l1 p=p1
 > mode vars
->   p1 ∈ {non-portable, portable}
+>   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
 >   a1 ∈ {global, local, regional}
->   p2 ∈ {non-portable, portable}
+>   p2 ∈ {nonportable, portable}
 >   l2 ∈ {many, never, once}
 >   a2 ∈ {global, local, regional}
 
 (fun x => (fun y => y))
-> (?470 ->[a=a2 l=l2 p=p2] (?471 ->[a=a1 l=l1 p=p1] ?471))
+> ('b ->[a=a2 l=l2 p=p2] ('a ->[a=a1 l=l1 p=p1] 'a))
 > mode vars
->   p1 ∈ {non-portable, portable}
+>   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
 >   a1 ∈ {global, local, regional}
->   p2 ∈ {non-portable, portable}
+>   p2 ∈ {nonportable, portable}
 >   l2 ∈ {many, never, once}
 >   a2 ∈ {global, local, regional}
 
@@ -39,21 +39,21 @@ fun x => x
 (fun p =>
 let f = (fun x => x p) in
 (f, f))
-> (?472 ->[a=a3 l=l2 p=p2] ((?480 ->[a=a1 l=l1 p=p1] ?481) *[u=u1 a=a2] (?480 ->[a=a1 l=l1 p=p1] ?481)))
+> ('c ->[a=a3 l=l2 p=p2] (('b ->[a=a1 l=l1 p=p1] 'a) *[u=u1 a=a2] ('b ->[a=a1 l=l1 p=p1] 'a)))
 > where
->   lock ?472 -> ?474 with a=a4 l=many p=p3
+>   lock 'c -> 'd with a=a4 l=many p=p3
 > mode vars
->   p1 ∈ {non-portable, portable}
+>   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
 >   a1 ∈ {global, local, regional}
 >   a2 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}
->   p2 ∈ {non-portable, portable}
+>   p2 ∈ {nonportable, portable}
 >   l2 ∈ {many, never, once}
 >   a3 ∈ {global, local, regional}
->   p3 ∈ {non-portable, portable}
+>   p3 ∈ {nonportable, portable}
 >   a4 ∈ {global, local, regional}
 > mode rels
 >   (a4,a2) ∉ {(regional,global), (local,global), (local,regional)}
 >   (a4,a1) ∉ {(regional,global), (local,global), (local,regional)}
->   (p3,p1) ∉ {(non-portable,portable)}
+>   (p3,p1) ∉ {(nonportable,portable)}

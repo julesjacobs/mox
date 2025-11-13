@@ -9,7 +9,7 @@ let non_shared1 = ((unit, unit) : (unit *[unique] unit)) in
 let non_shared2 = ((unit, unit) : (unit *[unique] unit)) in
 (((fun f => f non_shared1) : ((unit *[unique] unit) -> unit) ->[once] unit),
  ((fun g => g non_shared2) : ((unit *[unique] unit) -> unit) ->[once] unit))
-> ((((unit *[u=unique a=global] unit) ->[a=global l=many p=non-portable] unit) ->[a=global l=once p=non-portable] unit) *[u=u1 a=a1] (((unit *[u=unique a=global] unit) ->[a=global l=many p=non-portable] unit) ->[a=global l=once p=non-portable] unit))
+> ((((unit *[u=unique a=global] unit) ->[a=global l=many p=nonportable] unit) ->[a=global l=once p=nonportable] unit) *[u=u1 a=a1] (((unit *[u=unique a=global] unit) ->[a=global l=many p=nonportable] unit) ->[a=global l=once p=nonportable] unit))
 > mode vars
 >   a1 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}
@@ -19,7 +19,7 @@ let non_shared1 = ((unit, unit) : (unit *[unique] unit)) in
 let non_shared2 = ((unit, unit) : (unit *[unique] unit)) in
 (((fun f => f non_shared1) : ((unit *[unique] unit) ->[once] unit) ->[many] unit),
  ((fun g => g non_shared2) : ((unit *[unique] unit) ->[once] unit) ->[once] unit))
-> ((((unit *[u=unique a=global] unit) ->[a=global l=once p=non-portable] unit) ->[a=global l=many p=non-portable] unit) *[u=u1 a=a1] (((unit *[u=unique a=global] unit) ->[a=global l=once p=non-portable] unit) ->[a=global l=once p=non-portable] unit))
+> ((((unit *[u=unique a=global] unit) ->[a=global l=once p=nonportable] unit) ->[a=global l=many p=nonportable] unit) *[u=u1 a=a1] (((unit *[u=unique a=global] unit) ->[a=global l=once p=nonportable] unit) ->[a=global l=once p=nonportable] unit))
 > mode vars
 >   a1 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}

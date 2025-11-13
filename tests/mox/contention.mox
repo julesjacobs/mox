@@ -28,6 +28,14 @@ let r = ref unit in
 (fun x => r := x) : unit ->[portable] unit
 > (unit ->[a=global l=many p=portable] unit)
 
+let f = (fun x => x) : unit ->[nonportable] unit in
+f : unit ->[portable] unit
+> error: relation became empty
+
+let f = (fun x => x) : unit ->[portable] unit in
+f : unit ->[nonportable] unit
+> (unit ->[a=global l=many p=nonportable] unit)
+
 let x = $(unit, unit) in 
 fork (let (a,b) = x in a)
 > error: relation became empty

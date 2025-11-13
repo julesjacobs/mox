@@ -66,7 +66,7 @@
         },
         {
           "name": "storage.type.mox",
-          "match": "\\b(unique|aliased|contended|shared|uncontended|local|regional|global|portable|non-portable|once|many)\\b"
+          "match": "\\b(unique|aliased|contended|shared|uncontended|local|regional|global|portable|nonportable|once|many)\\b"
         }
       ]
     },
@@ -87,7 +87,7 @@
       },
       "patterns": [
         {
-          "match": "\\b(unique|aliased|contended|shared|uncontended|local|regional|global|portable|non-portable|once|many|never)\\b",
+          "match": "\\b(unique|aliased|contended|shared|uncontended|local|regional|global|portable|nonportable|once|many|never)\\b",
           "name": "entity.name.type.mode.mox markup.italic.mode.mox"
         }
       ]

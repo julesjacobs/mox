@@ -23,12 +23,41 @@ module ModeName = struct
         n
 end
 
+module MetaNames = struct
+  type t =
+    { tbl : (int, string) Hashtbl.t;
+      mutable counter : int }
+
+  let create () =
+    { tbl = Hashtbl.create 16; counter = 0 }
+
+  let rec label_of_index index =
+    let letter = Char.chr (Char.code 'a' + (index mod 26)) in
+    let next = (index / 26) - 1 in
+    let suffix = String.make 1 letter in
+    if next >= 0 then (label_of_index next) ^ suffix else suffix
+
+  let fresh_name t =
+    let name = "'" ^ label_of_index t.counter in
+    t.counter <- t.counter + 1;
+    name
+
+  let name t meta_id =
+    match Hashtbl.find_opt t.tbl meta_id with
+    | Some n -> n
+    | None ->
+        let n = fresh_name t in
+        Hashtbl.add t.tbl meta_id n;
+        n
+end
+
 type mode_print_state =
   { u : ModeName.t;
     a : ModeName.t;
     l : ModeName.t;
     p : ModeName.t;
     c : ModeName.t;
+    meta_names : MetaNames.t;
     mutable u_vars : Modesolver.Uniqueness.var list;
     mutable a_vars : Modesolver.Areality.var list;
     mutable l_vars : Modesolver.Linearity.var list;
@@ -43,6 +72,7 @@ let make_mode_print_state () =
     l = ModeName.create "l";
     p = ModeName.create "p";
     c = ModeName.create "c";
+    meta_names = MetaNames.create ();
     u_vars = [];
     a_vars = [];
     l_vars = [];
@@ -748,7 +778,7 @@ let rec string_of_ty_core state ty =
   | TyMeta meta ->
       (match meta.solution with
       | Some solution -> string_of_ty_core state solution
-      | None -> Printf.sprintf "?%d" meta.id)
+      | None -> MetaNames.name state.meta_names meta.id)
 
 let collect_metas ty =
   let rec aux set acc ty =
@@ -784,7 +814,7 @@ let render_constraints state metas =
       seen := cr :: !seen;
       true)
   in
-  let meta_ref meta = Printf.sprintf "?%d" meta.id in
+  let meta_ref meta = MetaNames.name state.meta_names meta.id in
   let describe_future future = string_of_future_mode state future in
   let describe_constraint cr =
     match cr.constraint_ with

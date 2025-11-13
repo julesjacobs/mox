@@ -1,13 +1,13 @@
 (* Holes cannot be inferred *)
 ?
-> ?206
+> 'a
 
 (* Holes check against any type *)
 (? : unit)
 > unit
 
 (? : (unit -> unit))
-> (unit ->[a=global l=many p=non-portable] unit)
+> (unit ->[a=global l=many p=nonportable] unit)
 
 (left(?) : (unit + empty))
 > (unit +[u=aliased a=global] empty)

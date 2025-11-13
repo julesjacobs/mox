@@ -148,7 +148,7 @@ module Portability_spec = struct
   let order_to = [ Portable; NonPortable ]
   let order_in = order_to
   let default = NonPortable
-  let show = function Portable -> "portable" | NonPortable -> "non-portable"
+  let show = function Portable -> "portable" | NonPortable -> "nonportable"
   let equal = ( = )
 end
 

@@ -15,7 +15,7 @@ let (x, y) = pair in x
 > unit
 
 ((fun x => absurd x) : (empty -> unit))
-> (empty ->[a=global l=many p=non-portable] unit)
+> (empty ->[a=global l=many p=nonportable] unit)
 
 (left(unit) : (unit + empty))
 > (unit +[u=aliased a=global] empty)

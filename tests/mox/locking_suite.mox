@@ -1,36 +1,36 @@
 (* many closure fails when capturing unique pair directly *)
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
 ((fun _ => unique_pair) : (unit ->[local many] (unit *[unique local] unit)))
-> (unit ->[a=local l=many p=non-portable] (unit *[u=unique a=local] unit))
+> (unit ->[a=local l=many p=nonportable] (unit *[u=unique a=local] unit))
 
 (* once closure succeeds when capturing unique pair directly *)
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
 ((fun _ => unique_pair) : (unit ->[local once] (unit *[unique local] unit)))
-> (unit ->[a=local l=once p=non-portable] (unit *[u=unique a=local] unit))
+> (unit ->[a=local l=once p=nonportable] (unit *[u=unique a=local] unit))
 
 (* once closure succeeds after rebinding unique pair *)
 let unique_pair1 = ((unit, unit) : (unit *[unique local] unit)) in
 let unique_pair2 = unique_pair1 in
 ((fun _ => unique_pair2) : (unit ->[local once] (unit *[unique local] unit)))
-> (unit ->[a=local l=once p=non-portable] (unit *[u=unique a=local] unit))
+> (unit ->[a=local l=once p=nonportable] (unit *[u=unique a=local] unit))
 
 (* many closure fails after alias binding to unique pair *)
 let base = ((unit, unit) : (unit *[unique local] unit)) in
 let alias = base in
 ((fun _ => alias) : (unit ->[local many] (unit *[unique local] unit)))
-> (unit ->[a=local l=many p=non-portable] (unit *[u=unique a=local] unit))
+> (unit ->[a=local l=many p=nonportable] (unit *[u=unique a=local] unit))
 
 (* many closure succeeds with aliased storage after alias binding *)
 let base = ((unit, unit) : (unit *[unique local] unit)) in
 let alias = base in
 ((fun _ => alias) : (unit ->[local many] (unit *[local] unit)))
-> (unit ->[a=local l=many p=non-portable] (unit *[u=aliased a=local] unit))
+> (unit ->[a=local l=many p=nonportable] (unit *[u=aliased a=local] unit))
 
 (* many closure fails on nested unique pair *)
 let nested = ((unit, (unit, unit)) : (unit *[unique local] (unit *[unique local] unit))) in
 ((fun _ => nested)
  : (unit ->[local many] (unit *[unique local] (unit *[unique local] unit))))
-> (unit ->[a=local l=many p=non-portable] (unit *[u=unique a=local] (unit *[u=unique a=local] unit)))
+> (unit ->[a=local l=many p=nonportable] (unit *[u=unique a=local] (unit *[u=unique a=local] unit)))
 
 (* many closure succeeds on nested pair with aliased storage *)
 let nested =
@@ -38,17 +38,17 @@ let nested =
 in
 ((fun _ => nested)
  : (unit ->[local many] (unit *[local] (unit *[local] unit))))
-> (unit ->[a=local l=many p=non-portable] (unit *[u=aliased a=local] (unit *[u=aliased a=local] unit)))
+> (unit ->[a=local l=many p=nonportable] (unit *[u=aliased a=local] (unit *[u=aliased a=local] unit)))
 
 (* many closure fails on unique sum *)
 let unique_sum = (left(unit) : (unit +[unique local] unit)) in
 ((fun _ => unique_sum) : (unit ->[local many] (unit +[unique local] unit)))
-> (unit ->[a=local l=many p=non-portable] (unit +[u=unique a=local] unit))
+> (unit ->[a=local l=many p=nonportable] (unit +[u=unique a=local] unit))
 
 (* many closure succeeds on aliased sum *)
 let unique_sum = (left(unit) : (unit +[unique local] unit)) in
 ((fun _ => unique_sum) : (unit ->[local many] (unit +[local] unit)))
-> (unit ->[a=local l=many p=non-portable] (unit +[u=aliased a=local] unit))
+> (unit ->[a=local l=many p=nonportable] (unit +[u=aliased a=local] unit))
 
 (* many closure fails on nested unique sum *)
 let nested_sum =
@@ -56,7 +56,7 @@ let nested_sum =
 in
 ((fun _ => nested_sum)
  : (unit ->[local many] (unit +[unique local] (unit +[unique local] unit))))
-> (unit ->[a=local l=many p=non-portable] (unit +[u=unique a=local] (unit +[u=unique a=local] unit)))
+> (unit ->[a=local l=many p=nonportable] (unit +[u=unique a=local] (unit +[u=unique a=local] unit)))
 
 (* many closure succeeds on nested sum with aliased storage *)
 let nested_sum =
@@ -64,12 +64,12 @@ let nested_sum =
 in
 ((fun _ => nested_sum)
  : (unit ->[local many] (unit +[local] (unit +[local] unit))))
-> (unit ->[a=local l=many p=non-portable] (unit +[u=aliased a=local] (unit +[u=aliased a=local] unit)))
+> (unit ->[a=local l=many p=nonportable] (unit +[u=aliased a=local] (unit +[u=aliased a=local] unit)))
 
 (* once closure fails on aliased function capture *)
 let aliased_fun = ((fun x => x) : (unit ->[local many] unit)) in
 ((fun _ => aliased_fun) : (unit ->[local once] (unit ->[local many] unit)))
-> (unit ->[a=local l=once p=non-portable] (unit ->[a=local l=many p=non-portable] unit))
+> (unit ->[a=local l=once p=nonportable] (unit ->[a=local l=many p=nonportable] unit))
 
 (* many closure succeeds on once-qualified function capture *)
 let linear_fun = ((fun x => x) : (unit ->[local once] unit)) in
@@ -80,7 +80,7 @@ let linear_fun = ((fun x => x) : (unit ->[local once] unit)) in
 let portable_fun = ((fun x => x) : (unit ->[local once portable] unit)) in
 ((fun _ => portable_fun)
  : (unit ->[local once] (unit ->[local once portable] unit)))
-> (unit ->[a=local l=once p=non-portable] (unit ->[a=local l=once p=portable] unit))
+> (unit ->[a=local l=once p=nonportable] (unit ->[a=local l=once p=portable] unit))
 
 (* once closure succeeds when requiring portable capability *)
 let portable_fun = ((fun x => x) : (unit ->[local once portable] unit)) in
@@ -95,7 +95,7 @@ let pair_left =
 in
 ((fun _ => pair_left)
  : (unit ->[local once] ((unit ->[local many] unit) *[unique local] unit)))
-> (unit ->[a=local l=once p=non-portable] ((unit ->[a=local l=many p=non-portable] unit) *[u=unique a=local] unit))
+> (unit ->[a=local l=once p=nonportable] ((unit ->[a=local l=many p=nonportable] unit) *[u=unique a=local] unit))
 
 (* once closure fails via pair.right path *)
 let pair_right =
@@ -105,7 +105,7 @@ let pair_right =
 in
 ((fun _ => pair_right)
  : (unit ->[local once] (unit *[unique local] (unit ->[local many] unit))))
-> (unit ->[a=local l=once p=non-portable] (unit *[u=unique a=local] (unit ->[a=local l=many p=non-portable] unit)))
+> (unit ->[a=local l=once p=nonportable] (unit *[u=unique a=local] (unit ->[a=local l=many p=nonportable] unit)))
 
 (* once closure fails via sum.left path *)
 let sum_left =
@@ -114,7 +114,7 @@ let sum_left =
 in
 ((fun _ => sum_left)
  : (unit ->[local once] ((unit ->[local many] unit) +[unique local] unit)))
-> (unit ->[a=local l=once p=non-portable] ((unit ->[a=local l=many p=non-portable] unit) +[u=unique a=local] unit))
+> (unit ->[a=local l=once p=nonportable] ((unit ->[a=local l=many p=nonportable] unit) +[u=unique a=local] unit))
 
 (* once closure fails via sum.right path *)
 let sum_right =
@@ -123,7 +123,7 @@ let sum_right =
 in
 ((fun _ => sum_right)
  : (unit ->[local once] (unit +[unique local] (unit ->[local many] unit))))
-> (unit ->[a=local l=once p=non-portable] (unit +[u=unique a=local] (unit ->[a=local l=many p=non-portable] unit)))
+> (unit ->[a=local l=once p=nonportable] (unit +[u=unique a=local] (unit ->[a=local l=many p=nonportable] unit)))
 
 (* once closure fails via nested pair path chain *)
 let nested_pair =
@@ -139,7 +139,7 @@ in
  : (unit
     ->[local once]
     ((unit *[unique local] (unit ->[local many] unit)) *[unique local] unit)))
-> (unit ->[a=local l=once p=non-portable] ((unit *[u=unique a=local] (unit ->[a=local l=many p=non-portable] unit)) *[u=unique a=local] unit))
+> (unit ->[a=local l=once p=nonportable] ((unit *[u=unique a=local] (unit ->[a=local l=many p=nonportable] unit)) *[u=unique a=local] unit))
 
 (* once closure fails via nested sum path chain *)
 let nested_sum_fn =
@@ -154,7 +154,7 @@ in
  : (unit
     ->[local once]
     (unit +[unique local] ((unit ->[local many] unit) +[unique local] unit))))
-> (unit ->[a=local l=once p=non-portable] (unit +[u=unique a=local] ((unit ->[a=local l=many p=non-portable] unit) +[u=unique a=local] unit)))
+> (unit ->[a=local l=once p=nonportable] (unit +[u=unique a=local] ((unit ->[a=local l=many p=nonportable] unit) +[u=unique a=local] unit)))
 
 (* many closure succeeds on nested pair with once-qualified function *)
 let nested_pair_once =
@@ -194,7 +194,7 @@ let inner =
 in
 ((fun _ => inner)
  : (unit ->[local once] (unit ->[local many] (unit *[local] unit))))
-> (unit ->[a=local l=once p=non-portable] (unit ->[a=local l=many p=non-portable] (unit *[u=aliased a=local] unit)))
+> (unit ->[a=local l=once p=nonportable] (unit ->[a=local l=many p=nonportable] (unit *[u=aliased a=local] unit)))
 
 (* many closure succeeds when capturing a once-closure as a value *)
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in

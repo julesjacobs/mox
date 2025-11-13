@@ -2,16 +2,16 @@
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
 ((fun _ => unique_pair)
  : (unit ->[local many] (unit *[unique local] unit)))
-> (unit ->[a=local l=many p=non-portable] (unit *[u=unique a=local] unit))
+> (unit ->[a=local l=many p=nonportable] (unit *[u=unique a=local] unit))
 
 (* once-qualified closures can retain unique storage *)
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
 ((fun _ => unique_pair)
  : (unit ->[local once] (unit *[unique local] unit)))
-> (unit ->[a=local l=once p=non-portable] (unit *[u=unique a=local] unit))
+> (unit ->[a=local l=once p=nonportable] (unit *[u=unique a=local] unit))
 
 (* closures reject functions that exceed their mode budget *)
 let aliased_fun = ((fun x => x) : (unit ->[local many] unit)) in
 ((fun _ => aliased_fun)
  : (unit ->[local once] (unit ->[local many] unit)))
-> (unit ->[a=local l=once p=non-portable] (unit ->[a=local l=many p=non-portable] unit))
+> (unit ->[a=local l=once p=nonportable] (unit ->[a=local l=many p=nonportable] unit))

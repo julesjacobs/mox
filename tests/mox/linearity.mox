@@ -1,0 +1,9 @@
+let x = (unit, unit) in
+let f = (fun a => let! (b,c) = x in b) in
+f unit
+> unit
+
+let x = (unit, unit) in
+let f = (fun a => let! (b,c) = x in b) in
+(f unit, f unit)
+> error: relation became empty
