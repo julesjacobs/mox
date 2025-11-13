@@ -225,8 +225,8 @@ let rec assert_in ty mode_vars =
     assert_in domain top_mode;
     assert_in codomain top_mode
 
-(* Makes the outer type constructors equivalent. *)
-let outer_equiv ty1 ty2 =
+(* Core constraint propagation and meta assignment. *)
+let rec outer_equiv ty1 ty2 =
   match (zonk ty1, zonk ty2) with
   | TyMeta meta1, TyMeta meta2 -> ()
   | TyUnit, TyUnit -> ()
@@ -235,96 +235,118 @@ let outer_equiv ty1 ty2 =
   | TySum _, TySum _ -> ()
   | TyArrow _, TyArrow _ -> ()
   | TyUnit, TyMeta meta | TyMeta meta, TyUnit ->
-    meta.solution <- Some TyUnit
+      set_meta_solution meta TyUnit
   | TyEmpty, TyMeta meta | TyMeta meta, TyEmpty ->
-    meta.solution <- Some TyEmpty
+      set_meta_solution meta TyEmpty
   | TyPair _, TyMeta meta | TyMeta meta, TyPair _ ->
-    let storage = fresh_storage_mode () in
-    let left = fresh_meta () in
-    let right = fresh_meta () in
-    meta.solution <- Some (TyPair (TyMeta left, storage, TyMeta right))
+      let storage = fresh_storage_mode () in
+      let left = fresh_meta () in
+      let right = fresh_meta () in
+      set_meta_solution meta (TyPair (TyMeta left, storage, TyMeta right))
   | TySum _, TyMeta meta | TyMeta meta, TySum _ ->
-    let storage = fresh_storage_mode () in
-    let left = fresh_meta () in
-    let right = fresh_meta () in
-    meta.solution <- Some (TySum (TyMeta left, storage, TyMeta right))
+      let storage = fresh_storage_mode () in
+      let left = fresh_meta () in
+      let right = fresh_meta () in
+      set_meta_solution meta (TySum (TyMeta left, storage, TyMeta right))
   | TyArrow _, TyMeta meta | TyMeta meta, TyArrow _ ->
-    let future = fresh_future_mode () in
-    let domain = fresh_meta () in
-    let codomain = fresh_meta () in
-    meta.solution <- Some (TyArrow (TyMeta domain, future, TyMeta codomain))
+      let future = fresh_future_mode () in
+      let domain = fresh_meta () in
+      let codomain = fresh_meta () in
+      set_meta_solution meta (TyArrow (TyMeta domain, future, TyMeta codomain))
   | _ ->
-    type_error "outer_equiv: not equivalent"
+      type_error "outer_equiv: not equivalent"
 
-let rec assert_subtype lower upper =
+and assert_subtype lower upper =
   outer_equiv lower upper;
   match (zonk lower, zonk upper) with
   | TyMeta lower_meta, TyMeta upper_meta ->
-    let constraint_ = mk_constraint (Sub { lower = lower_meta; upper = upper_meta }) in
-    add_constraint lower_meta constraint_;
-    add_constraint upper_meta constraint_
+      let constraint_ = mk_constraint (Sub { lower = lower_meta; upper = upper_meta }) in
+      add_constraint lower_meta constraint_;
+      add_constraint upper_meta constraint_
   | TyUnit, TyUnit -> ()
   | TyEmpty, TyEmpty -> ()
   | TyPair (lower_left, lower_storage, lower_right), TyPair (upper_left, upper_storage, upper_right) ->
-    assert_subtype lower_left upper_left;
-    assert_subtype lower_right upper_right;
-    assert_storage_leq_to lower_storage upper_storage
+      assert_subtype lower_left upper_left;
+      assert_subtype lower_right upper_right;
+      assert_storage_leq_to lower_storage upper_storage
   | TySum (lower_left, lower_storage, lower_right), TySum (upper_left, upper_storage, upper_right) ->
-    assert_subtype lower_left upper_left;
-    assert_subtype lower_right upper_right;
-    assert_storage_leq_to lower_storage upper_storage
+      assert_subtype lower_left upper_left;
+      assert_subtype lower_right upper_right;
+      assert_storage_leq_to lower_storage upper_storage
   | TyArrow (lower_domain, lower_future, lower_codomain), TyArrow (upper_domain, upper_future, upper_codomain) ->
-    assert_subtype upper_domain lower_domain;
-    assert_subtype lower_codomain upper_codomain;
-    assert_future_leq_to lower_future upper_future
+      assert_subtype upper_domain lower_domain;
+      assert_subtype lower_codomain upper_codomain;
+      assert_future_leq_to lower_future upper_future
   | _ ->
-    type_error "assert_subtype: not a subtype"
+      type_error "assert_subtype: not a subtype"
 
-let rec assert_alias source target = 
+and assert_alias source target =
   outer_equiv source target;
   match (zonk source, zonk target) with
   | TyMeta source_meta, TyMeta target_meta ->
-    let constraint_ = mk_constraint (Alias { source = source_meta; target = target_meta }) in
-    add_constraint source_meta constraint_;
-    add_constraint target_meta constraint_
+      let constraint_ = mk_constraint (Alias { source = source_meta; target = target_meta }) in
+      add_constraint source_meta constraint_;
+      add_constraint target_meta constraint_
   | TyUnit, TyUnit -> ()
   | TyEmpty, TyEmpty -> ()
   | TyPair (source_left, source_storage, source_right), TyPair (target_left, target_storage, target_right) ->
-    (* Make sure target_storage is aliased, areality is copied. *)
-    assert_aliased target_storage.uniqueness;
-    assert_equal_areality source_storage.areality target_storage.areality;
-    assert_alias source_left target_left;
-    assert_alias source_right target_right;
+      (* Make sure target_storage is aliased, areality is copied. *)
+      assert_aliased target_storage.uniqueness;
+      assert_equal_areality source_storage.areality target_storage.areality;
+      assert_alias source_left target_left;
+      assert_alias source_right target_right;
   | TySum (source_left, source_storage, source_right), TySum (target_left, target_storage, target_right) ->
-    (* Similar to pair. *)
-    assert_aliased target_storage.uniqueness;
-    assert_equal_areality source_storage.areality target_storage.areality;
-    assert_alias source_left target_left;
-    assert_alias source_right target_right;
+      (* Similar to pair. *)
+      assert_aliased target_storage.uniqueness;
+      assert_equal_areality source_storage.areality target_storage.areality;
+      assert_alias source_left target_left;
+      assert_alias source_right target_right;
   | TyArrow (_source_domain, source_future, _source_codomain), TyArrow (_target_domain, target_future, _target_codomain) ->
-    Modesolver.Linearity.assert_relation alias_linearity_relation source_future.linearity target_future.linearity;
-    assert_equal_areality source_future.areality target_future.areality;
-    assert_equal_portability source_future.portability target_future.portability;
+      Modesolver.Linearity.assert_relation alias_linearity_relation source_future.linearity target_future.linearity;
+      assert_equal_areality source_future.areality target_future.areality;
+      assert_equal_portability source_future.portability target_future.portability;
   | _ ->
-    type_error "assert_alias: not equivalent"
+      type_error "assert_alias: not equivalent"
 
-let assert_lock original locked future =
+and assert_lock original locked future =
   outer_equiv original locked;
   match (zonk original, zonk locked) with
   | TyMeta original_meta, TyMeta locked_meta ->
-    let constraint_ = mk_constraint (Lock { original = original_meta; locked = locked_meta; future = future }) in
-    add_constraint original_meta constraint_;
-    add_constraint locked_meta constraint_
+      let constraint_ = mk_constraint (Lock { original = original_meta; locked = locked_meta; future = future }) in
+      add_constraint original_meta constraint_;
+      add_constraint locked_meta constraint_
   | TyUnit, TyUnit -> ()
   | TyEmpty, TyEmpty -> ()
   | TyPair (original_left, original_storage, original_right), TyPair (locked_left, locked_storage, locked_right) ->
-    failwith "TODO"
+      failwith "TODO"
   | TySum (original_left, original_storage, original_right), TySum (locked_left, locked_storage, locked_right) ->
-    failwith "TODO"
+      failwith "TODO"
   | TyArrow (original_domain, original_future, original_codomain), TyArrow (locked_domain, locked_future, locked_codomain) ->
-    failwith "TODO"
+      failwith "TODO"
   | _ ->
-    type_error "assert_lock: not equivalent"
+      type_error "assert_lock: not equivalent"
+
+and fire_constraint constraint_record =
+  if constraint_record.fired then ()
+  else (
+    constraint_record.fired <- true;
+    match constraint_record.constraint_ with
+    | Sub { lower; upper } ->
+        assert_subtype (TyMeta lower) (TyMeta upper)
+    | Alias { source; target } ->
+        assert_alias (TyMeta source) (TyMeta target)
+    | Lock { original; locked; future } ->
+        assert_lock (TyMeta original) (TyMeta locked) future
+    | In { target; mode_vars } ->
+        assert_in (TyMeta target) mode_vars )
+
+and set_meta_solution meta ty =
+  match meta.solution with
+  | Some _ ->
+      type_error (Printf.sprintf "meta %d already solved" meta.id)
+  | None ->
+      meta.solution <- Some ty;
+      List.iter fire_constraint meta.constraints
 
 (* -------------------------------------------------------------------------- *)
 (* Converting annotated syntax *)
@@ -392,6 +414,8 @@ let rec lookup env name =
   | (bound, ty) :: rest -> if String.equal bound name then Some ty else lookup rest name
 
 
+(* TODO: add aliasing and locking *)
+(* For aliasing we want to implement proper context splitting. *)
 let rec infer_with_env env expr = 
   match expr with
   | Ast.Var x ->
@@ -426,7 +450,6 @@ let rec infer_with_env env expr =
     let ty1 = infer_with_env env e1 in
     let env' = (x, ty1) :: env in
     infer_with_env env' e2
-    (* TODO: aliasing *)
   | Ast.LetPair (x1, x2, e1, e2) ->
     let ty1 = infer_with_env env e1 in
     let ty_left = TyMeta (fresh_meta ()) in
@@ -436,7 +459,6 @@ let rec infer_with_env env expr =
     assert_subtype ty1 ty_pair;
     let env' = (x1, ty_left) :: (x2, ty_right) :: env in
     infer_with_env env' e2
-    (* TODO: aliasing *)
   | Ast.Match (e, x1, e1, x2, e2) ->
     let ty_scrut = infer_with_env env e in
     let ty_left = TyMeta (fresh_meta ()) in
@@ -452,7 +474,6 @@ let rec infer_with_env env expr =
     assert_subtype ty1 ty_join;
     assert_subtype ty2 ty_join;
     ty_join
-    (* TODO: aliasing *)
   | Ast.App (e1, e2) ->
     let ty1 = infer_with_env env e1 in
     let ty2 = infer_with_env env e2 in
@@ -471,7 +492,7 @@ let rec infer_with_env env expr =
     let future = fresh_future_mode () in
     let ty_arrow = TyArrow (ty_param, future, ty_body) in
     ty_arrow
-    (* TODO: aliasing + locking *)
+    (* TODO: locking *)
   | Ast.Annot (e, ty_syntax) ->
     let ty = ty_of_ast ty_syntax in
     let ty' = infer_with_env env e in
