@@ -14,7 +14,7 @@ let storage_mode_from_list names =
   { uniqueness; areality }
 %}
 
-%token LET IN FUN MATCH WITH LEFT RIGHT ABSURD UNIT EMPTY QUESTION
+%token LET IN FUN MATCH WITH LEFT RIGHT ABSURD UNIT EMPTY QUESTION STACK
 %token LPAREN RPAREN LBRACKET RBRACKET COMMA EQUAL BAR ARROW FATARROW PLUS TIMES COLON
 %token <string> IDENT
 %token EOF
@@ -41,7 +41,7 @@ expr_base:
   | LET IDENT EQUAL expr IN expr { Let ($2, $4, $6) }
   | LET LPAREN IDENT COMMA IDENT RPAREN EQUAL expr IN expr
       { LetPair ($3, $5, $8, $10) }
-  | FUN IDENT FATARROW expr { Fun ($2, $4) }
+  | stack_prefix FUN IDENT FATARROW expr { Fun ($1, $3, $5) }
   | MATCH expr WITH LEFT LPAREN IDENT RPAREN FATARROW expr
       BAR RIGHT LPAREN IDENT RPAREN FATARROW expr
       { Match ($2, $6, $9, $13, $16) }
@@ -56,10 +56,17 @@ expr_atom:
   | UNIT { Unit }
   | QUESTION { Hole }
   | ABSURD expr { Absurd $2 }
-  | LEFT LPAREN expr RPAREN { Inl $3 }
-  | RIGHT LPAREN expr RPAREN { Inr $3 }
-  | LPAREN expr COMMA expr RPAREN { Pair ($2, $4) }
+  | LEFT LPAREN expr RPAREN { Inl (Heap, $3) }
+  | STACK LEFT LPAREN expr RPAREN { Inl (Stack, $4) }
+  | RIGHT LPAREN expr RPAREN { Inr (Heap, $3) }
+  | STACK RIGHT LPAREN expr RPAREN { Inr (Stack, $4) }
+  | LPAREN expr COMMA expr RPAREN { Pair (Heap, $2, $4) }
+  | STACK LPAREN expr COMMA expr RPAREN { Pair (Stack, $3, $5) }
   | LPAREN expr RPAREN { $2 }
+
+stack_prefix:
+  | STACK { Stack }
+  | /* empty */ { Heap }
 
 (* Type grammar *)
 

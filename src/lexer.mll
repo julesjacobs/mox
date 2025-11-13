@@ -35,6 +35,7 @@ rule token = parse
   | ","                  { COMMA }
   | "="                  { EQUAL }
   | "|"                  { BAR }
+  | "$"                  { STACK }
   | "["                  { LBRACKET }
   | "]"                  { RBRACKET }
   | ":"                  { COLON }

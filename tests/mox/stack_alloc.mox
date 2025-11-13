@@ -1,0 +1,15 @@
+$(unit, unit)
+> (unit *[u=u1 a=local] unit)
+> mode vars
+>   u1 ∈ {aliased, unique}
+
+$left(unit)
+> (unit +[u=u1 a=local] ?438)
+> mode vars
+>   u1 ∈ {aliased, unique}
+
+$fun x => x
+> (?439 ->[a=local l=l1 p=p1] ?439)
+> mode vars
+>   p1 ∈ {non-portable, portable}
+>   l1 ∈ {many, never, once}

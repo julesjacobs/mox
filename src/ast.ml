@@ -18,17 +18,21 @@ type ty =
   | TySum of ty * storage_mode * ty
 
 (** Expressions as described in tex/mox.tex. *)
+type alloc =
+  | Stack
+  | Heap
+
 type expr =
   | Var of ident
   | Let of ident * expr * expr
   | Unit
   | Hole
   | Absurd of expr
-  | Fun of ident * expr
+  | Fun of alloc * ident * expr
   | App of expr * expr
-  | Pair of expr * expr
+  | Pair of alloc * expr * expr
   | LetPair of ident * ident * expr * expr
-  | Inl of expr
-  | Inr of expr
+  | Inl of alloc * expr
+  | Inr of alloc * expr
   | Match of expr * ident * expr * ident * expr
   | Annot of expr * ty

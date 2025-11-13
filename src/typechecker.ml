@@ -82,16 +82,16 @@ let rec free_vars expr =
   | Hole -> StringSet.empty
   | Absurd e -> free_vars e
   | Annot (e, _) -> free_vars e
-  | Fun (x, body) -> free_vars_without body [ x ]
+  | Fun (_, x, body) -> free_vars_without body [ x ]
   | App (fn, arg) -> StringSet.union (free_vars fn) (free_vars arg)
   | Let (x, e1, e2) ->
       StringSet.union (free_vars e1) (free_vars_without e2 [ x ])
   | LetPair (x1, x2, e1, e2) ->
       StringSet.union (free_vars e1) (free_vars_without e2 [ x1; x2 ])
-  | Pair (left, right) ->
+  | Pair (_, left, right) ->
       StringSet.union (free_vars left) (free_vars right)
-  | Inl e -> free_vars e
-  | Inr e -> free_vars e
+  | Inl (_, e) -> free_vars e
+  | Inr (_, e) -> free_vars e
   | Match (scrut, x1, e1, x2, e2) ->
       let fv_scrut = free_vars scrut in
       let fv_e1 = free_vars_without e1 [ x1 ] in
@@ -189,6 +189,9 @@ let lookup env x =
 
 let default_storage_mode =
   { uniqueness = Unique; areality = Modes.Areality.default }
+
+let stack_storage_mode =
+  { uniqueness = Unique; areality = Modes.Areality.local }
 
 let make_pair_ty left storage right =
   let ty = TyPair (left, storage, right) in
@@ -307,6 +310,27 @@ let lock_env mode env =
       | Tombstone _ -> (name, binding))
     env
 
+let require_local_storage alloc context storage =
+  match alloc with
+  | Stack ->
+      if not (Modes.Areality.equal storage.areality Modes.Areality.local) then
+        raise
+          (Mode_error
+             (Printf.sprintf "Stack-allocated %s must have local storage" context))
+  | Heap -> ()
+
+let require_local_future alloc context future =
+  match alloc with
+  | Stack ->
+      if not
+           (Modes.Areality.equal future.Modes.Future.areality
+              Modes.Areality.local)
+      then
+        raise
+          (Mode_error
+             (Printf.sprintf "Stack-allocated %s must have local areality" context))
+  | Heap -> ()
+
 let rec infer_expr env expr =
   match expr with
   | Var x -> lookup env x
@@ -327,13 +351,16 @@ let rec infer_expr env expr =
           check_expr env_arg arg param;
           result
       | _ -> raise (Error (Expected_function fn_ty)))
-  | Pair (left, right) ->
+  | Pair (alloc, left, right) ->
       let left_fv = free_vars left in
       let right_fv = free_vars right in
       let env_left, env_right = split_env env left_fv right_fv in
       let left_ty = infer_expr env_left left in
       let right_ty = infer_expr env_right right in
-      make_pair_ty left_ty default_storage_mode right_ty
+      let storage =
+        match alloc with Stack -> stack_storage_mode | Heap -> default_storage_mode
+      in
+      make_pair_ty left_ty storage right_ty
   | Let (x, e1, e2) ->
       let fv_e1 = free_vars e1 in
       let fv_e2 = free_vars_without e2 [ x ] in
@@ -379,25 +406,31 @@ and check_expr env expr ty =
   | Unit -> subtype TyUnit ty
   | Hole -> ()
   | Absurd e -> check_expr env e TyEmpty
-  | Fun (x, body) ->
+  | Fun (alloc, x, body) ->
       (match ty with
       | TyArrow (param, mode, result) ->
           let captured_vars = free_vars_without body [ x ] in
           let captured_env = restrict_env env captured_vars in
+          require_local_future alloc "function" mode;
           let locked_env = lock_env mode captured_env in
           check_expr ((x, Available param) :: locked_env) body result
       | _ -> raise (Error (Expected_function ty)))
-  | Inl e ->
+  | Inl (alloc, e) ->
       (match ty with
-      | TySum (left_ty, _, _) -> check_expr env e left_ty
+      | TySum (left_ty, storage, _) ->
+          require_local_storage alloc "sum" storage;
+          check_expr env e left_ty
       | _ -> raise (Error (Expected_sum ty)))
-  | Inr e ->
+  | Inr (alloc, e) ->
       (match ty with
-      | TySum (_, _, right_ty) -> check_expr env e right_ty
+      | TySum (_, storage, right_ty) ->
+          require_local_storage alloc "sum" storage;
+          check_expr env e right_ty
       | _ -> raise (Error (Expected_sum ty)))
-  | Pair (left, right) ->
+  | Pair (alloc, left, right) ->
       (match ty with
-      | TyPair (left_ty, _, right_ty) ->
+      | TyPair (left_ty, storage, right_ty) ->
+          require_local_storage alloc "pair" storage;
           let left_fv = free_vars left in
           let right_fv = free_vars right in
           let env_left, env_right = split_env env left_fv right_fv in

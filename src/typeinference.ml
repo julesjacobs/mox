@@ -87,16 +87,16 @@ let rec free_vars expr =
   | Ast.Hole -> StringSet.empty
   | Ast.Absurd e -> free_vars e
   | Ast.Annot (e, _) -> free_vars e
-  | Ast.Fun (x, body) -> free_vars_without body [ x ]
+  | Ast.Fun (_, x, body) -> free_vars_without body [ x ]
   | Ast.App (fn, arg) -> StringSet.union (free_vars fn) (free_vars arg)
   | Ast.Let (x, e1, e2) ->
       StringSet.union (free_vars e1) (free_vars_without e2 [ x ])
   | Ast.LetPair (x1, x2, e1, e2) ->
       StringSet.union (free_vars e1) (free_vars_without e2 [ x1; x2 ])
-  | Ast.Pair (left, right) ->
+  | Ast.Pair (_, left, right) ->
       StringSet.union (free_vars left) (free_vars right)
-  | Ast.Inl e -> free_vars e
-  | Ast.Inr e -> free_vars e
+  | Ast.Inl (_, e) -> free_vars e
+  | Ast.Inr (_, e) -> free_vars e
   | Ast.Match (scrut, x1, e1, x2, e2) ->
       let fv_scrut = free_vars scrut in
       let fv_e1 = free_vars_without e1 [ x1 ] in
@@ -184,6 +184,11 @@ let fresh_mode_vars () : mode_vars =
     portability = Modesolver.Portability.new_var ();
     areality = Modesolver.Areality.new_var () }
 
+let force_storage_local (storage : storage_mode) =
+  Modesolver.Areality.restrict_domain [Areality.local] storage.areality
+
+let force_future_local (future : future_mode) =
+  Modesolver.Areality.restrict_domain [Areality.local] future.areality
 let const_uniqueness_var value =
   Modesolver.Uniqueness.new_var ~domain:[value] ()
 
@@ -895,25 +900,28 @@ let rec infer_with_env env expr =
     | Some ty -> ty
     | None -> type_error (Printf.sprintf "Unbound variable %s" x))
   | Ast.Unit -> TyUnit
-  | Ast.Pair (e1, e2) ->
+  | Ast.Pair (alloc, e1, e2) ->
     let left_fv = free_vars e1 in
     let right_fv = free_vars e2 in
     let env_left, env_right = split_env env left_fv right_fv in
     let ty1 = infer_with_env env_left e1 in
     let ty2 = infer_with_env env_right e2 in
     let storage = fresh_storage_mode () in
+    let () = match alloc with Ast.Stack -> force_storage_local storage | Ast.Heap -> () in
     let ty = TyPair (ty1, storage, ty2) in
     ty
-  | Ast.Inl e ->
+  | Ast.Inl (alloc, e) ->
     let ty_left = infer_with_env env e in
     let ty_right = TyMeta (fresh_meta ()) in
     let storage = fresh_storage_mode () in
+    let () = match alloc with Ast.Stack -> force_storage_local storage | Ast.Heap -> () in
     let ty = TySum (ty_left, storage, ty_right) in
     ty
-  | Ast.Inr e ->
+  | Ast.Inr (alloc, e) ->
     let ty_left = TyMeta (fresh_meta ()) in
     let ty_right = infer_with_env env e in
     let storage = fresh_storage_mode () in
+    let () = match alloc with Ast.Stack -> force_storage_local storage | Ast.Heap -> () in
     let ty = TySum (ty_left, storage, ty_right) in
     ty
   | Ast.Hole -> TyMeta (fresh_meta ())
@@ -972,9 +980,10 @@ let rec infer_with_env env expr =
     assert_callable future;
     assert_subtype ty2 ty_dom;
     ty_cod
-  | Ast.Fun (x, e) ->
+  | Ast.Fun (alloc, x, e) ->
     let ty_param = TyMeta (fresh_meta ()) in
     let future = fresh_future_mode () in
+    let () = match alloc with Ast.Stack -> force_future_local future | Ast.Heap -> () in
     let captured_vars = free_vars_without e [ x ] in
     let captured_env = restrict_env env captured_vars in
     let locked_env = lock_env captured_env future in
