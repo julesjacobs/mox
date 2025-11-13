@@ -54,6 +54,16 @@ region
 >   a1 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}
 
+(* CR jujacobs: bug! *)
+let a = (region
+  let x = $(unit, unit) in
+  fun y => x) 
+in a unit
+> (unit *[u=u1 a=a1] unit)
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
 let! (x, y) = unique_pair in
 x
