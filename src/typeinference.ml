@@ -149,8 +149,7 @@ let fresh_meta ?solution ?(constraints = []) () : meta =
 (* Constraint management. *)
 
 let add_constraint meta constraint_ =
-  if List.exists (fun existing -> existing.constraint_ = constraint_.constraint_) meta.constraints then ()
-  else meta.constraints <- constraint_ :: meta.constraints
+  meta.constraints <- constraint_ :: meta.constraints
 
 let add_constraints meta constraints =
   List.iter (add_constraint meta) constraints
