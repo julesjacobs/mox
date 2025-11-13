@@ -493,8 +493,14 @@ let alias_env_for env vars =
           (name, ty))
       env
 
-let alias_env_between env fv1 fv2 =
-  alias_env_for env (StringSet.inter fv1 fv2)
+let restrict_env env vars =
+  if StringSet.is_empty vars then []
+  else List.filter (fun (name, _) -> StringSet.mem name vars) env
+
+let split_env env fv1 fv2 =
+  let shared = StringSet.inter fv1 fv2 in
+  let aliased_env = alias_env_for env shared in
+  (restrict_env aliased_env fv1, restrict_env aliased_env fv2)
 
 let lock_env env future =
   (* Apply the lock constraint to every binding so the function body only sees
@@ -519,9 +525,9 @@ let rec infer_with_env env expr =
   | Ast.Pair (e1, e2) ->
     let left_fv = free_vars e1 in
     let right_fv = free_vars e2 in
-    let shared_env = alias_env_between env left_fv right_fv in
-    let ty1 = infer_with_env shared_env e1 in
-    let ty2 = infer_with_env shared_env e2 in
+    let env_left, env_right = split_env env left_fv right_fv in
+    let ty1 = infer_with_env env_left e1 in
+    let ty2 = infer_with_env env_right e2 in
     let storage = fresh_storage_mode () in
     let ty = TyPair (ty1, storage, ty2) in
     ty
@@ -545,39 +551,36 @@ let rec infer_with_env env expr =
   | Ast.Let (x, e1, e2) ->
     let fv_e1 = free_vars e1 in
     let fv_e2 = free_vars_without e2 [ x ] in
-    let shared_env = alias_env_between env fv_e1 fv_e2 in
-    let ty1 = infer_with_env shared_env e1 in
-    infer_with_env ((x, ty1) :: shared_env) e2
+    let env_e1, env_e2 = split_env env fv_e1 fv_e2 in
+    let ty1 = infer_with_env env_e1 e1 in
+    infer_with_env ((x, ty1) :: env_e2) e2
   | Ast.LetPair (x1, x2, e1, e2) ->
     let fv_e1 = free_vars e1 in
     let fv_e2 = free_vars_without e2 [ x1; x2 ] in
-    let shared_env = alias_env_between env fv_e1 fv_e2 in
-    let ty1 = infer_with_env shared_env e1 in
+    let env_e1, env_e2 = split_env env fv_e1 fv_e2 in
+    let ty1 = infer_with_env env_e1 e1 in
     let ty_left = TyMeta (fresh_meta ()) in
     let ty_right = TyMeta (fresh_meta ()) in
     let storage = fresh_storage_mode () in
     let ty_pair = TyPair (ty_left, storage, ty_right) in
     assert_subtype ty1 ty_pair;
-    let env' = (x1, ty_left) :: (x2, ty_right) :: shared_env in
+    let env' = (x1, ty_left) :: (x2, ty_right) :: env_e2 in
     infer_with_env env' e2
   | Ast.Match (e, x1, e1, x2, e2) ->
     let fv_scrut = free_vars e in
     let fv_e1 = free_vars_without e1 [ x1 ] in
     let fv_e2 = free_vars_without e2 [ x2 ] in
     let branches_fv = StringSet.union fv_e1 fv_e2 in
-    let shared_with_scrut = StringSet.inter fv_scrut branches_fv in
-    let env_branches = alias_env_for env shared_with_scrut in
-    let env_scrut = alias_env_between env branches_fv fv_scrut in
+    let env_scrut, env_rest = split_env env fv_scrut branches_fv in
     let ty_scrut = infer_with_env env_scrut e in
     let ty_left = TyMeta (fresh_meta ()) in
     let ty_right = TyMeta (fresh_meta ()) in
     let storage = fresh_storage_mode () in
     let ty_sum = TySum (ty_left, storage, ty_right) in
     assert_subtype ty_scrut ty_sum;
-    let env1 = (x1, ty_left) :: env_branches in
-    let ty1 = infer_with_env env1 e1 in
-    let env2 = (x2, ty_right) :: env_branches in
-    let ty2 = infer_with_env env2 e2 in
+    let env1, env2 = split_env env_rest fv_e1 fv_e2 in
+    let ty1 = infer_with_env ((x1, ty_left) :: env1) e1 in
+    let ty2 = infer_with_env ((x2, ty_right) :: env2) e2 in
     let ty_join = TyMeta (fresh_meta ()) in
     assert_subtype ty1 ty_join;
     assert_subtype ty2 ty_join;
@@ -585,9 +588,9 @@ let rec infer_with_env env expr =
   | Ast.App (e1, e2) ->
     let fn_fv = free_vars e1 in
     let arg_fv = free_vars e2 in
-    let shared_env = alias_env_between env fn_fv arg_fv in
-    let ty1 = infer_with_env shared_env e1 in
-    let ty2 = infer_with_env shared_env e2 in
+    let env_fn, env_arg = split_env env fn_fv arg_fv in
+    let ty1 = infer_with_env env_fn e1 in
+    let ty2 = infer_with_env env_arg e2 in
     let ty_dom = TyMeta (fresh_meta ()) in
     let ty_cod = TyMeta (fresh_meta ()) in
     let future = fresh_future_mode () in
