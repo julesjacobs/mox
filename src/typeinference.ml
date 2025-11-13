@@ -767,24 +767,26 @@ let axis_relation_lines names vars describe get_relation =
   let vars = List.rev vars in
   let all_pairs =
     vars
-    |> List.map (fun left -> List.map (fun right -> (left, right)) vars)
+    |> List.mapi (fun i left ->
+           vars
+           |> List.mapi (fun j right ->
+                  if i >= j then None else Some (left, right))
+           |> List.filter_map (fun x -> x))
     |> List.concat
   in
   let lines =
     List.fold_left
       (fun acc (left, right) ->
-        if left == right then acc
+        let relation = get_relation left right in
+        if relation_is_cartesian left right relation then acc
         else
-          let relation = get_relation left right in
-          if relation_is_cartesian left right relation then acc
-          else
-            let relation_str = string_of_relation_values describe relation in
-            let left_name = ModeName.name names left in
-            let right_name = ModeName.name names right in
-            let line =
-              Printf.sprintf "(%s,%s) ∈ %s" left_name right_name relation_str
-            in
-            line :: acc)
+          let relation_str = string_of_relation_values describe relation in
+          let left_name = ModeName.name names left in
+          let right_name = ModeName.name names right in
+          let line =
+            Printf.sprintf "(%s,%s) ∈ %s" left_name right_name relation_str
+          in
+          line :: acc)
       [] all_pairs
   in
   List.rev lines
