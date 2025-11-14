@@ -1,6 +1,21 @@
 unit
 > unit
 
+1
+> int
+
+1 + 2
+> int
+
+(3 - 4) * 5
+> int
+
+-(1 + 2)
+> int
+
+let x = 1 in x + x
+> int
+
 let x = unit in x
 > unit
 

@@ -16,6 +16,7 @@ type ref_mode =
 type ty =
   | TyUnit
   | TyEmpty
+  | TyInt
   | TyArrow of ty * Modes.Future.t * ty
   | TyPair of ty * storage_mode * ty
   | TySum of ty * storage_mode * ty
@@ -35,6 +36,11 @@ type expr =
   | Borrow of ident * expr * ident * expr * expr
   | Let of bind_kind * ident * expr * expr
   | Unit
+  | Int of int
+  | IntAdd of expr * expr
+  | IntSub of expr * expr
+  | IntMul of expr * expr
+  | IntNeg of expr
   | Hole
   | Absurd of expr
   | Fun of alloc * ident * expr

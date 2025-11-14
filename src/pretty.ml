@@ -21,6 +21,14 @@ let rec string_of_expr = function
         Printf.sprintf "(%s %s = %s in %s)"
         (bind_prefix kind) x (string_of_expr e1) (string_of_expr e2)
   | Unit -> "unit"
+  | Int n -> string_of_int n
+  | IntAdd (lhs, rhs) ->
+      Printf.sprintf "(%s + %s)" (string_of_expr lhs) (string_of_expr rhs)
+  | IntSub (lhs, rhs) ->
+      Printf.sprintf "(%s - %s)" (string_of_expr lhs) (string_of_expr rhs)
+  | IntMul (lhs, rhs) ->
+      Printf.sprintf "(%s * %s)" (string_of_expr lhs) (string_of_expr rhs)
+  | IntNeg e -> Printf.sprintf "(-%s)" (string_of_expr e)
   | Hole -> "?"
   | Absurd e -> Printf.sprintf "(absurd %s)" (string_of_expr e)
   | Fun (stack, x, e) ->
@@ -48,6 +56,7 @@ let rec string_of_expr = function
 and string_of_ty = function
   | TyUnit -> "unit"
   | TyEmpty -> "empty"
+  | TyInt -> "int"
   | TyArrow (t1, modes, t2) ->
       let parts =
         [ Modes.Areality.to_short_string modes.Modes.Future.areality;

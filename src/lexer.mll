@@ -37,6 +37,7 @@ rule token = parse
   | "for"                { FOR }
   | "unit"               { UNIT }
   | "empty"              { EMPTY }
+  | "int"                { INT }
   | "("                  { LPAREN }
   | ")"                  { RPAREN }
   | ","                  { COMMA }
@@ -48,11 +49,13 @@ rule token = parse
   | ":"                  { COLON }
   | "=>"                 { FATARROW }
   | "->"                 { ARROW }
+  | "-"                  { MINUS }
   | ":="                 { ASSIGN }
   | "+"                  { PLUS }
   | "*"                  { TIMES }
   | "?"                  { QUESTION }
   | "!"                  { BANG }
+  | ['0'-'9']+ as digits { INT_LITERAL (int_of_string digits) }
   | ident_start ident_continue* as id { IDENT id }
   | eof                  { EOF }
   | _ as c               { raise (Lexing_error (Printf.sprintf "unexpected character %c at %s" c (location lexbuf))) }

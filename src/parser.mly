@@ -25,10 +25,11 @@ let ref_mode_from_list names =
   { contention }
 %}
 
-%token LET LETBANG IN BORROW FUN MATCH MATCHBANG WITH LEFT RIGHT ABSURD UNIT EMPTY QUESTION STACK REGION FOR
+%token LET LETBANG IN BORROW FUN MATCH MATCHBANG WITH LEFT RIGHT ABSURD UNIT EMPTY INT QUESTION STACK REGION FOR
 %token REF FORK BANG ASSIGN
-%token LPAREN RPAREN LBRACKET RBRACKET COMMA EQUAL BAR ARROW FATARROW PLUS TIMES COLON
+%token LPAREN RPAREN LBRACKET RBRACKET COMMA EQUAL BAR ARROW FATARROW PLUS MINUS TIMES COLON
 %token <string> IDENT
+%token <int> INT_LITERAL
 %token EOF
 
 %start <Ast.expr> expr_eof
@@ -36,7 +37,7 @@ let ref_mode_from_list names =
 %start <string list> modes_eof
 
 %left BAR
-%left PLUS
+%left PLUS MINUS
 %left TIMES
 %right ARROW
 
@@ -63,7 +64,20 @@ expr_base:
   | expr_assign { $1 }
 
 expr_assign:
-  | expr_assign ASSIGN expr_app { Assign ($1, $3) }
+  | expr_assign ASSIGN expr_sum { Assign ($1, $3) }
+  | expr_sum { $1 }
+
+expr_sum:
+  | expr_sum PLUS expr_mul { IntAdd ($1, $3) }
+  | expr_sum MINUS expr_mul { IntSub ($1, $3) }
+  | expr_mul { $1 }
+
+expr_mul:
+  | expr_mul TIMES expr_unary { IntMul ($1, $3) }
+  | expr_unary { $1 }
+
+expr_unary:
+  | MINUS expr_unary { IntNeg $2 }
   | expr_app { $1 }
 
 expr_app:
@@ -74,6 +88,7 @@ expr_atom:
   | BANG expr_atom { Deref $2 }
   | IDENT { Var $1 }
   | UNIT { Unit }
+  | INT_LITERAL { Int $1 }
   | QUESTION { Hole }
   | ABSURD expr { Absurd $2 }
   | REGION expr { Region $2 }
@@ -140,6 +155,7 @@ ty_prod:
 ty_atom:
   | UNIT { TyUnit }
   | EMPTY { TyEmpty }
+  | INT { TyInt }
   | REF ty_atom { TyRef ($2, default_ref_mode) }
   | REF mode_list ty_atom { TyRef ($3, ref_mode_from_list $2) }
   | LPAREN ty RPAREN { $2 }

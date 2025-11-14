@@ -120,6 +120,12 @@ let rec free_vars expr =
       let fv_rest = StringSet.union fv_e2 fv_e3 in
       StringSet.union fv_e1 fv_rest
   | Ast.Unit -> StringSet.empty
+  | Ast.Int _ -> StringSet.empty
+  | Ast.IntAdd (lhs, rhs)
+  | Ast.IntSub (lhs, rhs)
+  | Ast.IntMul (lhs, rhs) ->
+      StringSet.union (free_vars lhs) (free_vars rhs)
+  | Ast.IntNeg e -> free_vars e
   | Ast.Hole -> StringSet.empty
   | Ast.Absurd e -> free_vars e
   | Ast.Annot (e, _) -> free_vars e
@@ -177,6 +183,7 @@ type mode_vars =
 type ty =
   | TyUnit
   | TyEmpty
+  | TyInt
   | TyArrow of ty * future_mode * ty
   | TyPair of ty * storage_mode * ty
   | TySum of ty * storage_mode * ty
@@ -464,6 +471,7 @@ let rec assert_in ty mode_vars =
     add_constraint meta (mk_constraint (In { target = meta; mode_vars }))
   | TyUnit -> ()
   | TyEmpty -> ()
+  | TyInt -> ()
   | TyPair (left, storage, right)
   | TySum (left, storage, right) ->
     assert_storage_within storage mode_vars;
@@ -511,6 +519,7 @@ let rec string_of_ty ty =
   match zonk ty with
   | TyUnit -> "unit"
   | TyEmpty -> "empty"
+  | TyInt -> "int"
   | TyArrow (domain, _, codomain) ->
       Printf.sprintf "(%s -> %s)" (string_of_ty domain) (string_of_ty codomain)
   | TyPair (left, _, right) ->
@@ -530,6 +539,7 @@ let rec outer_equiv ty1 ty2 =
   | TyMeta meta1, TyMeta meta2 -> ()
   | TyUnit, TyUnit -> ()
   | TyEmpty, TyEmpty -> ()
+  | TyInt, TyInt -> ()
   | TyPair _, TyPair _ -> ()
   | TySum _, TySum _ -> ()
   | TyRef _, TyRef _ -> ()
@@ -538,6 +548,8 @@ let rec outer_equiv ty1 ty2 =
       set_meta_solution meta TyUnit
   | TyEmpty, TyMeta meta | TyMeta meta, TyEmpty ->
       set_meta_solution meta TyEmpty
+  | TyInt, TyMeta meta | TyMeta meta, TyInt ->
+      set_meta_solution meta TyInt
   | TyPair _, TyMeta meta | TyMeta meta, TyPair _ ->
       let storage = fresh_storage_mode () in
       let left = fresh_meta () in
@@ -569,6 +581,7 @@ and assert_subtype lower upper =
       add_constraint upper_meta constraint_
   | TyUnit, TyUnit -> ()
   | TyEmpty, TyEmpty -> ()
+  | TyInt, TyInt -> ()
   | TyPair (lower_left, lower_storage, lower_right), TyPair (upper_left, upper_storage, upper_right) ->
       assert_subtype lower_left upper_left;
       assert_subtype lower_right upper_right;
@@ -597,6 +610,7 @@ and assert_alias source target =
       add_constraint target_meta constraint_
   | TyUnit, TyUnit -> ()
   | TyEmpty, TyEmpty -> ()
+  | TyInt, TyInt -> ()
   | TyPair (source_left, source_storage, source_right), TyPair (target_left, target_storage, target_right) 
   | TySum (source_left, source_storage, source_right), TySum (target_left, target_storage, target_right) ->
       (* Make sure target_storage is aliased, areality is copied. *)
@@ -692,6 +706,7 @@ let rec ty_of_ast (ty_syntax : Ast.ty) : ty =
   match ty_syntax with
   | Ast.TyUnit -> TyUnit
   | Ast.TyEmpty -> TyEmpty
+  | Ast.TyInt -> TyInt
   | Ast.TyPair (left, storage, right) ->
       let left' = ty_of_ast left in
       let right' = ty_of_ast right in
@@ -776,6 +791,7 @@ let rec string_of_ty_core state ty =
   match zonk ty with
   | TyUnit -> "unit"
   | TyEmpty -> "empty"
+  | TyInt -> "int"
   | TyArrow (domain, future, codomain) ->
       Printf.sprintf "(%s ->[%s] %s)"
         (string_of_ty_core state domain)
@@ -818,7 +834,7 @@ let collect_metas ty =
     | TyArrow (domain, _, codomain) ->
         let set, acc = aux set acc domain in
         aux set acc codomain
-    | TyUnit | TyEmpty -> set, acc
+    | TyUnit | TyEmpty | TyInt -> set, acc
   in
   let _, metas = aux IntSet.empty [] ty in
   List.rev metas
@@ -1052,6 +1068,22 @@ let rec infer_with_env env expr =
       let env_e3 = (x, ty_x) :: (y, ty_y) :: env_e3_base in
       infer_with_env env_e3 e3
   | Ast.Unit -> TyUnit
+  | Ast.Int _ -> TyInt
+  | Ast.IntAdd (lhs, rhs)
+  | Ast.IntSub (lhs, rhs)
+  | Ast.IntMul (lhs, rhs) ->
+      let fv_lhs = free_vars lhs in
+      let fv_rhs = free_vars rhs in
+      let env_lhs, env_rhs = split_env env fv_lhs fv_rhs in
+      let ty_lhs = infer_with_env env_lhs lhs in
+      let ty_rhs = infer_with_env env_rhs rhs in
+      assert_subtype ty_lhs TyInt;
+      assert_subtype ty_rhs TyInt;
+      TyInt
+  | Ast.IntNeg e ->
+      let ty = infer_with_env env e in
+      assert_subtype ty TyInt;
+      TyInt
   | Ast.Pair (alloc, e1, e2) ->
     let left_fv = free_vars e1 in
     let right_fv = free_vars e2 in
