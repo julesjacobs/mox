@@ -255,14 +255,16 @@ let const_ref_mode ~contention : ref_mode =
 let precise_ref_mode () =
   const_ref_mode ~contention:Contention.uncontended
 
+let nonborrowed_arealities =
+  [ Areality.global; Areality.regional; Areality.local ]
+
 let top_mode_vars () : mode_vars =
-  (* Mode lattice top: type unrestricted on every axis. Useful when rules require
-     checking subcomponents at ⊤₍in₎ (see tex/mox.tex §Kinding). *)
-  { uniqueness = const_uniqueness_var Uniqueness.top_in;
+  fresh_mode_vars ()
+  (* { uniqueness = const_uniqueness_var Uniqueness.top_in;
     contention = const_contention_var Contention.top_in;
     linearity = const_linearity_var Linearity.top_in;
     portability = const_portability_var Portability.top_in;
-    areality = const_areality_var Areality.top_in }
+    areality = Modesolver.Areality.new_var ~domain:nonborrowed_arealities () } *)
 
 let global_mode_vars () : mode_vars =
   let mode = top_mode_vars () in

@@ -6,7 +6,7 @@ fun x => x
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
->   a1 ∈ {global, local, regional}
+>   a1 ∈ {borrowed, global, local, regional}
 
 (fun x => x) : (unit -> unit)
 > (unit ->[a=global l=many p=nonportable] unit)
@@ -18,20 +18,20 @@ fun x => x
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
->   a1 ∈ {global, local, regional}
+>   a1 ∈ {borrowed, global, local, regional}
 >   p2 ∈ {nonportable, portable}
 >   l2 ∈ {many, never, once}
->   a2 ∈ {global, local, regional}
+>   a2 ∈ {borrowed, global, local, regional}
 
 (fun x => (fun y => y))
 > ('b ->[a=a2 l=l2 p=p2] ('a ->[a=a1 l=l1 p=p1] 'a))
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
->   a1 ∈ {global, local, regional}
+>   a1 ∈ {borrowed, global, local, regional}
 >   p2 ∈ {nonportable, portable}
 >   l2 ∈ {many, never, once}
->   a2 ∈ {global, local, regional}
+>   a2 ∈ {borrowed, global, local, regional}
 
 (unit, unit) : (unit *[local unique] unit)
 > (unit *[u=unique a=local] unit)
@@ -45,15 +45,15 @@ let f = (fun x => x p) in
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
->   a1 ∈ {global, local, regional}
->   a2 ∈ {global, local, regional}
+>   a1 ∈ {borrowed, global, local, regional}
+>   a2 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 >   p2 ∈ {nonportable, portable}
 >   l2 ∈ {many, never, once}
->   a3 ∈ {global, local, regional}
+>   a3 ∈ {borrowed, global, local, regional}
 >   p3 ∈ {nonportable, portable}
->   a4 ∈ {global, local, regional}
+>   a4 ∈ {borrowed, global, local, regional}
 > mode rels
->   (a4,a2) ∉ {(regional,global), (local,global), (local,regional)}
->   (a4,a1) ∉ {(regional,global), (local,global), (local,regional)}
+>   (a4,a2) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
+>   (a4,a1) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
 >   (p3,p1) ∉ {(nonportable,portable)}

@@ -4,15 +4,22 @@ module type AXIS_SPEC = sig
   type t
 
   val order_to : t list
-  (** Increasing order for the conversion relation [\leqto]. *)
+  (** Total order for the conversion relation [\leqto]. *)
 
-  val order_in : t list
-  (** Increasing order for the in-placement relation [\leqin]. *)
+  val order_in : (t * t) list
+  (** Hasse diagram for the in-placement relation [\leqin]. *)
 
   val default : t
   val show : t -> string
   val equal : t -> t -> bool
 end
+
+let linear_order values =
+  let rec aux acc = function
+    | [] | [ _ ] -> List.rev acc
+    | x :: (y :: _ as rest) -> aux ((x, y) :: acc) rest
+  in
+  aux [] values
 
 module Make_axis (Spec : AXIS_SPEC) = struct
   type t = Spec.t
@@ -20,6 +27,63 @@ module Make_axis (Spec : AXIS_SPEC) = struct
   let all = Spec.order_to
   let default = Spec.default
   let equal = Spec.equal
+
+  let dedup list =
+    let rec aux acc = function
+      | [] -> List.rev acc
+      | x :: xs ->
+          if List.exists (fun y -> Spec.equal x y) acc then aux acc xs
+          else aux (x :: acc) xs
+    in
+    aux [] list
+
+  let add_reflexive relation values =
+    List.fold_left
+      (fun acc value -> if List.exists (fun (x, y) -> Spec.equal x value && Spec.equal y value) acc then acc else (value, value) :: acc)
+      relation values
+
+  let rec reachable relation visited src dst =
+    if Spec.equal src dst then true
+    else
+      let neighbors =
+        relation
+        |> List.filter_map (fun (a, b) -> if Spec.equal a src then Some b else None)
+      in
+      List.exists
+        (fun next ->
+          let already = List.exists (fun v -> Spec.equal v next) visited in
+          (not already) && reachable relation (next :: visited) next dst)
+        neighbors
+
+  let topo_linear_order values relation =
+    let relation = add_reflexive relation values in
+    let preds value =
+      relation
+      |> List.fold_left
+           (fun acc (src, dst) -> if Spec.equal dst value && not (Spec.equal src value) then src :: acc else acc)
+           []
+      |> dedup
+    in
+    let rec loop acc remaining =
+      match remaining with
+      | [] -> List.rev acc
+      | _ ->
+          let rec choose prefix = function
+            | [] -> invalid_arg "Make_axis.linear_order: cyclic relation"
+            | v :: rest ->
+                let all_preds_scheduled =
+                  preds v
+                  |> List.for_all (fun p -> List.exists (fun scheduled -> Spec.equal scheduled p) acc)
+                in
+                if all_preds_scheduled then
+                  let remaining' = List.rev_append prefix rest in
+                  loop (v :: acc) remaining'
+                else
+                  choose (v :: prefix) rest
+          in
+          choose [] remaining
+    in
+    loop [] (dedup values)
 
   let rank order value =
     let rec loop idx = function
@@ -33,13 +97,17 @@ module Make_axis (Spec : AXIS_SPEC) = struct
   let meet order a b = if rank order a <= rank order b then a else b
 
   let leq_to = leq Spec.order_to
-  let leq_in = leq Spec.order_in
+
+  let order_in_relation = add_reflexive Spec.order_in all
+  let order_in_linear = topo_linear_order all Spec.order_in
+
+  let leq_in a b = reachable order_in_relation [] a b
 
   let join_to = join Spec.order_to
   let meet_to = meet Spec.order_to
 
-  let join_in = join Spec.order_in
-  let meet_in = meet Spec.order_in
+  let join_in = join order_in_linear
+  let meet_in = meet order_in_linear
 
   let bottom order =
     match order with
@@ -57,14 +125,14 @@ module Make_axis (Spec : AXIS_SPEC) = struct
   let bottom_to = bottom Spec.order_to
   let top_to = top Spec.order_to
 
-  let bottom_in = bottom Spec.order_in
-  let top_in = top Spec.order_in
+  let bottom_in = bottom order_in_linear
+  let top_in = top order_in_linear
 
   let to_string = Spec.show
   let to_short_string value = if Spec.equal value Spec.default then "" else Spec.show value
 
   let of_string name =
-    List.find_opt (fun v -> String.equal (Spec.show v) name) Spec.order_to
+    List.find_opt (fun v -> String.equal (Spec.show v) name) all
 
   let extract names =
     let rec aux seen acc = function
@@ -87,7 +155,7 @@ module Uniqueness_spec = struct
   type t = Unique | Aliased
 
   let order_to = [ Unique; Aliased ]
-  let order_in = [ Aliased; Unique ]
+  let order_in = linear_order [ Aliased; Unique ]
   let default = Aliased
   let show = function Unique -> "unique" | Aliased -> "aliased"
   let equal = ( = )
@@ -105,7 +173,7 @@ module Contention_spec = struct
   type t = Uncontended | Shared | Contended
 
   let order_to = [ Uncontended; Shared; Contended ]
-  let order_in = [ Contended; Shared; Uncontended ]
+  let order_in = linear_order [ Contended; Shared; Uncontended ]
   let default = Uncontended
   let show = function
     | Uncontended -> "uncontended"
@@ -127,7 +195,7 @@ module Linearity_spec = struct
   type t = Many | Once | Never
 
   let order_to = [ Many; Once; Never ]
-  let order_in = order_to
+  let order_in = linear_order [ Many; Once; Never ]
   let default = Many
   let show = function Many -> "many" | Once -> "once" | Never -> "never"
   let equal = ( = )
@@ -146,7 +214,7 @@ module Portability_spec = struct
   type t = Portable | NonPortable
 
   let order_to = [ Portable; NonPortable ]
-  let order_in = order_to
+  let order_in = linear_order [ Portable; NonPortable ]
   let default = NonPortable
   let show = function Portable -> "portable" | NonPortable -> "nonportable"
   let equal = ( = )
@@ -161,22 +229,27 @@ module Portability = struct
 end
 
 module Areality_spec = struct
-  type t = Global | Regional | Local
+  type t = Global | Regional | Local | Borrowed
 
-  let order_to = [ Global; Regional; Local ]
-  let order_in = order_to
+  let order_to = [ Global; Regional; Local; Borrowed ]
+  let order_in = linear_order [ Global; Regional; Local ] @ [ (Borrowed, Borrowed) ]
   let default = Global
-  let show = function Global -> "global" | Regional -> "regional" | Local -> "local"
+  let show = function
+    | Global -> "global"
+    | Regional -> "regional"
+    | Local -> "local"
+    | Borrowed -> "borrowed"
   let equal = ( = )
 end
 
 module Areality = struct
   include Make_axis (Areality_spec)
-  type nonrec t = Areality_spec.t = Global | Regional | Local
+  type nonrec t = Areality_spec.t = Global | Regional | Local | Borrowed
 
   let global = Global
   let regional = Regional
   let local = Local
+  let borrowed = Borrowed
 end
 
 let concat parts =

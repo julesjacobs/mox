@@ -82,7 +82,7 @@ r := unit
 let r = ref unit in (r,r)
 > ((ref[c=uncontended] unit) *[u=u1 a=a1] (ref[c=uncontended] unit))
 > mode vars
->   a1 ∈ {global, local, regional}
+>   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 
 let r1 = ref unit in 
@@ -90,5 +90,5 @@ let r2 = ref unit in
 (r1, r2)
 > ((ref[c=uncontended] unit) *[u=u1 a=a1] (ref[c=uncontended] unit))
 > mode vars
->   a1 ∈ {global, local, regional}
+>   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
