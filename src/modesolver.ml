@@ -6,24 +6,32 @@ type 'a var = {
   encode : 'a -> int;
   decode : int -> 'a;
   id : Intsolver.var;
+  axis_name : string;
 }
 
 type 'a mode_var = 'a var
 
-let lift f =
-  try f () with Intsolver.Inconsistent msg -> raise (Inconsistent msg)
+let lift ?context f =
+  try f () with
+  | Intsolver.Inconsistent msg ->
+      let detail =
+        match context with
+        | Some axis -> Printf.sprintf "%s inconsistency" axis
+        | None -> msg
+      in
+      raise (Inconsistent detail)
 
 let sanitize_domain domain encode =
   domain
   |> List.map encode
   |> List.sort_uniq compare
 
-let new_var_internal ~encode ~decode ~domain =
+let new_var_internal ~axis_name ~encode ~decode ~domain =
   let ints = sanitize_domain domain encode in
   if ints = [] then invalid_arg "Modesolver.new_var: empty domain"
   else
-    let id = lift (fun () -> Intsolver.newvar ints) in
-    { encode; decode; id }
+    let id = lift ~context:axis_name (fun () -> Intsolver.newvar ints) in
+    { encode; decode; id; axis_name }
 
 let encode_relation var_a var_b rel =
   rel
@@ -31,9 +39,16 @@ let encode_relation var_a var_b rel =
   |> List.map (fun (a, b) -> (var_a.encode a, var_b.encode b))
   |> Relations.make
 
+let relation_context var_a var_b =
+  if String.equal var_a.axis_name var_b.axis_name then
+    var_a.axis_name
+  else
+    Printf.sprintf "%s/%s" var_a.axis_name var_b.axis_name
+
 let assert_relation_generic rel var_a var_b =
   let encoded = encode_relation var_a var_b rel in
-  lift (fun () -> Intsolver.assert_rel encoded var_a.id var_b.id)
+  let context = relation_context var_a var_b in
+  lift ~context (fun () -> Intsolver.assert_rel encoded var_a.id var_b.id)
 
 let get_relation_generic var_a var_b =
   lift (fun () -> Intsolver.get_rel var_a.id var_b.id)
@@ -45,7 +60,10 @@ let assert_predicate_generic rel var = assert_relation_generic rel var var
 
 let restrict_domain_generic domain var =
   let ints = sanitize_domain domain var.encode in
-  if ints = [] then raise (Inconsistent "empty domain restriction");
+  if ints = [] then
+    raise
+      (Inconsistent
+         (Printf.sprintf "%s empty domain restriction" var.axis_name));
   let values = List.map var.decode ints in
   let diag =
     values
@@ -54,7 +72,8 @@ let restrict_domain_generic domain var =
   in
   assert_predicate_generic diag var
 
-let new_var = new_var_internal
+let new_var ~encode ~decode ~domain =
+  new_var_internal ~axis_name:"mode" ~encode ~decode ~domain
 let id var = var.id
 let assert_relation = assert_relation_generic
 let get_relation = get_relation_generic
@@ -100,6 +119,7 @@ let assert_portability_dagger port_var cont_var =
 module type AXIS = sig
   type t
 
+  val axis_name : string
   val all : t list
   val equal : t -> t -> bool
   val leq_to : t -> t -> bool
@@ -164,7 +184,7 @@ module Make (A : AXIS) : AXIS_SOLVER with type mode = A.t = struct
 
   let new_var ?domain () =
     let domain = match domain with Some d -> d | None -> values in
-    new_var_internal ~encode ~decode ~domain
+    new_var_internal ~axis_name:A.axis_name ~encode ~decode ~domain
 
   let assert_relation rel v1 v2 = assert_relation_generic rel v1 v2
   let assert_leq_to v1 v2 = assert_relation relation_to v1 v2
@@ -183,6 +203,7 @@ end
 module Uniqueness = Make (struct
   type t = Modes.Uniqueness.t
 
+  let axis_name = "uniqueness"
   let all = Modes.Uniqueness.all
   let equal = Modes.Uniqueness.equal
   let leq_to = Modes.Uniqueness.leq_to
@@ -193,6 +214,7 @@ end)
 module Contention = Make (struct
   type t = Modes.Contention.t
 
+  let axis_name = "contention"
   let all = Modes.Contention.all
   let equal = Modes.Contention.equal
   let leq_to = Modes.Contention.leq_to
@@ -203,6 +225,7 @@ end)
 module Linearity = Make (struct
   type t = Modes.Linearity.t
 
+  let axis_name = "linearity"
   let all = Modes.Linearity.all
   let equal = Modes.Linearity.equal
   let leq_to = Modes.Linearity.leq_to
@@ -213,6 +236,7 @@ end)
 module Portability = Make (struct
   type t = Modes.Portability.t
 
+  let axis_name = "portability"
   let all = Modes.Portability.all
   let equal = Modes.Portability.equal
   let leq_to = Modes.Portability.leq_to
@@ -223,6 +247,7 @@ end)
 module Areality = Make (struct
   type t = Modes.Areality.t
 
+  let axis_name = "areality"
   let all = Modes.Areality.all
   let equal = Modes.Areality.equal
   let leq_to = Modes.Areality.leq_to

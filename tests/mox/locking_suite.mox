@@ -1,7 +1,7 @@
 (* many closure fails when capturing unique pair directly *)
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
 ((fun _ => unique_pair) : (unit ->[local many] (unit *[unique local] unit)))
-> error: relation became empty
+> error: mode solver detected linearity inconsistency
 
 (* once closure succeeds when capturing unique pair directly *)
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
@@ -18,7 +18,7 @@ let unique_pair2 = unique_pair1 in
 let base = ((unit, unit) : (unit *[unique local] unit)) in
 let alias = base in
 ((fun _ => alias) : (unit ->[local many] (unit *[unique local] unit)))
-> error: relation became empty
+> error: mode solver detected linearity inconsistency
 
 (* many closure succeeds with aliased storage after alias binding *)
 let base = ((unit, unit) : (unit *[unique local] unit)) in
@@ -30,7 +30,7 @@ let alias = base in
 let nested = ((unit, (unit, unit)) : (unit *[unique local] (unit *[unique local] unit))) in
 ((fun _ => nested)
  : (unit ->[local many] (unit *[unique local] (unit *[unique local] unit))))
-> error: relation became empty
+> error: mode solver detected linearity inconsistency
 
 (* many closure succeeds on nested pair with aliased storage *)
 let nested =
@@ -43,7 +43,7 @@ in
 (* many closure fails on unique sum *)
 let unique_sum = (left(unit) : (unit +[unique local] unit)) in
 ((fun _ => unique_sum) : (unit ->[local many] (unit +[unique local] unit)))
-> error: relation became empty
+> error: mode solver detected linearity inconsistency
 
 (* many closure succeeds on aliased sum *)
 let unique_sum = (left(unit) : (unit +[unique local] unit)) in
@@ -56,7 +56,7 @@ let nested_sum =
 in
 ((fun _ => nested_sum)
  : (unit ->[local many] (unit +[unique local] (unit +[unique local] unit))))
-> error: relation became empty
+> error: mode solver detected linearity inconsistency
 
 (* many closure succeeds on nested sum with aliased storage *)
 let nested_sum =
@@ -74,7 +74,7 @@ let aliased_fun = ((fun x => x) : (unit ->[local many] unit)) in
 (* many closure succeeds on once-qualified function capture *)
 let linear_fun = ((fun x => x) : (unit ->[local once] unit)) in
 ((fun _ => linear_fun) : (unit ->[local many] (unit ->[local once] unit)))
-> error: relation became empty
+> error: mode solver detected linearity inconsistency
 
 (* once closure fails on portable function capture *)
 let portable_fun = ((fun x => x) : (unit ->[local once portable] unit)) in
@@ -170,7 +170,7 @@ in
  : (unit
     ->[local many]
     ((unit *[local] (unit ->[local once] unit)) *[local] unit)))
-> error: relation became empty
+> error: mode solver detected linearity inconsistency
 
 (* many closure succeeds on nested sum with once-qualified function *)
 let nested_sum_once =
@@ -185,7 +185,7 @@ in
  : (unit
     ->[local many]
     (unit +[local] ((unit ->[local once] unit) +[local] unit))))
-> error: relation became empty
+> error: mode solver detected linearity inconsistency
 
 (* once closure fails when capturing a many-closure as a value *)
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
@@ -203,4 +203,4 @@ let inner =
 in
 ((fun _ => inner)
  : (unit ->[local many] (unit ->[local once] (unit *[unique local] unit))))
-> error: relation became empty
+> error: mode solver detected linearity inconsistency

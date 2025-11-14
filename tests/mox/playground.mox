@@ -69,4 +69,4 @@ let x = (unit, unit) in
 let y = (x,x) in
 let! (a,b) = y in 
 let! (c,d) = a in c
-> error: relation became empty
+> error: mode solver detected uniqueness inconsistency

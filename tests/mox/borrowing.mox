@@ -27,14 +27,14 @@ borrow a = $(unit, p) for b = fst a in let! (q,r) = a in (b, q)
 let fst = (fun p => let (x,y) = p in x) in
 let p = (unit, unit) in
 borrow a = $(p, unit) for b = fst a in let! (q,r) = a in (b, q)
-> error: relation became empty
+> error: mode solver detected areality inconsistency
 
 borrow a = (unit, unit) for b = a in let! (q,r) = a in (b, q)
-> error: relation became empty
+> error: mode solver detected areality inconsistency
 
 let x = (unit, unit) in
 borrow a = x for b = (let (q,r) = a in q) in let! (q,r) = a in (b,a)
-> error: relation became empty
+> error: mode solver detected uniqueness inconsistency
 
 let x = (unit, unit) in
 region 

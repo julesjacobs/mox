@@ -3,7 +3,7 @@
 > (unit *[u=unique a=local] (unit *[u=aliased a=global] unit))
 
 (((left(unit)), (right(unit))) : ((unit +[unique local] empty) * (unit +[unique local] unit)))
-> error: relation became empty
+> error: mode solver detected uniqueness inconsistency
 
 (* arrow annotations roundtrip *)
 ((fun f => f) : ((unit ->[local once portable] unit) -> (unit ->[local once portable] unit)))
@@ -15,4 +15,4 @@
 
 (* violation: arrow modes stronger than implementation *)
 ((fun f => f) : ((unit ->[local once] unit) -> (unit ->[local once portable] unit)))
-> error: relation became empty
+> error: mode solver detected portability inconsistency

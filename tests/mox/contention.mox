@@ -8,10 +8,10 @@ let r = ref unit in r := unit
 > unit
 
 let r = ref unit in fork (r := unit)
-> error: relation became empty
+> error: mode solver detected contention inconsistency
 
 let r = ref unit in fork (let x = !r in unit)
-> error: relation became empty
+> error: mode solver detected contention inconsistency
 
 let r = ref unit in 
 let g = fun x => r := x in
@@ -21,7 +21,7 @@ g unit
 let r = ref unit in 
 let g = fun x => r := x in
 fork (g unit)
-> error: relation became empty
+> error: mode solver detected portability inconsistency
 
 (* CR jujacobs: bug! *)
 ref unit : ref unit
@@ -37,7 +37,7 @@ ref unit : ref[contended] unit
 
 let r = ref unit in
 (fun x => r := x) : unit ->[portable] unit
-> error: relation became empty
+> error: mode solver detected portability inconsistency
 
 let f = fun x => x in
 let g = f : unit ->[portable] unit in
@@ -49,7 +49,7 @@ let g = f : unit ->[portable] unit in
 
 let f = (fun x => x) : unit ->[nonportable] unit in
 f : unit ->[portable] unit
-> error: relation became empty
+> error: mode solver detected portability inconsistency
 
 let f = (fun x => x) : unit ->[portable] unit in
 f : unit ->[nonportable] unit
@@ -57,22 +57,22 @@ f : unit ->[nonportable] unit
 
 let x = $(unit, unit) in 
 fork (let (a,b) = x in a)
-> error: relation became empty
+> error: mode solver detected areality inconsistency
 
 let r = ref (unit, unit) in
 let x = !r in 
 let! (a,b) = x in unit
-> error: relation became empty
+> error: mode solver detected uniqueness inconsistency
 
 ref $(unit, unit)
-> error: relation became empty
+> error: mode solver detected areality inconsistency
 
 let r = ref left(unit) in
 let x = (region
   let y = $right(unit) in
   r := y) in
 !r
-> error: relation became empty
+> error: mode solver detected areality inconsistency
 
 let r = ref unit in 
 let s = (r, r) in 

@@ -2,7 +2,7 @@
 let shared = ((unit, unit) : (unit *[unique local] unit)) in
 ((fun f => f shared) : ((unit *[unique local] unit) -> unit) -> unit)
   ((fun g => g shared) : ((unit *[unique local] unit) -> unit))
-> error: relation became empty
+> error: mode solver detected uniqueness inconsistency
 
 (* application: non-shared variables used in both functions *)
 let non_shared1 = ((unit, unit) : (unit *[unique] unit)) in
@@ -19,13 +19,13 @@ let non_shared1 = ((unit, unit) : (unit *[unique] unit)) in
 let non_shared2 = ((unit, unit) : (unit *[unique] unit)) in
 (((fun f => f non_shared1) : ((unit *[unique] unit) ->[once] unit) ->[many] unit),
  ((fun g => g non_shared2) : ((unit *[unique] unit) ->[once] unit) ->[once] unit))
-> error: relation became empty
+> error: mode solver detected linearity inconsistency
 
 (* application: shared variable used in both function and argument *)
 let shared = ((unit, unit) : (unit *[unique] unit)) in
 (((fun f => f shared) : ((unit *[unique] unit) ->[once] unit) ->[once] unit),
  ((fun g => g shared) : ((unit *[unique] unit) ->[once] unit) ->[once] unit))
-> error: relation became empty
+> error: mode solver detected uniqueness inconsistency
 
 (* pair: shared variable appears in both components *)
 let shared = ((unit, unit) : (unit *[unique local] unit)) in

@@ -1406,4 +1406,9 @@ let rec infer_with_env env expr =
 
 let infer expr =
   try infer_with_env [] expr with
-  | Modesolver.Inconsistent msg -> type_error msg
+  | Modesolver.Inconsistent msg ->
+      let formatted =
+        if msg = "" then "mode solver detected inconsistency"
+        else Printf.sprintf "mode solver detected %s" msg
+      in
+      type_error formatted

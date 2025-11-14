@@ -1,6 +1,6 @@
 (* Stack allocated pair cannot escape from region *)
 region $(1,2)
-> error: relation became empty
+> error: mode solver detected areality inconsistency
 
 (* Normal pairs can *)
 region (1,2)
@@ -20,7 +20,7 @@ region
   let x = $(1,2) in
   let y = (x,x) in
   let (a,b) = y in a
-> error: relation became empty
+> error: mode solver detected areality inconsistency
 
 (* Destructive pair matching is only allowed on unique pairs *)
 let x = (1,2) in 
@@ -31,7 +31,7 @@ let! (a,b) = x in a
 let x = (1,2) in
 let y = (x,x) in
 let! (a,b) = x in a
-> error: relation became empty
+> error: mode solver detected uniqueness inconsistency
 
 (* We can store aliased data in unique data *)
 let x = (1,2) in

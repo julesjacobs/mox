@@ -27,7 +27,7 @@ region unit
 > unit
 
 region $(unit, unit)
-> error: relation became empty
+> error: mode solver detected areality inconsistency
 
 region
   let x = $(unit, unit) in
@@ -44,12 +44,12 @@ region
 region
   let x = $(unit, unit) in
   let y = (x, x) in y
-> error: relation became empty
+> error: mode solver detected areality inconsistency
 
 region
   let x = $(unit, unit) in
   let y = (x, x) in y
-> error: relation became empty
+> error: mode solver detected areality inconsistency
 
 region
   let a = (unit, unit) in 
@@ -62,13 +62,13 @@ region
 region
   let x = $(unit, unit) in
   fun y => x
-> error: relation became empty
+> error: mode solver detected areality inconsistency
 
 let a = (region
   let x = $(unit, unit) in
   fun y => x) 
 in a unit
-> error: relation became empty
+> error: mode solver detected areality inconsistency
 
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
 let! (x, y) = unique_pair in
@@ -82,7 +82,7 @@ match! unique_sum with left(x) => x | right(y) => y
 let p = (unit, unit) in
 let q = (p,p) in
 let! (x,y) = p in x
-> error: relation became empty
+> error: mode solver detected uniqueness inconsistency
 
 let p = (unit, unit) in
 let q = (p,p) in
@@ -94,4 +94,4 @@ let p = (unit, unit) in
 let q = (p,p) in
 let! (x,y) = q in 
 let! (a,b) = x in a
-> error: relation became empty
+> error: mode solver detected uniqueness inconsistency

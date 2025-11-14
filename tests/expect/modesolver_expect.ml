@@ -74,7 +74,7 @@ let%expect_test "inconsistent restriction raises" =
   (try U.restrict_domain [] v with
   | Modesolver.Inconsistent msg -> Printf.printf "inconsistent: %s\n" msg);
   [%expect {|
-    inconsistent: empty domain restriction
+    inconsistent: uniqueness empty domain restriction
   |}]
 
 let diag value = Relations.make [ (value, value) ]
@@ -231,7 +231,7 @@ let%expect_test "inconsistent cross-axis assertion raises" =
   (try Modesolver.assert_relation rel u c with
   | Modesolver.Inconsistent msg -> Printf.printf "boom: %s\n" msg);
   [%expect {|
-    boom: relation became empty
+    boom: uniqueness/contention inconsistency
   |}]
 
 type color = Red | Green | Blue

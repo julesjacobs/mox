@@ -8,10 +8,10 @@ borrow x = unit for y = x in y
 > unit
 
 borrow x = (unit, unit) for y = x in y
-> error: relation became empty
+> error: mode solver detected areality inconsistency
 
 borrow x = ((fun y => y) : (unit ->[once] unit)) for y = x in y
-> error: relation became empty
+> error: mode solver detected linearity inconsistency
 
 let pair = (unit, unit) in pair
 > (unit *[u=u1 a=a1] unit)
@@ -89,10 +89,10 @@ let r = ref unit in let g = fun x => r := x in g unit
 > unit
 
 let r = ref unit in fork (r := unit)
-> error: relation became empty
+> error: mode solver detected contention inconsistency
 
 let r = ref unit in fork (let x = !r in x)
-> error: relation became empty
+> error: mode solver detected contention inconsistency
 
 let x = $(unit, unit) in x
 > (unit *[u=u1 a=local] unit)
@@ -133,7 +133,7 @@ let r = ref unit in (r : ref[contended] unit)
 > (ref[c=contended] unit)
 
 let r = ref unit in let f = fun x => r := x in fork (f unit)
-> error: relation became empty
+> error: mode solver detected portability inconsistency
 
 let r = ref unit in fork (let g = fun x => x in g unit)
 > unit
@@ -216,7 +216,7 @@ let shared = ref unit in let _ = shared := unit in shared
 > (ref[c=uncontended] unit)
 
 let shared = ref unit in fork (let alias = shared in alias := unit)
-> error: relation became empty
+> error: mode solver detected contention inconsistency
 
 let shared = left(unit) in let alias = shared in match alias with left(x) => x | right(y) => unit
 > unit
@@ -237,7 +237,7 @@ let u = region (ref unit) in u
 > (ref[c=uncontended] unit)
 
 let r = region (ref unit) in fork (let x = !r in x)
-> error: relation became empty
+> error: mode solver detected contention inconsistency
 
 let f = fun x => (x, x) in f (ref unit)
 > ((ref[c=c2] unit) *[u=u1 a=a1] (ref[c=c1] unit))
@@ -248,10 +248,10 @@ let f = fun x => (x, x) in f (ref unit)
 >   c2 ∈ {contended, shared, uncontended}
 
 let refpair = ref (unit, unit) in let x = !refpair in let! (a,b) = x in a
-> error: relation became empty
+> error: mode solver detected uniqueness inconsistency
 
 let refsum = ref left(unit) in region (let y = $right(unit) in refsum := y)
-> error: relation became empty
+> error: mode solver detected areality inconsistency
 
 let f = (fun x => x) : unit ->[portable] unit in (f, f)
 > (('b ->[a=a1 l=l1 p=p1] 'a) *[u=u1 a=a2] ('b ->[a=a1 l=l1 p=p1] 'a))
@@ -263,7 +263,7 @@ let f = (fun x => x) : unit ->[portable] unit in (f, f)
 >   u1 ∈ {aliased, unique}
 
 let f = (fun x => x) : unit ->[nonportable] unit in (f : unit ->[portable] unit)
-> error: relation became empty
+> error: mode solver detected portability inconsistency
 
 let f = (fun x => x) : unit ->[portable] unit in (f : unit ->[nonportable] unit)
 > (unit ->[a=global l=many p=nonportable] unit)
@@ -288,10 +288,10 @@ let shared = ref unit in let mk = fun _ => shared in (mk unit, mk unit)
 >   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
 
 let shared = ref unit in let mk = fun _ => !shared in fork (mk unit)
-> error: relation became empty
+> error: mode solver detected portability inconsistency
 
 let shared = ref unit in let mk = fun _ => shared in fork ((mk unit) := unit)
-> error: relation became empty
+> error: mode solver detected contention inconsistency
 
 let alias = ref unit in let pair = (alias, alias) in let (a,b) = pair in a := unit
 > unit
@@ -303,10 +303,10 @@ let alias = ((unit, unit) : (unit *[unique] unit)) in let (a,b) = alias in (a,b)
 >   u1 ∈ {aliased, unique}
 
 let alias = ((unit, unit) : (unit *[unique local] unit)) in fork (let (a,b) = alias in a)
-> error: relation became empty
+> error: mode solver detected areality inconsistency
 
 let alias = ((unit, unit) : (unit *[aliased local] unit)) in fork (let (a,b) = alias in a)
-> error: relation became empty
+> error: mode solver detected areality inconsistency
 
 let alias = ((unit, unit) : (unit *[aliased] unit)) in fork (let (a,b) = alias in a)
 > unit

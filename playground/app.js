@@ -6,6 +6,8 @@ let id = fun x -> x
 id unit
 > unit`;
 const EXAMPLE_PATH = '../tests/mox/editor.mox';
+const EXAMPLE_CACHE_BUSTER = Date.now().toString(36);
+const EXAMPLE_URL = `${EXAMPLE_PATH}?cache=${EXAMPLE_CACHE_BUSTER}`;
 const KEY_HINTS = {
   mac: '⌘ + Enter',
   default: 'Ctrl + Enter'
@@ -248,7 +250,7 @@ async function loadEditorExamples() {
     return { text: DEFAULT_SNIPPET, source: 'default snippet' };
   }
   try {
-    const response = await fetch(EXAMPLE_PATH);
+    const response = await fetch(EXAMPLE_URL, { cache: 'no-store' });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
