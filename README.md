@@ -19,8 +19,10 @@ expr ::=
   | expr + expr | expr - expr | expr * expr | -expr
   | expr == expr | expr < expr | expr <= expr | expr > expr | expr >= expr
   | expr and expr | expr or expr | not expr
-  | match expr with ... | match! expr with ...  -- sum matches (shared or destructive)
-  | match expr with [] => expr | x :: y => expr -- list matches
+  | match expr with left(x) => expr | right(y) => expr -- shared sum matches
+  | match! expr with left(x) => expr | right(y) => expr -- destructive sum matches
+  | match expr with [] => expr | x :: y => expr -- shared list matches
+  | match! expr with [] => expr | x :: y => expr -- destructive list matches
   | (expr, expr) | left(expr) | right(expr)   -- product and sum constructors
   | [expr, ...] | expr :: expr                -- list literals/cons
   | $(expr, expr) | $left(expr) | $right(expr)
