@@ -35,3 +35,9 @@ borrow a = (unit, unit) for b = a in let! (q,r) = a in (b, q)
 let x = (unit, unit) in
 borrow a = x for b = (let (q,r) = a in q) in let! (q,r) = a in (b,a)
 > error: relation became empty
+
+let x = (unit, unit) in
+region 
+  let y = $(x,x) in
+  let (a,b) = y in a
+> (unit *[u=aliased a=global] unit)

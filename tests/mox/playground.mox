@@ -57,3 +57,16 @@ let f = (fun x => x p) in
 >   (a4,a2) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
 >   (a4,a1) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
 >   (p3,p1) ∉ {(nonportable,portable)}
+
+let x = (unit, unit) in
+let y = (x,x) in
+let! (a,b) = y in a
+> (unit *[u=aliased a=a1] unit)
+> mode vars
+>   a1 ∈ {borrowed, global, local, regional}
+
+let x = (unit, unit) in
+let y = (x,x) in
+let! (a,b) = y in 
+let! (c,d) = a in c
+> error: relation became empty
