@@ -14,7 +14,6 @@ borrow a = (unit, unit) for b = fst a in let! (q,r) = a in (b, q)
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 
-(* Bug! `a` shouldn't be able to be bound to `b` because then it escapes the e2! *)
 borrow a = (unit, unit) for b = a in let! (q,r) = a in (b, q)
 > error: relation became empty
 
