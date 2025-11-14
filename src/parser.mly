@@ -57,7 +57,7 @@ expr_base:
   | match_prefix expr WITH LEFT LPAREN IDENT RPAREN FATARROW expr
       BAR RIGHT LPAREN IDENT RPAREN FATARROW expr
       { Match ($1, $2, $6, $9, $13, $16) }
-  | REF expr { Ref $2 }
+  | REF expr_base { Ref $2 }
   | FORK expr { Fork $2 }
   | expr_assign { $1 }
 

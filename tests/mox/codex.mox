@@ -1,0 +1,297 @@
+unit
+> unit
+
+let x = unit in x
+> unit
+
+let pair = (unit, unit) in pair
+> (unit *[u=u1 a=a1] unit)
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+
+left(unit)
+> (unit +[u=u1 a=a1] 'a)
+> where
+>   'a in {u=u2; c=uncontended; l=never; p=nonportable; a=a2}
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   a2 ∈ {global, local, regional}
+>   u2 ∈ {aliased, unique}
+> mode rels
+>   (u2,u1) ∉ {(unique,aliased)}
+>   (a2,a1) ∉ {(regional,global), (local,global), (local,regional)}
+
+right(unit)
+> ('a +[u=u1 a=a1] unit)
+> where
+>   'a in {u=u2; c=uncontended; l=never; p=nonportable; a=a2}
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   a2 ∈ {global, local, regional}
+>   u2 ∈ {aliased, unique}
+> mode rels
+>   (u2,u1) ∉ {(unique,aliased)}
+>   (a2,a1) ∉ {(regional,global), (local,global), (local,regional)}
+
+fun x => x
+> ('a ->[a=a1 l=l1 p=p1] 'a)
+> mode vars
+>   p1 ∈ {nonportable, portable}
+>   l1 ∈ {many, never, once}
+>   a1 ∈ {global, local, regional}
+
+(fun x => x) unit
+> unit
+
+ref unit
+> (ref[c=uncontended] unit)
+
+let r = ref unit in !r
+> unit
+
+let r = ref unit in r := unit
+> unit
+
+region unit
+> unit
+
+match left(unit) with left(x) => x | right(y) => unit
+> unit
+
+let (a,b) = (unit, unit) in a
+> unit
+
+(fun x => x) : unit -> unit
+> (unit ->[a=global l=many p=nonportable] unit)
+
+let r = ref unit in let alias = r in alias
+> (ref[c=uncontended] unit)
+
+let r = ref unit in let g = fun x => r := x in g unit
+> unit
+
+let r = ref unit in fork (r := unit)
+> error: relation became empty
+
+let r = ref unit in fork (let x = !r in x)
+> error: relation became empty
+
+let x = $(unit, unit) in x
+> (unit *[u=u1 a=local] unit)
+> mode vars
+>   u1 ∈ {aliased, unique}
+
+stack (unit, unit)
+> error: Unbound variable stack
+
+let! (a,b) = $(unit, unit) in a
+> unit
+
+match left(unit) with left(x) => left(x) | right(y) => right(y)
+> (unit +[u=u1 a=a1] 'a)
+> where
+>   'b <= 'a
+>   'c <= 'a
+>   'a in {u=u2; c=uncontended; l=never; p=nonportable; a=a2}
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   a2 ∈ {global, local, regional}
+>   u2 ∈ {aliased, unique}
+> mode rels
+>   (u2,u1) ∉ {(unique,aliased)}
+>   (a2,a1) ∉ {(regional,global), (local,global), (local,regional)}
+
+ref unit : ref unit
+> (ref[c=uncontended] unit)
+
+ref unit : ref[contended] unit
+> (ref[c=contended] unit)
+
+let r = ref unit in (r : ref[contended] unit)
+> (ref[c=contended] unit)
+
+let r = ref unit in let f = fun x => r := x in fork (f unit)
+> error: relation became empty
+
+let r = ref unit in fork (let g = fun x => x in g unit)
+> unit
+
+let r = ref unit in (fun x => !r) unit
+> unit
+
+let r = ref unit in (fun f => f unit) (fun _ => r := unit)
+> unit
+
+fork unit
+> unit
+
+let shared = ref unit in (shared, shared)
+> ((ref[c=contended] unit) *[u=u1 a=a1] (ref[c=contended] unit))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+
+let shared = ref unit in let alias = shared in (shared, alias)
+> ((ref[c=contended] unit) *[u=u1 a=a1] (ref[c=contended] unit))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+
+let shared = (unit, unit) in (fun f => f shared, fun g => g shared)
+> ((((unit *[u=aliased a=a7] unit) ->[a=a6 l=l4 p=p4] 'd) ->[a=a5 l=l3 p=p3] 'c) *[u=u1 a=a4] (((unit *[u=aliased a=a3] unit) ->[a=a2 l=l2 p=p2] 'b) ->[a=a1 l=l1 p=p1] 'a))
+> where
+>   'd <= 'c
+>   'b <= 'a
+> mode vars
+>   p1 ∈ {nonportable, portable}
+>   l1 ∈ {many, once}
+>   a1 ∈ {global, local, regional}
+>   p2 ∈ {nonportable, portable}
+>   l2 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+>   a3 ∈ {global, local, regional}
+>   a4 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   p3 ∈ {nonportable, portable}
+>   l3 ∈ {many, once}
+>   a5 ∈ {global, local, regional}
+>   p4 ∈ {nonportable, portable}
+>   l4 ∈ {many, never, once}
+>   a6 ∈ {global, local, regional}
+>   a7 ∈ {global, local, regional}
+> mode rels
+>   (a5,a4) ∉ {(regional,global), (local,global), (local,regional)}
+
+let shared = ((unit, unit) : (unit *[unique] unit)) in (fun f => f shared, fun g => g shared)
+> ((((unit *[u=aliased a=a7] unit) ->[a=a6 l=l4 p=p4] 'd) ->[a=a5 l=l3 p=p3] 'c) *[u=u1 a=a4] (((unit *[u=aliased a=a3] unit) ->[a=a2 l=l2 p=p2] 'b) ->[a=a1 l=l1 p=p1] 'a))
+> where
+>   'd <= 'c
+>   'b <= 'a
+> mode vars
+>   p1 ∈ {nonportable, portable}
+>   l1 ∈ {many, once}
+>   a1 ∈ {global, local, regional}
+>   p2 ∈ {nonportable, portable}
+>   l2 ∈ {many, never, once}
+>   a2 ∈ {global, local, regional}
+>   a3 ∈ {global, local, regional}
+>   a4 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   p3 ∈ {nonportable, portable}
+>   l3 ∈ {many, once}
+>   a5 ∈ {global, local, regional}
+>   p4 ∈ {nonportable, portable}
+>   l4 ∈ {many, never, once}
+>   a6 ∈ {global, local, regional}
+>   a7 ∈ {global, local, regional}
+> mode rels
+>   (a5,a4) ∉ {(regional,global), (local,global), (local,regional)}
+
+let shared = ((unit, unit) : (unit *[unique] unit)) in fork (let shared2 = shared in shared2)
+> error: outer_equiv: not equivalent
+
+let shared = ref unit in let _ = shared := unit in shared
+> error: relation became empty
+
+let shared = ref unit in fork (let alias = shared in alias := unit)
+> error: relation became empty
+
+let shared = left(unit) in let alias = shared in match alias with left(x) => x | right(y) => unit
+> unit
+
+let shared = (unit, unit) in let! (a,b) = shared in a
+> unit
+
+let shared = ((unit, unit) : (unit *[unique] unit)) in let! (a,b) = shared in a
+> unit
+
+let f = fun x => fork x in f unit
+> unit
+
+let f = fun x => fork (x unit) in f (fun _ => unit)
+> unit
+
+let u = region (ref unit) in u
+> (ref[c=uncontended] unit)
+
+let r = region (ref unit) in fork (let x = !r in x)
+> error: relation became empty
+
+let f = fun x => (x, x) in f (ref unit)
+> ((ref[c=contended] unit) *[u=u1 a=a1] (ref[c=contended] unit))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+
+let refpair = ref (unit, unit) in let x = !refpair in let! (a,b) = x in a
+> error: relation became empty
+
+let refsum = ref left(unit) in region (let y = $right(unit) in refsum := y)
+> error: relation became empty
+
+let f = (fun x => x) : unit ->[portable] unit in (f, f)
+> (('b ->[a=a1 l=l1 p=p1] 'a) *[u=u1 a=a2] ('b ->[a=a1 l=l1 p=p1] 'a))
+> mode vars
+>   p1 ∈ {nonportable, portable}
+>   l1 ∈ {many, never, once}
+>   a1 ∈ {global, local, regional}
+>   a2 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+
+let f = (fun x => x) : unit ->[nonportable] unit in (f : unit ->[portable] unit)
+> error: relation became empty
+
+let f = (fun x => x) : unit ->[portable] unit in (f : unit ->[nonportable] unit)
+> (unit ->[a=global l=many p=nonportable] unit)
+
+let shared = ref unit in let mk = fun _ => shared in (mk unit, mk unit)
+> ('b *[u=u1 a=a1] 'a)
+> where
+>   'b in {u=u2; c=uncontended; l=never; p=nonportable; a=a2}
+>   'c <= 'b
+>   'a in {u=u2; c=uncontended; l=never; p=nonportable; a=a2}
+>   'c <= 'a
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   a2 ∈ {global, local, regional}
+>   u2 ∈ {aliased, unique}
+> mode rels
+>   (u2,u1) ∉ {(unique,aliased)}
+>   (a2,a1) ∉ {(regional,global), (local,global), (local,regional)}
+
+let shared = ref unit in let mk = fun _ => !shared in fork (mk unit)
+> error: relation became empty
+
+let shared = ref unit in let mk = fun _ => shared in fork ((mk unit) := unit)
+> error: relation became empty
+
+let alias = ref unit in let pair = (alias, alias) in let (a,b) = pair in a := unit
+> error: relation became empty
+
+let alias = ((unit, unit) : (unit *[unique] unit)) in let (a,b) = alias in (a,b)
+> (unit *[u=u1 a=a1] unit)
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+
+let alias = ((unit, unit) : (unit *[unique local] unit)) in fork (let (a,b) = alias in a)
+> error: relation became empty
+
+let alias = ((unit, unit) : (unit *[aliased local] unit)) in fork (let (a,b) = alias in a)
+> error: relation became empty
+
+let alias = ((unit, unit) : (unit *[aliased] unit)) in fork (let (a,b) = alias in a)
+> unit
+
+let shared = ((unit, unit) : (unit *[aliased local] unit)) in let alias = shared in (shared, alias)
+> ((unit *[u=aliased a=local] unit) *[u=u1 a=local] (unit *[u=aliased a=local] unit))
+> mode vars
+>   u1 ∈ {aliased, unique}
+
+let shared = ((unit, unit) : (unit *[aliased local] unit)) in match left(shared) with left(x) => x | right(y) => shared
+> (unit *[u=aliased a=local] unit)

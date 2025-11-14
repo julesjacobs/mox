@@ -25,15 +25,15 @@ fork (g unit)
 
 (* CR jujacobs: bug! *)
 ref unit : ref unit
-> error: outer_equiv: not equivalent
+> (ref[c=uncontended] unit)
 
 (* CR jujacobs: bug! *)
 ref unit : ref[uncontended] unit
-> error: outer_equiv: not equivalent
+> (ref[c=uncontended] unit)
 
 (* CR jujacobs: bug! *)
 ref unit : ref[contended] unit
-> error: outer_equiv: not equivalent
+> (ref[c=contended] unit)
 
 let r = ref unit in
 (fun x => r := x) : unit ->[portable] unit
@@ -73,3 +73,25 @@ let x = (region
   r := y) in
 !r
 > error: relation became empty
+
+(* CR jujacobs: bug! *)
+let r = ref unit in 
+let s = (r, r) in 
+r := unit
+> error: relation became empty
+
+(* Bug! Sharing the ref makes it contended, which is wrong! *)
+let r = ref unit in (r,r)
+> ((ref[c=contended] unit) *[u=u1 a=a1] (ref[c=contended] unit))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
+
+(* Two separate refs keep it uncontended, which is correct!  So the problem is really sharing. *)
+let r1 = ref unit in 
+let r2 = ref unit in 
+(r1, r2)
+> ((ref[c=uncontended] unit) *[u=u1 a=a1] (ref[c=uncontended] unit))
+> mode vars
+>   a1 ∈ {global, local, regional}
+>   u1 ∈ {aliased, unique}
