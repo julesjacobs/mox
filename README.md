@@ -28,7 +28,7 @@ expr ::=
   | [expr, ...] | expr :: expr                -- list literals/cons
   | $(expr, expr) | $left(expr) | $right(expr)
   | $[expr, ...] | $expr :: expr               -- stack-allocated list constructors
-  | region expr                               -- ensure global escape
+  | region expr                               -- stack region
   | ref expr | !expr | expr := expr           -- mutable references
   | fork expr                                 -- spawn a concurrent thread
 
@@ -45,26 +45,26 @@ ty ::=
 Mox separates *past* and *future* capabilities. Every axis supports two orders:
 
 - `≤ₜₒ` (“convert to”) lets us forget guarantees (turn `unique` into `aliased`, for example).
-- `≤ᵢₙ` (“lives in”) governs what may be placed inside what (an aliased child can live inside a unique container, but not the reverse).
+- `≤ᵢₙ` (“may live in”) governs what may be placed inside what (an aliased child can live inside a unique container, but not the reverse).
 
 Past axes (properties established already):
 
-| Axis        | `≤ₜₒ` order                | `≤ᵢₙ` order (from weakest container) |
+| Axis        | `≤ₜₒ` order                | `≤ᵢₙ` order |
 |-------------|----------------------------|---------------------------------------|
 | Uniqueness (`u`) | `unique ≤ₜₒ aliased`      | `aliased ≤ᵢₙ unique`                    |
-| Contention (`c`) | `uncontended ≤ shared ≤ contended` | `contended ≤ᵢₙ shared ≤ᵢₙ uncontended` |
+| Contention (`c`) | `uncontended ≤ₜₒ shared ≤ₜₒ contended` | `contended ≤ᵢₙ shared ≤ᵢₙ uncontended` |
 
-Future axes (restrictions on upcoming use; `≤ₜₒ` and `≤ᵢₙ` coincide):
+Future axes (restrictions on upcoming use):
 
-| Axis         | Order |
-|--------------|-------|
-| Linearity (`l`) | `many ≤ once ≤ never` |
-| Portability (`p`) | `portable ≤ nonportable` |
-| Areality (`a`) | `global ≤ regional ≤ local ≤ borrowed` |
+| Axis           | `≤ₜₒ` order                         | `≤ᵢₙ` order |
+|----------------|-------------------------------------|-------------|
+| Linearity (`l`)| `many ≤ₜₒ once ≤ₜₒ never`               | same as `≤ₜₒ` |
+| Portability (`p`)| `portable ≤ₜₒ nonportable`          | same as `≤ₜₒ` |
+| Areality (`a`) | `global ≤ₜₒ regional ≤ₜₒ local ≤ₜₒ borrowed` | `global ≤ᵢₙ regional ≤ᵢₙ local`, `borrowed ≤ᵢₙ borrowed` |
 
-- Past axes flip when stored: a unique container may hold only unique children (`aliased ≤ᵢₙ unique`), whereas future axes weaken going inward (a `many` value can live inside an `once` container).
+- Past axes flip when stored: a unique container may hold only unique children (`aliased ≤ᵢₙ unique`), whereas future axes (except for `borrowed`) weaken going inward (a `many` value can live inside an `once` container).
 - Linearity and portability also interact with closures: capturing an environment in a `many` closure marks those bindings as `aliased`, and capturing into a `portable` closure forces their contention to become `contended`.
-- Areality tracks placement: `local` data must not leak beyond its region.
+- Areality tracks placement: `local` data must not leak beyond its region, and `borrowed` states only live at the leaf—they cannot be stored inside another container.
 
 These component-wise relations power the mode solver described in `tex/mox.tex`.
 
