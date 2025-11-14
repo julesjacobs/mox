@@ -41,6 +41,8 @@ let rec string_of_expr = function
   | Absurd e -> Printf.sprintf "(absurd %s)" (string_of_expr e)
   | Fun (stack, x, e) ->
       Printf.sprintf "(%sfun %s => %s)" (stack_prefix stack) x (string_of_expr e)
+  | FunRec (stack, f, x, e) ->
+      Printf.sprintf "(%srec %s %s => %s)" (stack_prefix stack) f x (string_of_expr e)
   | App (e1, e2) -> Printf.sprintf "(%s %s)" (string_of_expr e1) (string_of_expr e2)
   | Pair (stack, e1, e2) ->
       Printf.sprintf "%s(%s, %s)" (stack_prefix stack) (string_of_expr e1) (string_of_expr e2)

@@ -25,6 +25,7 @@ rule token = parse
   | "borrow"             { BORROW }
   | "in"                 { IN }
   | "fun"                { FUN }
+  | "rec"                { REC }
   | "match!"             { MATCHBANG }
   | "match"              { MATCH }
   | "with"               { WITH }

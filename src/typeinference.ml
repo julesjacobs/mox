@@ -138,6 +138,7 @@ let rec free_vars expr =
   | Ast.Absurd e -> free_vars e
   | Ast.Annot (e, _) -> free_vars e
   | Ast.Fun (_, x, body) -> free_vars_without body [ x ]
+  | Ast.FunRec (_, f, x, body) -> free_vars_without body [ f; x ]
   | Ast.App (fn, arg) -> StringSet.union (free_vars fn) (free_vars arg)
   | Ast.Let (_, x, e1, e2) ->
       StringSet.union (free_vars e1) (free_vars_without e2 [ x ])
@@ -1177,6 +1178,21 @@ let rec infer_with_env env expr =
       let ty = infer_with_env env e in
       assert_subtype ty TyInt;
       TyInt
+  | Ast.FunRec (alloc, f, x, body) ->
+      let ty_param = TyMeta (fresh_meta ()) in
+      let future = fresh_future_mode () in
+      let () = match alloc with Ast.Stack -> force_future_local future | Ast.Heap -> () in
+      Modesolver.Linearity.restrict_domain [Linearity.many] future.linearity;
+      let ty_cod = TyMeta (fresh_meta ()) in
+      let fun_ty = TyArrow (ty_param, future, ty_cod) in
+      let captured_vars = free_vars_without body [ f; x ] in
+      let captured_env = restrict_env env captured_vars in
+      let locked_env = lock_env captured_env future in
+      let env' = (f, fun_ty) :: (x, ty_param) :: locked_env in
+      let body_ty = infer_with_env env' body in
+      assert_subtype body_ty ty_cod;
+      assert_subtype ty_cod body_ty;
+      fun_ty
   | Ast.Pair (alloc, e1, e2) ->
     let left_fv = free_vars e1 in
     let right_fv = free_vars e2 in

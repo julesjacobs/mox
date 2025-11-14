@@ -36,6 +36,7 @@ type expr =
   | Var of ident
   | Borrow of ident * expr * ident * expr * expr
   | Let of bind_kind * ident * expr * expr
+  | FunRec of alloc * ident * ident * expr
   | Unit
   | ListNil
   | ListCons of alloc * expr * expr

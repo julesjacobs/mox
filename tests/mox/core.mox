@@ -53,6 +53,9 @@ let x = unit in x
 ((fun x => x) : (unit -> unit)) unit
 > unit
 
+(rec f x => x) unit
+> unit
+
 let pair = (unit, unit) in
 let (x, y) = pair in x
 > unit
@@ -68,3 +71,11 @@ let (x, y) = pair in x
 
 (right(unit) : (empty + unit))
 > (empty +[u=aliased a=global] unit)
+
+(rec f x => f x + f x)
+> ('a ->[a=a1 l=many p=p1] int)
+> where
+>   'a alias 'b
+> mode vars
+>   p1 ∈ {nonportable, portable}
+>   a1 ∈ {borrowed, global, local, regional}
