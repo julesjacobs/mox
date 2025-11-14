@@ -616,8 +616,10 @@ let rec outer_equiv ty1 ty2 =
       let domain = fresh_meta () in
       let codomain = fresh_meta () in
       set_meta_solution meta (TyArrow (TyMeta domain, future, TyMeta codomain))
-  | _ ->
-      type_error "outer_equiv: not equivalent"
+  | ty_left, ty_right ->
+      let left = string_of_ty ty_left in
+      let right = string_of_ty ty_right in
+      type_error (Printf.sprintf "type mismatch between %s and %s" left right)
 
 and assert_subtype lower upper =
   outer_equiv lower upper;
@@ -662,6 +664,7 @@ and assert_alias source target =
   | TyUnit, TyUnit -> ()
   | TyEmpty, TyEmpty -> ()
   | TyInt, TyInt -> ()
+  | TyBool, TyBool -> ()
   | TyList (source_elem, source_storage), TyList (target_elem, target_storage) ->
       assert_aliased target_storage.uniqueness;
       Modesolver.Areality.assert_leq_to source_storage.areality target_storage.areality;
@@ -696,6 +699,7 @@ and assert_lock original locked future =
   | TyUnit, TyUnit -> ()
   | TyEmpty, TyEmpty -> ()
   | TyBool, TyBool -> ()
+  | TyInt, TyInt -> ()
   | TyPair (original_left, original_storage, original_right), TyPair (locked_left, locked_storage, locked_right) 
   | TySum (original_left, original_storage, original_right), TySum (locked_left, locked_storage, locked_right) ->
       log_lock "pair/sum storage lock";

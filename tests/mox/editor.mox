@@ -45,4 +45,4 @@ let! (a,b) = y in a
 let r = ref 3 in
 let g = fun x => r := !r + x in
 let _ = fork (g 1) in g 2
-> error: assert_lock: not equivalent
+> error: mode solver detected portability inconsistency

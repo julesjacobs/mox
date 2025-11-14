@@ -15,22 +15,22 @@ left(unit)
 >   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
 
 unit unit
-> error: outer_equiv: not equivalent
+> error: type mismatch between unit and (?614 -> ?615)
 
 let (x, y) = unit in x
-> error: outer_equiv: not equivalent
+> error: type mismatch between unit and (?616 * ?617)
 
 match unit with left(x) => x | right(y) => y
-> error: outer_equiv: not equivalent
+> error: type mismatch between unit and (?618 + ?619)
 
 let x = unit in (x : empty)
-> error: outer_equiv: not equivalent
+> error: type mismatch between unit and empty
 
 x
 > error: Unbound variable x
 
 absurd unit
-> error: outer_equiv: not equivalent
+> error: type mismatch between unit and empty
 
 ((fun x => x) : (unit -> unit)) ((left(unit) : (unit + empty)))
-> error: outer_equiv: not equivalent
+> error: type mismatch between (unit + empty) and unit

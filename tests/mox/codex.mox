@@ -210,7 +210,7 @@ let shared = ((unit, unit) : (unit *[unique] unit)) in (fun f => f shared, fun g
 >   (a5,a4) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
 
 let shared = ((unit, unit) : (unit *[unique] unit)) in fork (let shared2 = shared in shared2)
-> error: outer_equiv: not equivalent
+> error: type mismatch between (unit * unit) and unit
 
 let shared = ref unit in let _ = shared := unit in shared
 > (ref[c=uncontended] unit)
