@@ -23,6 +23,12 @@ borrow a = $(unit, p) for b = fst a in let! (q,r) = a in (b, q)
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 
+(* This ought to be OK but is rejected. Related to Leo's ideas? *)
+let fst = (fun p => let (x,y) = p in x) in
+let p = (unit, unit) in
+borrow a = $(p, unit) for b = fst a in let! (q,r) = a in (b, q)
+> error: relation became empty
+
 borrow a = (unit, unit) for b = a in let! (q,r) = a in (b, q)
 > error: relation became empty
 
