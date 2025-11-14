@@ -1,0 +1,23 @@
+borrow x = unit for y = x in y
+> unit
+
+let a = (unit, unit) in let! (q,r) = a in (q,r)
+> (unit *[u=u1 a=a1] unit)
+> mode vars
+>   a1 ∈ {borrowed, global, local, regional}
+>   u1 ∈ {aliased, unique}
+
+let fst = (fun p => let (x,y) = p in x) in
+borrow a = (unit, unit) for b = fst a in let! (q,r) = a in (b, q)
+> (unit *[u=u1 a=a1] unit)
+> mode vars
+>   a1 ∈ {borrowed, global, local, regional}
+>   u1 ∈ {aliased, unique}
+
+(* Bug! `a` shouldn't be able to be bound to `b` because then it escapes the e2! *)
+borrow a = (unit, unit) for b = a in let! (q,r) = a in (b, q)
+> error: relation became empty
+
+let x = (unit, unit) in
+borrow a = x for b = (let (q,r) = a in q) in let! (q,r) = a in (b,a)
+> error: relation became empty

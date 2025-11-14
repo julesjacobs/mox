@@ -7,6 +7,12 @@ let x = unit in x
 borrow x = unit for y = x in y
 > unit
 
+borrow x = (unit, unit) for y = x in y
+> error: relation became empty
+
+borrow x = ((fun y => y) : (unit ->[once] unit)) for y = x in y
+> error: relation became empty
+
 let pair = (unit, unit) in pair
 > (unit *[u=u1 a=a1] unit)
 > mode vars

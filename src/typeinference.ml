@@ -261,6 +261,11 @@ let const_ref_mode ~contention : ref_mode =
 let precise_ref_mode () =
   const_ref_mode ~contention:Contention.uncontended
 
+let borrowed_future_mode () : future_mode =
+  { linearity = const_linearity_var Linearity.many;
+    portability = const_portability_var Portability.nonportable;
+    areality = const_areality_var Areality.borrowed }
+
 let nonborrowed_arealities =
   [ Areality.global; Areality.regional; Areality.local ]
 
@@ -271,6 +276,21 @@ let top_mode_vars () : mode_vars =
     linearity = const_linearity_var Linearity.top_in;
     portability = const_portability_var Portability.top_in;
     areality = Modesolver.Areality.new_var ~domain:nonborrowed_arealities () } *)
+
+let nonborrowed_mode_vars () : mode_vars =
+  let mode = top_mode_vars () in
+  Modesolver.Areality.restrict_domain nonborrowed_arealities mode.areality;
+  mode
+
+let borrowed_mode_vars () : mode_vars =
+  let mode = top_mode_vars () in
+  Modesolver.Areality.restrict_domain [Areality.borrowed] mode.areality;
+  mode
+
+let many_mode_vars () : mode_vars =
+  let mode = top_mode_vars () in
+  Modesolver.Linearity.restrict_domain [Linearity.many] mode.linearity;
+  mode
 
 let global_mode_vars () : mode_vars =
   let mode = top_mode_vars () in
@@ -995,15 +1015,15 @@ let split_env env fv1 fv2 =
   let aliased_env = alias_env_for env shared in
   (restrict_env aliased_env fv1, restrict_env aliased_env fv2)
 
+let lock_type ty future =
+  let locked_ty = TyMeta (fresh_meta ()) in
+  assert_lock ty locked_ty future;
+  locked_ty
+
 let lock_env env future =
   (* Apply the lock constraint to every binding so the function body only sees
      weakened capabilities allowed by [future]. *)
-  List.map
-    (fun (name, ty) ->
-      let locked_ty = TyMeta (fresh_meta ()) in
-      assert_lock ty locked_ty future;
-      (name, locked_ty))
-    env
+  List.map (fun (name, ty) -> (name, lock_type ty future)) env
 
 
 let rec infer_with_env env expr = 
@@ -1013,8 +1033,24 @@ let rec infer_with_env env expr =
     | Some ty -> ty
     | None -> type_error (Printf.sprintf "Unbound variable %s" x))
   | Ast.Borrow (x, e1, y, e2, e3) ->
-      let desugared = Ast.Let (Ast.Regular, x, e1, Ast.Let (Ast.Regular, y, e2, e3)) in
-      infer_with_env env desugared
+      let fv_e2 = free_vars_without e2 [ x ] in
+      let fv_e3 = free_vars_without e3 [ x; y ] in
+      let fv_rest = StringSet.union fv_e2 fv_e3 in
+      let fv_e1 = free_vars e1 in
+      let env_e1, env_rest = split_env env fv_e1 fv_rest in
+      let ty_x = infer_with_env env_e1 e1 in
+      let borrow_source_mode = many_mode_vars () in
+      assert_in ty_x borrow_source_mode;
+      let env_e2_base, env_e3_base = split_env env_rest fv_e2 fv_e3 in
+      let ty_x_borrowed = TyMeta (fresh_meta ()) in
+      assert_subtype ty_x ty_x_borrowed;
+      assert_in ty_x_borrowed (borrowed_mode_vars ());
+      let env_e2 = (x, ty_x_borrowed) :: env_e2_base in
+      let ty_y = infer_with_env env_e2 e2 in
+      let mode = nonborrowed_mode_vars () in
+      assert_in ty_y mode;
+      let env_e3 = (x, ty_x) :: (y, ty_y) :: env_e3_base in
+      infer_with_env env_e3 e3
   | Ast.Unit -> TyUnit
   | Ast.Pair (alloc, e1, e2) ->
     let left_fv = free_vars e1 in
