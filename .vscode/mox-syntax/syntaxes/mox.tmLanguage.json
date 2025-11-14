@@ -56,7 +56,7 @@
     },
     "keywords": {
       "name": "keyword.control.mox",
-      "match": "(?:let!|match!|\\b(let|in|fun|match|with|ref|fork|left|right|absurd|region|unit)\\b)"
+      "match": "(?:let!|match!|\\b(let|in|borrow|for|fun|match|with|ref|fork|left|right|absurd|region|unit)\\b)"
     },
     "builtins": {
       "patterns": [

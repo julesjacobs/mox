@@ -24,6 +24,7 @@ If you change `.vscode/mox-syntax/syntaxes/mox.tmLanguage.json`, remember that C
 2. Reinstall the package in both editors so they pick up the new scopes:
    - `code --install-extension .vscode/mox-syntax.vsix --force`
    - `cursor --install-extension .vscode/mox-syntax.vsix --force`
+   The user wants you to always reinstall after making syntax highlighting changes.
 3. Reload the window (“Developer: Reload Window”) to flush the cached syntax data.
 
 Skipping these steps means the editors will continue using the previous grammar even though the repo files changed.

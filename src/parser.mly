@@ -25,7 +25,7 @@ let ref_mode_from_list names =
   { contention }
 %}
 
-%token LET LETBANG IN FUN MATCH MATCHBANG WITH LEFT RIGHT ABSURD UNIT EMPTY QUESTION STACK REGION
+%token LET LETBANG IN BORROW FUN MATCH MATCHBANG WITH LEFT RIGHT ABSURD UNIT EMPTY QUESTION STACK REGION FOR
 %token REF FORK BANG ASSIGN
 %token LPAREN RPAREN LBRACKET RBRACKET COMMA EQUAL BAR ARROW FATARROW PLUS TIMES COLON
 %token <string> IDENT
@@ -50,6 +50,7 @@ expr:
   | expr_base COLON ty { Annot ($1, $3) }
 
 expr_base:
+  | BORROW IDENT EQUAL expr FOR IDENT EQUAL expr IN expr { Borrow ($2, $4, $6, $8, $10) }
   | bind_prefix IDENT EQUAL expr IN expr { Let ($1, $2, $4, $6) }
   | bind_prefix LPAREN IDENT COMMA IDENT RPAREN EQUAL expr IN expr
       { LetPair ($1, $3, $5, $8, $10) }

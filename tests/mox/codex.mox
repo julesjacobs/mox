@@ -4,6 +4,9 @@ unit
 let x = unit in x
 > unit
 
+borrow x = unit for y = x in y
+> unit
+
 let pair = (unit, unit) in pair
 > (unit *[u=u1 a=a1] unit)
 > mode vars

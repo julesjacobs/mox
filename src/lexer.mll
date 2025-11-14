@@ -22,6 +22,7 @@ rule token = parse
   | "(*"                 { comment lexbuf; token lexbuf }
   | "let!"               { LETBANG }
   | "let"                { LET }
+  | "borrow"             { BORROW }
   | "in"                 { IN }
   | "fun"                { FUN }
   | "match!"             { MATCHBANG }
@@ -33,6 +34,7 @@ rule token = parse
   | "right"              { RIGHT }
   | "absurd"             { ABSURD }
   | "region"             { REGION }
+  | "for"                { FOR }
   | "unit"               { UNIT }
   | "empty"              { EMPTY }
   | "("                  { LPAREN }

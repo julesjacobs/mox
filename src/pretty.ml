@@ -14,8 +14,11 @@ let match_prefix = function
 
 let rec string_of_expr = function
   | Var x -> x
+  | Borrow (x, e1, y, e2, e3) ->
+      Printf.sprintf "(borrow %s = %s for %s = %s in %s)"
+        x (string_of_expr e1) y (string_of_expr e2) (string_of_expr e3)
   | Let (kind, x, e1, e2) ->
-      Printf.sprintf "(%s %s = %s in %s)"
+        Printf.sprintf "(%s %s = %s in %s)"
         (bind_prefix kind) x (string_of_expr e1) (string_of_expr e2)
   | Unit -> "unit"
   | Hole -> "?"

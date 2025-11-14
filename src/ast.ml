@@ -32,6 +32,7 @@ type bind_kind =
 
 type expr =
   | Var of ident
+  | Borrow of ident * expr * ident * expr * expr
   | Let of bind_kind * ident * expr * expr
   | Unit
   | Hole

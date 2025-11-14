@@ -113,6 +113,12 @@ let remove_vars vars set =
 let rec free_vars expr =
   match expr with
   | Ast.Var x -> StringSet.singleton x
+  | Ast.Borrow (x, e1, y, e2, e3) ->
+      let fv_e1 = free_vars e1 in
+      let fv_e2 = free_vars_without e2 [ x ] in
+      let fv_e3 = free_vars_without e3 [ x; y ] in
+      let fv_rest = StringSet.union fv_e2 fv_e3 in
+      StringSet.union fv_e1 fv_rest
   | Ast.Unit -> StringSet.empty
   | Ast.Hole -> StringSet.empty
   | Ast.Absurd e -> free_vars e
@@ -1013,6 +1019,9 @@ let rec infer_with_env env expr =
     (match lookup env x with
     | Some ty -> ty
     | None -> type_error (Printf.sprintf "Unbound variable %s" x))
+  | Ast.Borrow (x, e1, y, e2, e3) ->
+      let desugared = Ast.Let (Ast.Regular, x, e1, Ast.Let (Ast.Regular, y, e2, e3)) in
+      infer_with_env env desugared
   | Ast.Unit -> TyUnit
   | Ast.Pair (alloc, e1, e2) ->
     let left_fv = free_vars e1 in
