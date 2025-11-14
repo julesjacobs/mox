@@ -1,6 +1,6 @@
 # Agent Guide
 
-This project uses `.mox` test files to exercise the parser and bidirectional type checker. Each test file contains a sequence of source expressions separated by blank lines. After every expression, a line beginning with `>` records the result: either the inferred type (`> unit`, `> (unit + empty)`, etc.) or an error message prefixed with `error:`.
+This project uses `.mox` test files to exercise the parser and type checker. Each test file contains a sequence of source expressions separated by blank lines. After every expression, a line beginning with `>` records the result: either the inferred type (`> unit`, `> (unit + empty)`, etc.) or an error message prefixed with `error:`.
 
 ## Running the test suite
 
