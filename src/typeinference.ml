@@ -120,6 +120,14 @@ let rec free_vars expr =
       let fv_rest = StringSet.union fv_e2 fv_e3 in
       StringSet.union fv_e1 fv_rest
   | Ast.Unit -> StringSet.empty
+  | Ast.ListNil -> StringSet.empty
+  | Ast.ListCons (_, head, tail) ->
+      StringSet.union (free_vars head) (free_vars tail)
+  | Ast.MatchList (_, scrut, nil_branch, x, xs, cons_branch) ->
+      let fv_scrut = free_vars scrut in
+      let fv_nil = free_vars nil_branch in
+      let fv_cons = free_vars_without cons_branch [ x; xs ] in
+      StringSet.union fv_scrut (StringSet.union fv_nil fv_cons)
   | Ast.Int _ -> StringSet.empty
   | Ast.IntAdd (lhs, rhs)
   | Ast.IntSub (lhs, rhs)
@@ -184,6 +192,7 @@ type ty =
   | TyUnit
   | TyEmpty
   | TyInt
+  | TyList of ty * storage_mode
   | TyArrow of ty * future_mode * ty
   | TyPair of ty * storage_mode * ty
   | TySum of ty * storage_mode * ty
@@ -478,6 +487,10 @@ let rec assert_in ty mode_vars =
     let component_mode = push_storage_to_components storage mode_vars in
     assert_in left component_mode;
     assert_in right component_mode
+  | TyList (elem, storage) ->
+    assert_storage_within storage mode_vars;
+    let component_mode = push_storage_to_components storage mode_vars in
+    assert_in elem component_mode
   | TyRef (payload, ref_mode) ->
     assert_ref_within ref_mode mode_vars;
     let payload_mode = push_ref_to_payload ref_mode mode_vars in
@@ -495,6 +508,11 @@ let mk_pair left storage right =
 
 let mk_sum left storage right =
   let ty = TySum (left, storage, right) in
+  assert_in ty (top_mode_vars ());
+  ty
+
+let mk_list elem storage =
+  let ty = TyList (elem, storage) in
   assert_in ty (top_mode_vars ());
   ty
 
@@ -526,6 +544,8 @@ let rec string_of_ty ty =
       Printf.sprintf "(%s * %s)" (string_of_ty left) (string_of_ty right)
   | TySum (left, _, right) ->
       Printf.sprintf "(%s + %s)" (string_of_ty left) (string_of_ty right)
+  | TyList (elem, _) ->
+      Printf.sprintf "(list %s)" (string_of_ty elem)
   | TyRef (payload, _) ->
       Printf.sprintf "(ref %s)" (string_of_ty payload)
   | TyMeta meta ->
@@ -540,6 +560,7 @@ let rec outer_equiv ty1 ty2 =
   | TyUnit, TyUnit -> ()
   | TyEmpty, TyEmpty -> ()
   | TyInt, TyInt -> ()
+  | TyList _, TyList _ -> ()
   | TyPair _, TyPair _ -> ()
   | TySum _, TySum _ -> ()
   | TyRef _, TyRef _ -> ()
@@ -550,6 +571,10 @@ let rec outer_equiv ty1 ty2 =
       set_meta_solution meta TyEmpty
   | TyInt, TyMeta meta | TyMeta meta, TyInt ->
       set_meta_solution meta TyInt
+  | TyList _, TyMeta meta | TyMeta meta, TyList _ ->
+      let elem = fresh_meta () in
+      let storage = fresh_storage_mode () in
+      set_meta_solution meta (mk_list (TyMeta elem) storage)
   | TyPair _, TyMeta meta | TyMeta meta, TyPair _ ->
       let storage = fresh_storage_mode () in
       let left = fresh_meta () in
@@ -582,6 +607,9 @@ and assert_subtype lower upper =
   | TyUnit, TyUnit -> ()
   | TyEmpty, TyEmpty -> ()
   | TyInt, TyInt -> ()
+  | TyList (lower_elem, lower_storage), TyList (upper_elem, upper_storage) ->
+      assert_subtype lower_elem upper_elem;
+      assert_storage_leq_to lower_storage upper_storage
   | TyPair (lower_left, lower_storage, lower_right), TyPair (upper_left, upper_storage, upper_right) ->
       assert_subtype lower_left upper_left;
       assert_subtype lower_right upper_right;
@@ -611,6 +639,10 @@ and assert_alias source target =
   | TyUnit, TyUnit -> ()
   | TyEmpty, TyEmpty -> ()
   | TyInt, TyInt -> ()
+  | TyList (source_elem, source_storage), TyList (target_elem, target_storage) ->
+      assert_aliased target_storage.uniqueness;
+      Modesolver.Areality.assert_leq_to source_storage.areality target_storage.areality;
+      assert_alias source_elem target_elem
   | TyPair (source_left, source_storage, source_right), TyPair (target_left, target_storage, target_right) 
   | TySum (source_left, source_storage, source_right), TySum (target_left, target_storage, target_right) ->
       (* Make sure target_storage is aliased, areality is copied. *)
@@ -650,6 +682,13 @@ and assert_lock original locked future =
       Modesolver.Areality.assert_leq_to original_storage.areality future.areality;
       assert_lock original_left locked_left future;
       assert_lock original_right locked_right future
+  | TyList (original_elem, original_storage), TyList (locked_elem, locked_storage) ->
+      log_lock "list storage lock";
+      Modesolver.Uniqueness.assert_leq_to original_storage.uniqueness locked_storage.uniqueness;
+      Modesolver.assert_linearity_dagger future.linearity locked_storage.uniqueness;
+      Modesolver.Areality.assert_leq_to original_storage.areality locked_storage.areality;
+      Modesolver.Areality.assert_leq_to original_storage.areality future.areality;
+      assert_lock original_elem locked_elem future
   | TyRef (original_payload, original_mode), TyRef (locked_payload, locked_mode) ->
       log_lock "ref lock enforcement";
       Modesolver.Contention.assert_leq_to original_mode.contention locked_mode.contention;
@@ -707,6 +746,10 @@ let rec ty_of_ast (ty_syntax : Ast.ty) : ty =
   | Ast.TyUnit -> TyUnit
   | Ast.TyEmpty -> TyEmpty
   | Ast.TyInt -> TyInt
+  | Ast.TyList (elem, storage) ->
+      let elem' = ty_of_ast elem in
+      let storage' = storage_mode_of_ast storage in
+      mk_list elem' storage'
   | Ast.TyPair (left, storage, right) ->
       let left' = ty_of_ast left in
       let right' = ty_of_ast right in
@@ -807,6 +850,10 @@ let rec string_of_ty_core state ty =
         (string_of_ty_core state left)
         (string_of_storage_mode state storage)
         (string_of_ty_core state right)
+  | TyList (elem, storage) ->
+      Printf.sprintf "(list[%s] %s)"
+        (string_of_storage_mode state storage)
+        (string_of_ty_core state elem)
   | TyRef (payload, mode) ->
       Printf.sprintf "(ref[%s] %s)"
         (string_of_ref_mode state mode)
@@ -830,6 +877,7 @@ let collect_metas ty =
     | TyPair (left, _, right) | TySum (left, _, right) ->
         let set, acc = aux set acc left in
         aux set acc right
+    | TyList (elem, _) -> aux set acc elem
     | TyRef (payload, _) -> aux set acc payload
     | TyArrow (domain, _, codomain) ->
         let set, acc = aux set acc domain in
@@ -1068,6 +1116,51 @@ let rec infer_with_env env expr =
       let env_e3 = (x, ty_x) :: (y, ty_y) :: env_e3_base in
       infer_with_env env_e3 e3
   | Ast.Unit -> TyUnit
+  | Ast.ListNil ->
+      let elem_ty = TyMeta (fresh_meta ()) in
+      let storage = fresh_storage_mode () in
+      mk_list elem_ty storage
+  | Ast.ListCons (alloc, head, tail) ->
+      let head_fv = free_vars head in
+      let tail_fv = free_vars tail in
+      let env_head, env_tail = split_env env head_fv tail_fv in
+      let head_ty = infer_with_env env_head head in
+      let tail_ty = infer_with_env env_tail tail in
+      let elem_ty = TyMeta (fresh_meta ()) in
+      let storage = fresh_storage_mode () in
+      let () =
+        match alloc with
+        | Ast.Stack -> force_storage_local storage
+        | Ast.Heap -> ()
+      in
+      let list_ty = mk_list elem_ty storage in
+      assert_subtype head_ty elem_ty;
+      assert_subtype elem_ty head_ty;
+      assert_subtype tail_ty list_ty;
+      assert_subtype list_ty tail_ty;
+      list_ty
+  | Ast.MatchList (kind, scrut, nil_branch, x, xs, cons_branch) ->
+      let fv_scrut = free_vars scrut in
+      let fv_nil = free_vars nil_branch in
+      let fv_cons = free_vars_without cons_branch [ x; xs ] in
+      let branches_fv = StringSet.union fv_nil fv_cons in
+      let env_scrut, env_rest = split_env env fv_scrut branches_fv in
+      let ty_scrut = infer_with_env env_scrut scrut in
+      let elem_ty = TyMeta (fresh_meta ()) in
+      let storage = fresh_storage_mode () in
+      let ty_list = mk_list elem_ty storage in
+      assert_subtype ty_scrut ty_list;
+      (match kind with
+       | Ast.Destructive -> force_storage_unique storage
+       | Ast.Regular -> ());
+      let env_nil, env_cons = split_env env_rest fv_nil fv_cons in
+      let ty_nil = infer_with_env env_nil nil_branch in
+      let env_cons' = (x, elem_ty) :: (xs, ty_list) :: env_cons in
+      let ty_cons = infer_with_env env_cons' cons_branch in
+      let ty_join = TyMeta (fresh_meta ()) in
+      assert_subtype ty_nil ty_join;
+      assert_subtype ty_cons ty_join;
+      ty_join
   | Ast.Int _ -> TyInt
   | Ast.IntAdd (lhs, rhs)
   | Ast.IntSub (lhs, rhs)

@@ -23,11 +23,18 @@ let ref_mode_from_list names =
       (Printf.sprintf "Only contention modes are allowed on references, but saw [%s]"
          (String.concat ", " remaining));
   { contention }
+
+let rec list_literal alloc elems =
+  List.fold_right
+    (fun elem acc -> ListCons (alloc, elem, acc))
+    elems
+    ListNil
 %}
 
 %token LET LETBANG IN BORROW FUN MATCH MATCHBANG WITH LEFT RIGHT ABSURD UNIT EMPTY INT QUESTION STACK REGION FOR
+%token LIST
 %token REF FORK BANG ASSIGN
-%token LPAREN RPAREN LBRACKET RBRACKET COMMA EQUAL BAR ARROW FATARROW PLUS MINUS TIMES COLON
+%token LPAREN RPAREN LBRACKET RBRACKET COMMA EQUAL BAR ARROW FATARROW PLUS MINUS TIMES CONS COLON
 %token <string> IDENT
 %token <int> INT_LITERAL
 %token EOF
@@ -37,6 +44,7 @@ let ref_mode_from_list names =
 %start <string list> modes_eof
 
 %left BAR
+%right CONS
 %left PLUS MINUS
 %left TIMES
 %right ARROW
@@ -59,12 +67,19 @@ expr_base:
   | match_prefix expr WITH LEFT LPAREN IDENT RPAREN FATARROW expr
       BAR RIGHT LPAREN IDENT RPAREN FATARROW expr
       { Match ($1, $2, $6, $9, $13, $16) }
+  | match_prefix expr WITH LBRACKET RBRACKET FATARROW expr
+      BAR IDENT CONS IDENT FATARROW expr
+      { MatchList ($1, $2, $7, $9, $11, $13) }
   | REF expr_base { Ref $2 }
   | FORK expr { Fork $2 }
   | expr_assign { $1 }
 
 expr_assign:
-  | expr_assign ASSIGN expr_sum { Assign ($1, $3) }
+  | expr_assign ASSIGN expr_cons { Assign ($1, $3) }
+  | expr_cons { $1 }
+
+expr_cons:
+  | expr_sum CONS expr_cons { ListCons (Heap, $1, $3) }
   | expr_sum { $1 }
 
 expr_sum:
@@ -88,6 +103,8 @@ expr_atom:
   | BANG expr_atom { Deref $2 }
   | IDENT { Var $1 }
   | UNIT { Unit }
+  | LBRACKET list_items_opt RBRACKET { list_literal Heap $2 }
+  | STACK LBRACKET list_items_opt RBRACKET { list_literal Stack $3 }
   | INT_LITERAL { Int $1 }
   | QUESTION { Hole }
   | ABSURD expr { Absurd $2 }
@@ -99,6 +116,14 @@ expr_atom:
   | LPAREN expr COMMA expr RPAREN { Pair (Heap, $2, $4) }
   | STACK LPAREN expr COMMA expr RPAREN { Pair (Stack, $3, $5) }
   | LPAREN expr RPAREN { $2 }
+
+list_items_opt:
+  | list_items { $1 }
+  | /* empty */ { [] }
+
+list_items:
+  | expr { [ $1 ] }
+  | expr COMMA list_items { $1 :: $3 }
 
 stack_prefix:
   | STACK { Stack }
@@ -155,6 +180,8 @@ ty_prod:
 ty_atom:
   | UNIT { TyUnit }
   | EMPTY { TyEmpty }
+  | LIST ty_atom { TyList ($2, default_storage_mode) }
+  | LIST mode_list ty_atom { TyList ($3, storage_mode_from_list $2) }
   | INT { TyInt }
   | REF ty_atom { TyRef ($2, default_ref_mode) }
   | REF mode_list ty_atom { TyRef ($3, ref_mode_from_list $2) }

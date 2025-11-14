@@ -37,6 +37,7 @@ rule token = parse
   | "for"                { FOR }
   | "unit"               { UNIT }
   | "empty"              { EMPTY }
+  | "list"               { LIST }
   | "int"                { INT }
   | "("                  { LPAREN }
   | ")"                  { RPAREN }
@@ -46,6 +47,7 @@ rule token = parse
   | "$"                  { STACK }
   | "["                  { LBRACKET }
   | "]"                  { RBRACKET }
+  | "::"                 { CONS }
   | ":"                  { COLON }
   | "=>"                 { FATARROW }
   | "->"                 { ARROW }

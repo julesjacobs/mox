@@ -17,6 +17,7 @@ type ty =
   | TyUnit
   | TyEmpty
   | TyInt
+  | TyList of ty * storage_mode
   | TyArrow of ty * Modes.Future.t * ty
   | TyPair of ty * storage_mode * ty
   | TySum of ty * storage_mode * ty
@@ -36,6 +37,9 @@ type expr =
   | Borrow of ident * expr * ident * expr * expr
   | Let of bind_kind * ident * expr * expr
   | Unit
+  | ListNil
+  | ListCons of alloc * expr * expr
+  | MatchList of bind_kind * expr * expr * ident * ident * expr
   | Int of int
   | IntAdd of expr * expr
   | IntSub of expr * expr

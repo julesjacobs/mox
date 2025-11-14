@@ -21,6 +21,14 @@ let rec string_of_expr = function
         Printf.sprintf "(%s %s = %s in %s)"
         (bind_prefix kind) x (string_of_expr e1) (string_of_expr e2)
   | Unit -> "unit"
+  | ListNil -> "[]"
+  | ListCons (alloc, head, tail) ->
+      Printf.sprintf "(%s%s :: %s)"
+        (stack_prefix alloc) (string_of_expr head) (string_of_expr tail)
+  | MatchList (kind, scrutinee, nil_branch, x, xs, cons_branch) ->
+      Printf.sprintf "(%s %s with [] => %s | %s :: %s => %s)"
+        (match_prefix kind) (string_of_expr scrutinee)
+        (string_of_expr nil_branch) x xs (string_of_expr cons_branch)
   | Int n -> string_of_int n
   | IntAdd (lhs, rhs) ->
       Printf.sprintf "(%s + %s)" (string_of_expr lhs) (string_of_expr rhs)
@@ -94,6 +102,18 @@ and string_of_ty = function
         | _ -> Printf.sprintf " +[%s] " (String.concat " " parts)
       in
       Printf.sprintf "(%s%s%s)" (string_of_ty t1) sep (string_of_ty t2)
+  | TyList (elem, mode) ->
+      let parts =
+        [ Modes.Uniqueness.to_short_string mode.uniqueness;
+          Modes.Areality.to_short_string mode.areality ]
+        |> List.filter (fun s -> String.trim s <> "")
+      in
+      let prefix =
+        match parts with
+        | [] -> "list "
+        | _ -> Printf.sprintf "list[%s] " (String.concat " " parts)
+      in
+      Printf.sprintf "(%s%s)" prefix (string_of_ty elem)
   | TyRef (payload, mode) ->
       let parts =
         [ Modes.Contention.to_short_string mode.contention ]
