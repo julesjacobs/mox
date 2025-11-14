@@ -56,6 +56,36 @@ let x = unit in x
 (rec f x => x) unit
 > unit
 
+true
+> bool
+
+false
+> bool
+
+if true then unit else unit
+> unit
+
+if 1 < 2 then 1 else 2
+> int
+
+true and false
+> bool
+
+true or false
+> bool
+
+not false
+> bool
+
+1 == 2
+> bool
+
+1 < 2
+> bool
+
+1 >= 0
+> bool
+
 let pair = (unit, unit) in
 let (x, y) = pair in x
 > unit
@@ -79,3 +109,27 @@ let (x, y) = pair in x
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   a1 ∈ {borrowed, global, local, regional}
+
+(rec f x => (x,x))
+> ('c ->[a=a2 l=many p=p1] ('b *[u=u1 a=a1] 'a))
+> where
+>   'c alias 'd
+>   'b <= 'd
+>   'd <= 'b
+>   'b in {u=u2; c=c1; l=l1; p=p2; a=a3}
+>   'a <= 'd
+>   'd <= 'a
+>   'a in {u=u2; c=c1; l=l1; p=p2; a=a3}
+> mode vars
+>   a1 ∈ {borrowed, global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   p1 ∈ {nonportable, portable}
+>   a2 ∈ {borrowed, global, local, regional}
+>   a3 ∈ {borrowed, global, local, regional}
+>   p2 ∈ {nonportable, portable}
+>   l1 ∈ {many, never, once}
+>   c1 ∈ {contended, shared, uncontended}
+>   u2 ∈ {aliased, unique}
+> mode rels
+>   (u2,u1) ∉ {(unique,aliased)}
+>   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}

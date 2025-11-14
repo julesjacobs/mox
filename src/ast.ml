@@ -17,6 +17,7 @@ type ty =
   | TyUnit
   | TyEmpty
   | TyInt
+  | TyBool
   | TyList of ty * storage_mode
   | TyArrow of ty * Modes.Future.t * ty
   | TyPair of ty * storage_mode * ty
@@ -38,6 +39,8 @@ type expr =
   | Let of bind_kind * ident * expr * expr
   | FunRec of alloc * ident * ident * expr
   | Unit
+  | Bool of bool
+  | If of expr * expr * expr
   | ListNil
   | ListCons of alloc * expr * expr
   | MatchList of bind_kind * expr * expr * ident * ident * expr
@@ -46,6 +49,14 @@ type expr =
   | IntSub of expr * expr
   | IntMul of expr * expr
   | IntNeg of expr
+  | IntEq of expr * expr
+  | IntLt of expr * expr
+  | IntLe of expr * expr
+  | IntGt of expr * expr
+  | IntGe of expr * expr
+  | BoolAnd of expr * expr
+  | BoolOr of expr * expr
+  | BoolNot of expr
   | Hole
   | Absurd of expr
   | Fun of alloc * ident * expr

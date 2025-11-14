@@ -26,6 +26,9 @@ rule token = parse
   | "in"                 { IN }
   | "fun"                { FUN }
   | "rec"                { REC }
+  | "if"                 { IF }
+  | "then"               { THEN }
+  | "else"               { ELSE }
   | "match!"             { MATCHBANG }
   | "match"              { MATCH }
   | "with"               { WITH }
@@ -40,9 +43,20 @@ rule token = parse
   | "empty"              { EMPTY }
   | "list"               { LIST }
   | "int"                { INT }
+  | "bool"               { BOOL }
+  | "true"               { TRUE }
+  | "false"              { FALSE }
+  | "and"                { AND }
+  | "or"                 { OR }
+  | "not"                { NOT }
   | "("                  { LPAREN }
   | ")"                  { RPAREN }
   | ","                  { COMMA }
+  | "=="                 { EQ }
+  | "<="                 { LE }
+  | ">="                 { GE }
+  | "<"                  { LT }
+  | ">"                  { GT }
   | "="                  { EQUAL }
   | "|"                  { BAR }
   | "$"                  { STACK }

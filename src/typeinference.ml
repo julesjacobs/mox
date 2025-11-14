@@ -120,6 +120,12 @@ let rec free_vars expr =
       let fv_rest = StringSet.union fv_e2 fv_e3 in
       StringSet.union fv_e1 fv_rest
   | Ast.Unit -> StringSet.empty
+  | Ast.Bool _ -> StringSet.empty
+  | Ast.If (cond, t_branch, e_branch) ->
+      let fv_cond = free_vars cond in
+      let fv_t = free_vars t_branch in
+      let fv_e = free_vars e_branch in
+      StringSet.union fv_cond (StringSet.union fv_t fv_e)
   | Ast.ListNil -> StringSet.empty
   | Ast.ListCons (_, head, tail) ->
       StringSet.union (free_vars head) (free_vars tail)
@@ -134,6 +140,15 @@ let rec free_vars expr =
   | Ast.IntMul (lhs, rhs) ->
       StringSet.union (free_vars lhs) (free_vars rhs)
   | Ast.IntNeg e -> free_vars e
+  | Ast.IntEq (lhs, rhs)
+  | Ast.IntLt (lhs, rhs)
+  | Ast.IntLe (lhs, rhs)
+  | Ast.IntGt (lhs, rhs)
+  | Ast.IntGe (lhs, rhs)
+  | Ast.BoolAnd (lhs, rhs)
+  | Ast.BoolOr (lhs, rhs) ->
+      StringSet.union (free_vars lhs) (free_vars rhs)
+  | Ast.BoolNot e -> free_vars e
   | Ast.Hole -> StringSet.empty
   | Ast.Absurd e -> free_vars e
   | Ast.Annot (e, _) -> free_vars e
@@ -193,6 +208,7 @@ type ty =
   | TyUnit
   | TyEmpty
   | TyInt
+  | TyBool
   | TyList of ty * storage_mode
   | TyArrow of ty * future_mode * ty
   | TyPair of ty * storage_mode * ty
@@ -482,6 +498,7 @@ let rec assert_in ty mode_vars =
   | TyUnit -> ()
   | TyEmpty -> ()
   | TyInt -> ()
+  | TyBool -> ()
   | TyPair (left, storage, right)
   | TySum (left, storage, right) ->
     assert_storage_within storage mode_vars;
@@ -539,6 +556,7 @@ let rec string_of_ty ty =
   | TyUnit -> "unit"
   | TyEmpty -> "empty"
   | TyInt -> "int"
+  | TyBool -> "bool"
   | TyArrow (domain, _, codomain) ->
       Printf.sprintf "(%s -> %s)" (string_of_ty domain) (string_of_ty codomain)
   | TyPair (left, _, right) ->
@@ -561,6 +579,7 @@ let rec outer_equiv ty1 ty2 =
   | TyUnit, TyUnit -> ()
   | TyEmpty, TyEmpty -> ()
   | TyInt, TyInt -> ()
+  | TyBool, TyBool -> ()
   | TyList _, TyList _ -> ()
   | TyPair _, TyPair _ -> ()
   | TySum _, TySum _ -> ()
@@ -572,6 +591,8 @@ let rec outer_equiv ty1 ty2 =
       set_meta_solution meta TyEmpty
   | TyInt, TyMeta meta | TyMeta meta, TyInt ->
       set_meta_solution meta TyInt
+  | TyBool, TyMeta meta | TyMeta meta, TyBool ->
+      set_meta_solution meta TyBool
   | TyList _, TyMeta meta | TyMeta meta, TyList _ ->
       let elem = fresh_meta () in
       let storage = fresh_storage_mode () in
@@ -608,6 +629,7 @@ and assert_subtype lower upper =
   | TyUnit, TyUnit -> ()
   | TyEmpty, TyEmpty -> ()
   | TyInt, TyInt -> ()
+  | TyBool, TyBool -> ()
   | TyList (lower_elem, lower_storage), TyList (upper_elem, upper_storage) ->
       assert_subtype lower_elem upper_elem;
       assert_storage_leq_to lower_storage upper_storage
@@ -673,6 +695,7 @@ and assert_lock original locked future =
       add_constraint locked_meta constraint_
   | TyUnit, TyUnit -> ()
   | TyEmpty, TyEmpty -> ()
+  | TyBool, TyBool -> ()
   | TyPair (original_left, original_storage, original_right), TyPair (locked_left, locked_storage, locked_right) 
   | TySum (original_left, original_storage, original_right), TySum (locked_left, locked_storage, locked_right) ->
       log_lock "pair/sum storage lock";
@@ -747,6 +770,7 @@ let rec ty_of_ast (ty_syntax : Ast.ty) : ty =
   | Ast.TyUnit -> TyUnit
   | Ast.TyEmpty -> TyEmpty
   | Ast.TyInt -> TyInt
+  | Ast.TyBool -> TyBool
   | Ast.TyList (elem, storage) ->
       let elem' = ty_of_ast elem in
       let storage' = storage_mode_of_ast storage in
@@ -836,6 +860,7 @@ let rec string_of_ty_core state ty =
   | TyUnit -> "unit"
   | TyEmpty -> "empty"
   | TyInt -> "int"
+  | TyBool -> "bool"
   | TyArrow (domain, future, codomain) ->
       Printf.sprintf "(%s ->[%s] %s)"
         (string_of_ty_core state domain)
@@ -883,7 +908,7 @@ let collect_metas ty =
     | TyArrow (domain, _, codomain) ->
         let set, acc = aux set acc domain in
         aux set acc codomain
-    | TyUnit | TyEmpty | TyInt -> set, acc
+    | TyUnit | TyEmpty | TyInt | TyBool -> set, acc
   in
   let _, metas = aux IntSet.empty [] ty in
   List.rev metas
@@ -1117,6 +1142,22 @@ let rec infer_with_env env expr =
       let env_e3 = (x, ty_x) :: (y, ty_y) :: env_e3_base in
       infer_with_env env_e3 e3
   | Ast.Unit -> TyUnit
+  | Ast.Bool _ -> TyBool
+  | Ast.If (cond, then_branch, else_branch) ->
+      let fv_cond = free_vars cond in
+      let fv_then = free_vars then_branch in
+      let fv_else = free_vars else_branch in
+      let branches_fv = StringSet.union fv_then fv_else in
+      let env_cond, env_rest = split_env env fv_cond branches_fv in
+      let cond_ty = infer_with_env env_cond cond in
+      assert_subtype cond_ty TyBool;
+      let env_then, env_else = split_env env_rest fv_then fv_else in
+      let ty_then = infer_with_env env_then then_branch in
+      let ty_else = infer_with_env env_else else_branch in
+      let ty_join = TyMeta (fresh_meta ()) in
+      assert_subtype ty_then ty_join;
+      assert_subtype ty_else ty_join;
+      ty_join
   | Ast.ListNil ->
       let elem_ty = TyMeta (fresh_meta ()) in
       let storage = fresh_storage_mode () in
@@ -1178,6 +1219,33 @@ let rec infer_with_env env expr =
       let ty = infer_with_env env e in
       assert_subtype ty TyInt;
       TyInt
+  | Ast.IntEq (lhs, rhs)
+  | Ast.IntLt (lhs, rhs)
+  | Ast.IntLe (lhs, rhs)
+  | Ast.IntGt (lhs, rhs)
+  | Ast.IntGe (lhs, rhs) ->
+      let fv_lhs = free_vars lhs in
+      let fv_rhs = free_vars rhs in
+      let env_lhs, env_rhs = split_env env fv_lhs fv_rhs in
+      let ty_lhs = infer_with_env env_lhs lhs in
+      let ty_rhs = infer_with_env env_rhs rhs in
+      assert_subtype ty_lhs TyInt;
+      assert_subtype ty_rhs TyInt;
+      TyBool
+  | Ast.BoolAnd (lhs, rhs)
+  | Ast.BoolOr (lhs, rhs) ->
+      let fv_lhs = free_vars lhs in
+      let fv_rhs = free_vars rhs in
+      let env_lhs, env_rhs = split_env env fv_lhs fv_rhs in
+      let ty_lhs = infer_with_env env_lhs lhs in
+      let ty_rhs = infer_with_env env_rhs rhs in
+      assert_subtype ty_lhs TyBool;
+      assert_subtype ty_rhs TyBool;
+      TyBool
+  | Ast.BoolNot e ->
+      let ty = infer_with_env env e in
+      assert_subtype ty TyBool;
+      TyBool
   | Ast.FunRec (alloc, f, x, body) ->
       let ty_param = TyMeta (fresh_meta ()) in
       let future = fresh_future_mode () in

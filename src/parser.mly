@@ -31,10 +31,11 @@ let rec list_literal alloc elems =
     ListNil
 %}
 
-%token LET LETBANG IN BORROW FUN MATCH MATCHBANG WITH LEFT RIGHT ABSURD UNIT EMPTY INT QUESTION STACK REGION FOR REC
+%token LET LETBANG IN BORROW FUN MATCH MATCHBANG WITH LEFT RIGHT ABSURD UNIT EMPTY INT BOOL TRUE FALSE QUESTION STACK REGION FOR REC IF THEN ELSE
 %token LIST
-%token REF FORK BANG ASSIGN
+%token REF FORK BANG ASSIGN NOT AND OR
 %token LPAREN RPAREN LBRACKET RBRACKET COMMA EQUAL BAR ARROW FATARROW PLUS MINUS TIMES CONS COLON
+%token EQ LT GT LE GE
 %token <string> IDENT
 %token <int> INT_LITERAL
 %token EOF
@@ -45,6 +46,9 @@ let rec list_literal alloc elems =
 
 %left BAR
 %right CONS
+%left OR
+%left AND
+%nonassoc EQ LT GT LE GE
 %left PLUS MINUS
 %left TIMES
 %right ARROW
@@ -80,7 +84,24 @@ expr_assign:
   | expr_cons { $1 }
 
 expr_cons:
-  | expr_sum CONS expr_cons { ListCons (Heap, $1, $3) }
+  | STACK expr_or CONS expr_cons { ListCons (Stack, $2, $4) }
+  | expr_or CONS expr_cons { ListCons (Heap, $1, $3) }
+  | expr_or { $1 }
+
+expr_or:
+  | expr_or OR expr_and { BoolOr ($1, $3) }
+  | expr_and { $1 }
+
+expr_and:
+  | expr_and AND expr_cmp { BoolAnd ($1, $3) }
+  | expr_cmp { $1 }
+
+expr_cmp:
+  | expr_cmp EQ expr_sum { IntEq ($1, $3) }
+  | expr_cmp LT expr_sum { IntLt ($1, $3) }
+  | expr_cmp LE expr_sum { IntLe ($1, $3) }
+  | expr_cmp GT expr_sum { IntGt ($1, $3) }
+  | expr_cmp GE expr_sum { IntGe ($1, $3) }
   | expr_sum { $1 }
 
 expr_sum:
@@ -94,6 +115,7 @@ expr_mul:
 
 expr_unary:
   | MINUS expr_unary { IntNeg $2 }
+  | NOT expr_unary { BoolNot $2 }
   | expr_app { $1 }
 
 expr_app:
@@ -104,10 +126,13 @@ expr_atom:
   | BANG expr_atom { Deref $2 }
   | IDENT { Var $1 }
   | UNIT { Unit }
+  | TRUE { Bool true }
+  | FALSE { Bool false }
   | LBRACKET list_items_opt RBRACKET { list_literal Heap $2 }
   | STACK LBRACKET list_items_opt RBRACKET { list_literal Stack $3 }
   | INT_LITERAL { Int $1 }
   | QUESTION { Hole }
+  | IF expr THEN expr ELSE expr { If ($2, $4, $6) }
   | ABSURD expr { Absurd $2 }
   | REGION expr { Region $2 }
   | LEFT LPAREN expr RPAREN { Inl (Heap, $3) }
@@ -181,6 +206,7 @@ ty_prod:
 ty_atom:
   | UNIT { TyUnit }
   | EMPTY { TyEmpty }
+  | BOOL { TyBool }
   | LIST ty_atom { TyList ($2, default_storage_mode) }
   | LIST mode_list ty_atom { TyList ($3, storage_mode_from_list $2) }
   | INT { TyInt }

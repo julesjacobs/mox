@@ -21,6 +21,11 @@ let rec string_of_expr = function
         Printf.sprintf "(%s %s = %s in %s)"
         (bind_prefix kind) x (string_of_expr e1) (string_of_expr e2)
   | Unit -> "unit"
+  | Bool true -> "true"
+  | Bool false -> "false"
+  | If (cond, t_branch, e_branch) ->
+      Printf.sprintf "(if %s then %s else %s)"
+        (string_of_expr cond) (string_of_expr t_branch) (string_of_expr e_branch)
   | ListNil -> "[]"
   | ListCons (alloc, head, tail) ->
       Printf.sprintf "(%s%s :: %s)"
@@ -37,6 +42,21 @@ let rec string_of_expr = function
   | IntMul (lhs, rhs) ->
       Printf.sprintf "(%s * %s)" (string_of_expr lhs) (string_of_expr rhs)
   | IntNeg e -> Printf.sprintf "(-%s)" (string_of_expr e)
+  | IntEq (lhs, rhs) ->
+      Printf.sprintf "(%s == %s)" (string_of_expr lhs) (string_of_expr rhs)
+  | IntLt (lhs, rhs) ->
+      Printf.sprintf "(%s < %s)" (string_of_expr lhs) (string_of_expr rhs)
+  | IntLe (lhs, rhs) ->
+      Printf.sprintf "(%s <= %s)" (string_of_expr lhs) (string_of_expr rhs)
+  | IntGt (lhs, rhs) ->
+      Printf.sprintf "(%s > %s)" (string_of_expr lhs) (string_of_expr rhs)
+  | IntGe (lhs, rhs) ->
+      Printf.sprintf "(%s >= %s)" (string_of_expr lhs) (string_of_expr rhs)
+  | BoolAnd (lhs, rhs) ->
+      Printf.sprintf "(%s and %s)" (string_of_expr lhs) (string_of_expr rhs)
+  | BoolOr (lhs, rhs) ->
+      Printf.sprintf "(%s or %s)" (string_of_expr lhs) (string_of_expr rhs)
+  | BoolNot e -> Printf.sprintf "(not %s)" (string_of_expr e)
   | Hole -> "?"
   | Absurd e -> Printf.sprintf "(absurd %s)" (string_of_expr e)
   | Fun (stack, x, e) ->
@@ -66,6 +86,7 @@ let rec string_of_expr = function
 and string_of_ty = function
   | TyUnit -> "unit"
   | TyEmpty -> "empty"
+  | TyBool -> "bool"
   | TyInt -> "int"
   | TyArrow (t1, modes, t2) ->
       let parts =
