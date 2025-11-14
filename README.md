@@ -13,6 +13,7 @@ expr ::=
   | $fun x => expr | $rec f x => expr         -- stack-allocated closures
   | expr expr                                 -- application
   | let x = expr in expr                      -- shared binding
+  | let (x, y) = expr in expr                -- pair bind
   | let! (x, y) = expr in expr                -- destructive pair bind
   | borrow x = expr for y = expr in expr      -- temporary unique borrow
   | if expr then expr else expr | absurd expr -- control flow/elimination for empty
