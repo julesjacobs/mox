@@ -692,13 +692,6 @@ let rec ty_of_ast (ty_syntax : Ast.ty) : ty =
       let future' = future_mode_of_ast future in
       TyArrow (domain', future', codomain')
 
-let top_mode_vars () : mode_vars =
-  { uniqueness = const_uniqueness_var Uniqueness.top_in;
-    contention = const_contention_var Contention.top_in;
-    linearity = const_linearity_var Linearity.top_in;
-    portability = const_portability_var Portability.top_in;
-    areality = const_areality_var Areality.top_in }
-
 (* -------------------------------------------------------------------------- *)
 (* Pretty-printing inference types.                                           *)
 
