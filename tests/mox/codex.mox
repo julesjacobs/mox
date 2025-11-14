@@ -130,13 +130,13 @@ fork unit
 > unit
 
 let shared = ref unit in (shared, shared)
-> ((ref[c=contended] unit) *[u=u1 a=a1] (ref[c=contended] unit))
+> ((ref[c=uncontended] unit) *[u=u1 a=a1] (ref[c=uncontended] unit))
 > mode vars
 >   a1 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}
 
 let shared = ref unit in let alias = shared in (shared, alias)
-> ((ref[c=contended] unit) *[u=u1 a=a1] (ref[c=contended] unit))
+> ((ref[c=uncontended] unit) *[u=u1 a=a1] (ref[c=uncontended] unit))
 > mode vars
 >   a1 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}
@@ -195,7 +195,7 @@ let shared = ((unit, unit) : (unit *[unique] unit)) in fork (let shared2 = share
 > error: outer_equiv: not equivalent
 
 let shared = ref unit in let _ = shared := unit in shared
-> error: relation became empty
+> (ref[c=uncontended] unit)
 
 let shared = ref unit in fork (let alias = shared in alias := unit)
 > error: relation became empty
@@ -222,10 +222,12 @@ let r = region (ref unit) in fork (let x = !r in x)
 > error: relation became empty
 
 let f = fun x => (x, x) in f (ref unit)
-> ((ref[c=contended] unit) *[u=u1 a=a1] (ref[c=contended] unit))
+> ((ref[c=c2] unit) *[u=u1 a=a1] (ref[c=c1] unit))
 > mode vars
+>   c1 ∈ {contended, shared, uncontended}
 >   a1 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}
+>   c2 ∈ {contended, shared, uncontended}
 
 let refpair = ref (unit, unit) in let x = !refpair in let! (a,b) = x in a
 > error: relation became empty
@@ -271,7 +273,7 @@ let shared = ref unit in let mk = fun _ => shared in fork ((mk unit) := unit)
 > error: relation became empty
 
 let alias = ref unit in let pair = (alias, alias) in let (a,b) = pair in a := unit
-> error: relation became empty
+> unit
 
 let alias = ((unit, unit) : (unit *[unique] unit)) in let (a,b) = alias in (a,b)
 > (unit *[u=u1 a=a1] unit)

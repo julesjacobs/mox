@@ -74,20 +74,17 @@ let x = (region
 !r
 > error: relation became empty
 
-(* CR jujacobs: bug! *)
 let r = ref unit in 
 let s = (r, r) in 
 r := unit
-> error: relation became empty
+> unit
 
-(* Bug! Sharing the ref makes it contended, which is wrong! *)
 let r = ref unit in (r,r)
-> ((ref[c=contended] unit) *[u=u1 a=a1] (ref[c=contended] unit))
+> ((ref[c=uncontended] unit) *[u=u1 a=a1] (ref[c=uncontended] unit))
 > mode vars
 >   a1 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}
 
-(* Two separate refs keep it uncontended, which is correct!  So the problem is really sharing. *)
 let r1 = ref unit in 
 let r2 = ref unit in 
 (r1, r2)

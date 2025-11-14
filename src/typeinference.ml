@@ -577,8 +577,8 @@ and assert_alias source target =
       assert_alias source_left target_left;
       assert_alias source_right target_right;
   | TyRef (source_payload, source_mode), TyRef (target_payload, target_mode) ->
-      assert_contended target_mode.contention;
       assert_alias source_payload target_payload;
+      assert_equal_in Modesolver.Contention.assert_leq_to source_mode.contention target_mode.contention;
   | TyArrow (_source_domain, source_future, _source_codomain), TyArrow (_target_domain, target_future, _target_codomain) ->
       (* Assert that linearity is many for aliased functions.*)
       Modesolver.Linearity.restrict_domain [Linearity.many] source_future.linearity;
