@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mox Playground</title>
+    <style>
+      :root {
+        color-scheme: dark light;
+        font-family: "Inter", "SF Pro Display", system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        background-color: #0f111a;
+        color: #f0f3ff;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        background: radial-gradient(circle at top, #1b2431, #090b12 60%);
+      }
+
+      header {
+        padding: 1rem 1.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      h1 {
+        font-size: 1.2rem;
+        margin: 0;
+        font-weight: 600;
+      }
+
+      button {
+        border: none;
+        background: #4f46e5;
+        color: white;
+        padding: 0.6rem 1.2rem;
+        border-radius: 0.4rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s ease, transform 0.1s ease;
+      }
+
+      button:disabled {
+        opacity: 0.65;
+        cursor: wait;
+      }
+
+      button:not(:disabled):hover {
+        background: #6366f1;
+      }
+
+      button:not(:disabled):active {
+        transform: translateY(1px);
+      }
+
+      #status {
+        flex: 1;
+        min-width: 200px;
+        font-family: "JetBrains Mono", "SFMono-Regular", Menlo, Monaco, monospace;
+        font-size: 0.85rem;
+        color: #a8b3cf;
+        transition: color 0.3s ease, opacity 0.4s ease;
+        opacity: 1;
+      }
+
+      #status.ready {
+        color: #34d399;
+      }
+
+      #status.error {
+        color: #f87171;
+      }
+
+      #status.busy {
+        color: #fdba74;
+      }
+
+      #editor-container {
+        flex: 1;
+        min-height: 0;
+        padding: 0 1.5rem 1.5rem 1.5rem;
+      }
+
+      #status.dimmed {
+        opacity: 0;
+      }
+
+      #editor {
+        width: 100%;
+        height: calc(100vh - 120px);
+        border-radius: 0.6rem;
+        overflow: hidden;
+        border: 1px solid #23273a;
+        background: #0f111a;
+        padding-top: 0.75rem;
+        box-sizing: border-box;
+        position: relative;
+      }
+
+      #editor::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 0.75rem;
+        background: inherit;
+        transition: background 0.3s ease;
+        pointer-events: none;
+      }
+
+      #editor.processing::before {
+        background: radial-gradient(circle at 25% 0, rgba(99, 102, 241, 0.12), #13192b);
+      }
+
+      #editor .monaco-editor-background,
+      #editor .monaco-editor,
+      #editor .monaco-editor .margin {
+        transition: background 0.3s ease, background-color 0.3s ease;
+        background: #0f111a !important;
+      }
+
+      #editor.processing .monaco-editor-background,
+      #editor.processing .monaco-editor,
+      #editor.processing .monaco-editor .margin {
+        background: radial-gradient(circle at 25% 0, rgba(99, 102, 241, 0.12), #13192b) !important;
+      }
+    </style>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+    <script defer src="./mox_playground.bc.wasm.js"></script>
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <header>
+      <h1>Mox Playground</h1>
+      <button id="process"><span id="shortcut-hint">Process buffer (⌘/Ctrl + Enter)</span></button>
+      <div id="status">Waiting for WebAssembly build…</div>
+    </header>
+    <section id="editor-container">
+      <div id="editor"></div>
+    </section>
+  </body>
+</html>

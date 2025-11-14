@@ -1,0 +1,13 @@
+(executable
+ (name mox_playground)
+ (modules mox_playground)
+ (libraries mox js_of_ocaml)
+ (preprocess (pps js_of_ocaml-ppx))
+ (modes exe byte js))
+
+(rule
+ (alias wasm)
+ (targets mox_playground.bc.wasm.js (dir mox_playground.bc.wasm.assets))
+ (deps mox_playground.bc)
+ (action
+  (bash "set -euo pipefail\nset -- %{targets}\nwasm_of_ocaml compile -o \"$1\" %{deps}")))

@@ -1,0 +1,48 @@
+(* Stack allocated pair cannot escape from region *)
+region $(1,2)
+> error: relation became empty
+
+(* Normal pairs can *)
+region (1,2)
+> (int *[u=u1 a=global] int)
+> mode vars
+>   u1 ∈ {aliased, unique}
+
+(* Automatic modalities: can store global data in stack allocated data *)
+region
+  let x = (1,2) in
+  let y = $(x,x) in
+  let (a,b) = y in a
+> (int *[u=aliased a=global] int)
+
+(* The reverse is not allowed *)
+region
+  let x = $(1,2) in
+  let y = (x,x) in
+  let (a,b) = y in a
+> error: relation became empty
+
+(* Destructive pair matching is only allowed on unique pairs *)
+let x = (1,2) in 
+let! (a,b) = x in a
+> int
+
+(* Not allowed on aliased pairs *)
+let x = (1,2) in
+let y = (x,x) in
+let! (a,b) = x in a
+> error: relation became empty
+
+(* We can store aliased data in unique data *)
+let x = (1,2) in
+let y = (x,x) in
+let! (a,b) = y in a
+> (int *[u=aliased a=a1] int)
+> mode vars
+>   a1 ∈ {borrowed, global, local, regional}
+
+(* Concurrency: catching data races *)
+let r = ref 3 in
+let g = fun x => r := !r + x in
+let _ = fork (g 1) in g 2
+> error: assert_lock: not equivalent
