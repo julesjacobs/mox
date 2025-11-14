@@ -55,6 +55,7 @@ let restrict_domain_generic domain var =
   assert_predicate_generic diag var
 
 let new_var = new_var_internal
+let id var = var.id
 let assert_relation = assert_relation_generic
 let get_relation = get_relation_generic
 let assert_predicate = assert_predicate_generic

@@ -5,7 +5,7 @@ module ModeInfoSet = Set.Make (String)
 
 module ModeName = struct
   type t =
-    { tbl : (Obj.t, string) Hashtbl.t;
+    { tbl : (Intsolver.var, string) Hashtbl.t;
       mutable counter : int;
       prefix : string }
 
@@ -13,7 +13,7 @@ module ModeName = struct
     { tbl = Hashtbl.create 16; counter = 0; prefix }
 
   let name t var =
-    let key = Obj.repr var in
+    let key = Modesolver.id var in
     match Hashtbl.find_opt t.tbl key with
     | Some n -> n
     | None ->

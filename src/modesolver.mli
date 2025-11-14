@@ -6,6 +6,7 @@ type 'a var
 type 'a mode_var = 'a var
 
 val new_var : encode:('a -> int) -> decode:(int -> 'a) -> domain:'a list -> 'a var
+val id : 'a var -> Intsolver.var
 val assert_relation : ('a, 'b) Relations.t -> 'a var -> 'b var -> unit
 val get_relation : 'a var -> 'b var -> ('a, 'b) Relations.t
 val assert_predicate : ('a, 'a) Relations.t -> 'a var -> unit
