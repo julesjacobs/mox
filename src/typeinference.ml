@@ -157,23 +157,16 @@ let force_future_local (future : future_mode) =
 
 let force_storage_unique (storage : storage_mode) =
   Modesolver.Uniqueness.restrict_domain [Uniqueness.unique] storage.uniqueness
-let const_uniqueness_var value =
-  Modesolver.Uniqueness.new_var ~domain:[value] ()
-
-let const_contention_var value =
-  Modesolver.Contention.new_var ~domain:[value] ()
-
-let const_areality_var value =
-  Modesolver.Areality.new_var ~domain:[value] ()
-
-let const_linearity_var value =
-  Modesolver.Linearity.new_var ~domain:[value] ()
-
-let const_portability_var value =
-  Modesolver.Portability.new_var ~domain:[value] ()
+module Mode_consts = struct
+  let uniqueness value = Modesolver.Uniqueness.new_var ~domain:[value] ()
+  let contention value = Modesolver.Contention.new_var ~domain:[value] ()
+  let areality value = Modesolver.Areality.new_var ~domain:[value] ()
+  let linearity value = Modesolver.Linearity.new_var ~domain:[value] ()
+  let portability value = Modesolver.Portability.new_var ~domain:[value] ()
+end
 
 let const_ref_mode ~contention : ref_mode =
-  { contention = const_contention_var contention }
+  { contention = Mode_consts.contention contention }
 
 let precise_ref_mode () =
   const_ref_mode ~contention:Contention.uncontended
@@ -198,7 +191,7 @@ let many_mode_vars () : mode_vars =
 
 let global_mode_vars () : mode_vars =
   let mode = fresh_mode_vars () in
-  { mode with areality = const_areality_var Areality.global }
+  { mode with areality = Mode_consts.areality Areality.global }
 
 let fresh_meta_id =
   let counter = ref 0 in
@@ -560,16 +553,16 @@ and set_meta_solution meta ty =
 (* Converting annotated syntax *)
 
 let storage_mode_of_ast (storage : Ast.storage_mode) : storage_mode =
-  { uniqueness = const_uniqueness_var storage.uniqueness;
-    areality = const_areality_var storage.areality }
+  { uniqueness = Mode_consts.uniqueness storage.uniqueness;
+    areality = Mode_consts.areality storage.areality }
 
 let ref_mode_of_ast (mode : Ast.ref_mode) : ref_mode =
-  { contention = const_contention_var mode.contention }
+  { contention = Mode_consts.contention mode.contention }
 
 let future_mode_of_ast (future : Future.t) : future_mode =
-  { linearity = const_linearity_var future.linearity;
-    portability = const_portability_var future.portability;
-    areality = const_areality_var future.areality }
+  { linearity = Mode_consts.linearity future.linearity;
+    portability = Mode_consts.portability future.portability;
+    areality = Mode_consts.areality future.areality }
 
 let rec ty_of_ast (ty_syntax : Ast.ty) : ty =
   match ty_syntax with
@@ -1282,7 +1275,7 @@ let rec infer_with_env env expr =
     let ref_ty = infer_with_env env e in
     let payload = TyMeta (fresh_meta ()) in
     let ref_mode =
-      { contention = const_contention_var Contention.shared }
+      { contention = Mode_consts.contention Contention.shared }
     in
     let expected = mk_ref payload ref_mode in
     assert_subtype ref_ty expected;
@@ -1292,7 +1285,7 @@ let rec infer_with_env env expr =
     let rhs_ty = infer_with_env env rhs in
     let payload = TyMeta (fresh_meta ()) in
     let ref_mode =
-      { contention = const_contention_var Contention.uncontended }
+      { contention = Mode_consts.contention Contention.uncontended }
     in
     let expected = mk_ref payload ref_mode in
     assert_subtype lhs_ty expected;
@@ -1302,9 +1295,9 @@ let rec infer_with_env env expr =
     let fv = free_vars e in
     let captured_env = restrict_env env fv in
     let future =
-      { linearity = const_linearity_var Linearity.once;
-        portability = const_portability_var Portability.portable;
-        areality = const_areality_var Areality.global }
+      { linearity = Mode_consts.linearity Linearity.once;
+        portability = Mode_consts.portability Portability.portable;
+        areality = Mode_consts.areality Areality.global }
     in
     let locked_env = lock_env captured_env future in
     let body_ty = infer_with_env locked_env e in

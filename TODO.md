@@ -32,4 +32,7 @@
 
 # Codex todolist
 
-[add todolist here]
+- DRY inference env splitting: introduce helper(s) for split/infer of binary expressions.
+- Centralize mode constant helpers (const_*_var) and share across constructors.
+- Reduce Menhir conflicts by tightening precedence/expr grammar now that BinOp exists.
+- Consider encapsulating intsolver state in an explicit context to avoid globals.
