@@ -29,12 +29,6 @@ let add_edge tbl src dst =
   if List.mem dst neighbors then ()
   else Hashtbl.replace tbl src (dst :: neighbors)
 
-let rec list_equal a b =
-  match (a, b) with
-  | [], [] -> true
-  | x :: xs, y :: ys -> x = y && list_equal xs ys
-  | _ -> false
-
 let add_relation_entry src dst rel =
   PairTbl.replace relation_tbl (src, dst) rel;
   add_edge outgoing src dst;
@@ -86,7 +80,7 @@ and restrict_domain queue v allowed =
   if allowed = [] then raise (Inconsistent "domain restriction emptied domain");
   let allowed = List.sort_uniq compare allowed in
   let current = domain v in
-  if list_equal allowed current then ()
+  if allowed = current then ()
   else (
     Hashtbl.replace domains v allowed;
     let outs = Hashtbl.find_opt outgoing v |> Option.value ~default:[] in
