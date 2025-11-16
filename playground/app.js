@@ -87,9 +87,14 @@ async function waitForPlayground(timeoutMs = 20000) {
 
 function injectScriptOnce(src) {
   return new Promise((resolve, reject) => {
-    const existing = Array.from(document.getElementsByTagName('script')).find(
-      (el) => el.src === src
-    );
+    const targetHref = new URL(src, document.baseURI).href;
+    const existing = Array.from(document.getElementsByTagName('script')).find((el) => {
+      try {
+        return el.src === targetHref;
+      } catch (_err) {
+        return false;
+      }
+    });
     if (existing) {
       if (window.MoxPlayground?.process) {
         resolve(src);
@@ -109,9 +114,14 @@ async function ensurePlaygroundLoader() {
   if (window.MoxPlayground?.process) {
     return;
   }
+  const pathname = window.location?.pathname || '';
+  const isNestedPlayground = pathname.includes('/playground');
+  const relRoot = isNestedPlayground ? '..' : '.';
   const candidates = [
+    `${relRoot}/_build/default/playground/mox_playground.bc.wasm.js`,
     '/_build/default/playground/mox_playground.bc.wasm.js',
-    './mox_playground.bc.wasm.js'
+    './mox_playground.bc.wasm.js',
+    `${relRoot}/playground/mox_playground.bc.wasm.js`
   ];
   let lastError = null;
   for (const src of candidates) {
