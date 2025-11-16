@@ -3,7 +3,7 @@
  (modules ast lexer parser pretty typeinference expect modes relations
    intsolver modesolver)
  (wrapped false)
- (flags (:standard -w -9-27-32-33-37-39)))
+ (flags (:standard -w -9-27-33-37-39)))
 
 (ocamllex lexer)
 (menhir

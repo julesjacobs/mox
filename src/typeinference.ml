@@ -188,11 +188,6 @@ let const_ref_mode ~contention : ref_mode =
 let precise_ref_mode () =
   const_ref_mode ~contention:Contention.uncontended
 
-let borrowed_future_mode () : future_mode =
-  { linearity = const_linearity_var Linearity.many;
-    portability = const_portability_var Portability.nonportable;
-    areality = const_areality_var Areality.borrowed }
-
 let nonborrowed_arealities =
   [ Areality.global; Areality.regional; Areality.local ]
 
@@ -233,9 +228,6 @@ let fresh_meta ?solution ?(constraints = []) () : meta =
 let add_constraint meta constraint_ =
   meta.constraints <- constraint_ :: meta.constraints
 
-let add_constraints meta constraints =
-  List.iter (add_constraint meta) constraints
-
 (* -------------------------------------------------------------------------- *)
 (* Mode helpers                                                               *)
 
@@ -254,9 +246,6 @@ let assert_future_leq_to (lower : future_mode) (upper : future_mode) =
 let assert_aliased (uniqueness : Modesolver.Uniqueness.var) =
   Modesolver.Uniqueness.restrict_domain [Uniqueness.aliased] uniqueness
 
-let assert_contended (contention : Modesolver.Contention.var) =
-  Modesolver.Contention.restrict_domain [Contention.contended] contention
-
 let assert_equal_in assert_leq var1 var2 =
   assert_leq var1 var2;
   assert_leq var2 var1
@@ -272,10 +261,7 @@ let string_of_error err = err
 
 let type_error message = raise (Error message)
 
-
-(* -------------------------------------------------------------------------- *)
-
-
+(* Probe for unused-value warnings; intentionally unused. *)
 let rec zonk ty =
   match ty with
   | TyMeta meta ->
@@ -738,12 +724,6 @@ let remember_cont_var state var =
 
 module IntSet = Set.Make (Int)
 
-let describe_uniqueness var = Modesolver.describe_var Modes.Uniqueness.to_string var
-let describe_areality var = Modesolver.describe_var Modes.Areality.to_string var
-let describe_linearity var = Modesolver.describe_var Modes.Linearity.to_string var
-let describe_portability var = Modesolver.describe_var Modes.Portability.to_string var
-let describe_contention var = Modesolver.describe_var Modes.Contention.to_string var
-
 let domain_to_string describe values =
   values
   |> List.map describe
@@ -800,41 +780,6 @@ let string_of_mode_vars state (mode_vars : mode_vars) =
     (render_lin state mode_vars.linearity)
     (render_port state mode_vars.portability)
     (render_are state mode_vars.areality)
-
-let add_entry (set : ModeInfoSet.t) acc entry =
-  if ModeInfoSet.mem entry set then set, acc
-  else ModeInfoSet.add entry set, entry :: acc
-
-let add_uni_var (set : ModeInfoSet.t) acc var =
-  add_entry set acc (Printf.sprintf "u: %s" (describe_uniqueness var))
-
-let add_are_var (set : ModeInfoSet.t) acc var =
-  add_entry set acc (Printf.sprintf "a: %s" (describe_areality var))
-
-let add_lin_var (set : ModeInfoSet.t) acc var =
-  add_entry set acc (Printf.sprintf "l: %s" (describe_linearity var))
-
-let add_port_var (set : ModeInfoSet.t) acc var =
-  add_entry set acc (Printf.sprintf "p: %s" (describe_portability var))
-
-let add_cont_var (set : ModeInfoSet.t) acc var =
-  add_entry set acc (Printf.sprintf "c: %s" (describe_contention var))
-
-let add_storage_mode (set : ModeInfoSet.t) acc (storage : storage_mode) =
-  let set, acc = add_uni_var set acc storage.uniqueness in
-  add_are_var set acc storage.areality
-
-let add_future_mode (set : ModeInfoSet.t) acc (future : future_mode) =
-  let set, acc = add_are_var set acc future.areality in
-  let set, acc = add_lin_var set acc future.linearity in
-  add_port_var set acc future.portability
-
-let add_mode_vars_record (set : ModeInfoSet.t) acc (mode_vars : mode_vars) =
-  let set, acc = add_uni_var set acc mode_vars.uniqueness in
-  let set, acc = add_cont_var set acc mode_vars.contention in
-  let set, acc = add_lin_var set acc mode_vars.linearity in
-  let set, acc = add_port_var set acc mode_vars.portability in
-  add_are_var set acc mode_vars.areality
 
 let rec string_of_ty_core state ty =
   match zonk ty with
