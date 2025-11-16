@@ -88,16 +88,34 @@ async function waitForPlayground(timeoutMs = 20000) {
 function registerLanguage(monaco) {
   monaco.languages.register({ id: 'mox' });
 
+  const MODE_WORDS = [
+    'unique',
+    'aliased',
+    'contended',
+    'shared',
+    'uncontended',
+    'local',
+    'regional',
+    'global',
+    'portable',
+    'nonportable',
+    'once',
+    'many',
+    'never'
+  ];
+
   monaco.languages.setMonarchTokensProvider('mox', {
     defaultToken: 'identifier',
     tokenPostfix: '.mox',
     keywords: [
       'let',
+      'let!',
       'in',
       'borrow',
       'for',
       'fun',
       'match',
+      'match!',
       'with',
       'ref',
       'fork',
@@ -107,6 +125,8 @@ function registerLanguage(monaco) {
       'region',
       'unit'
     ],
+    builtins: ['empty', 'true', 'false'],
+    modeWords: MODE_WORDS,
     brackets: [
       { open: '(', close: ')', token: 'delimiter.parenthesis' },
       { open: '[', close: ']', token: 'delimiter.bracket' },
@@ -115,19 +135,22 @@ function registerLanguage(monaco) {
     tokenizer: {
       root: [
         [/^\s*>.*$/, 'annotation'],
+        [/\blet!|\bmatch!/, 'keyword'],
         [/(\(\*).*(\*\))/, ['comment', 'comment']],
         [/\(\*/, 'comment', '@comment'],
         [/"([^"\\]|\\.)*"/, 'string'],
         [/\b\d+\b/, 'number'],
+        [/\[(?=[^\]]*(?:u=|a=|p=|l=|c=))/, { token: 'annotation', next: '@modeAnn' }],
         [/[a-zA-Z_][\w']*/, {
           cases: {
             '@keywords': 'keyword',
+            '@builtins': 'constant',
+            '@modeWords': 'type',
             '@default': 'identifier'
           }
         }],
-        [/\[.*?\]/, 'predefined'],
         [/[{}()\[\]]/, '@brackets'],
-        [/(?:->|=>|\||\+|\-|\*|=|:|,|!)/, 'operator'],
+        [/(?:->|=>|\||\+|\-|\*|=|:|,|!|\$)/, 'operator'],
         [/[,]/, 'delimiter'],
         [/\s+/, 'white']
       ],
@@ -136,6 +159,13 @@ function registerLanguage(monaco) {
         [/\*\)/, 'comment', '@pop'],
         [/\(\*/, 'comment', '@push'],
         [/[*()]/, 'comment']
+      ],
+      modeAnn: [
+        [/\]/, { token: 'annotation', next: '@pop' }],
+        [/\b(?:unique|aliased|contended|shared|uncontended|local|regional|global|portable|nonportable|once|many|never)\b/, 'type'],
+        [/[=,]/, 'operator'],
+        [/[^\]\s]+/, 'annotation'],
+        [/\s+/, 'white']
       ]
     }
   });
