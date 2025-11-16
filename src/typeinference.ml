@@ -302,31 +302,23 @@ let borrowed_future_mode () : future_mode =
 let nonborrowed_arealities =
   [ Areality.global; Areality.regional; Areality.local ]
 
-let top_mode_vars () : mode_vars =
-  fresh_mode_vars ()
-  (* { uniqueness = const_uniqueness_var Uniqueness.top_in;
-    contention = const_contention_var Contention.top_in;
-    linearity = const_linearity_var Linearity.top_in;
-    portability = const_portability_var Portability.top_in;
-    areality = Modesolver.Areality.new_var ~domain:nonborrowed_arealities () } *)
-
 let nonborrowed_mode_vars () : mode_vars =
-  let mode = top_mode_vars () in
+  let mode = fresh_mode_vars () in
   Modesolver.Areality.restrict_domain nonborrowed_arealities mode.areality;
   mode
 
 let borrowed_mode_vars () : mode_vars =
-  let mode = top_mode_vars () in
+  let mode = fresh_mode_vars () in
   Modesolver.Areality.restrict_domain [Areality.borrowed] mode.areality;
   mode
 
 let many_mode_vars () : mode_vars =
-  let mode = top_mode_vars () in
+  let mode = fresh_mode_vars () in
   Modesolver.Linearity.restrict_domain [Linearity.many] mode.linearity;
   mode
 
 let global_mode_vars () : mode_vars =
-  let mode = top_mode_vars () in
+  let mode = fresh_mode_vars () in
   { mode with areality = const_areality_var Areality.global }
 
 let fresh_meta_id =
@@ -521,22 +513,22 @@ let rec assert_in ty mode_vars =
 
 let mk_pair left storage right =
   let ty = TyPair (left, storage, right) in
-  assert_in ty (top_mode_vars ());
+  assert_in ty (fresh_mode_vars ());
   ty
 
 let mk_sum left storage right =
   let ty = TySum (left, storage, right) in
-  assert_in ty (top_mode_vars ());
+  assert_in ty (fresh_mode_vars ());
   ty
 
 let mk_list elem storage =
   let ty = TyList (elem, storage) in
-  assert_in ty (top_mode_vars ());
+  assert_in ty (fresh_mode_vars ());
   ty
 
 let mk_ref payload ref_mode =
   let ty = TyRef (payload, ref_mode) in
-  assert_in ty (top_mode_vars ());
+  assert_in ty (fresh_mode_vars ());
   ty
 
 let debug_lock_enabled =

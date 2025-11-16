@@ -28,3 +28,11 @@ If you change `.vscode/mox-syntax/syntaxes/mox.tmLanguage.json`, remember that C
 3. Reload the window (“Developer: Reload Window”) to flush the cached syntax data.
 
 Skipping these steps means the editors will continue using the previous grammar even though the repo files changed.
+
+# Agent Guidelines
+
+- After completing any task, trigger an audible notification using macOS `say`.
+  - Example: `say "Task complete"`
+  - Customize the phrase to describe which task was completed, but keep it short and clear.
+  - You do not need to explain your `say` usage in your final message -- the main purpose is to notify the user.
+- Always run the `.mox` tests using `./mox.sh` and inspect the git diff to check that behavior is adversely changed.
