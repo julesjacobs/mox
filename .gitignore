@@ -3,6 +3,8 @@
 
 # OCaml tooling
 /.merlin
+/rfr.md
+/src/parser.conflicts
 
 # LaTeX build artifacts
 *.aux
