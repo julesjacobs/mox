@@ -1,0 +1,2267 @@
+
+** Conflict (shift/reduce) in state 183.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+IF expr THEN expr ELSE
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+expr_mul 
+expr_unary 
+expr_app 
+expr_atom 
+IF expr THEN expr ELSE expr 
+                       expr_base 
+                       expr_assign 
+                       expr_cons 
+                       expr_or CONS expr_cons 
+                       expr_and 
+                       expr_cmp 
+                       expr_sum 
+                       expr_mul 
+                       expr_unary 
+                       expr_app 
+                       expr_atom 
+                       (?)
+
+** In state 183, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 183, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 181.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+IF expr THEN
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+expr_mul 
+expr_unary 
+expr_app 
+expr_atom 
+IF expr THEN expr ELSE expr 
+             expr_base 
+             expr_assign 
+             expr_cons 
+             expr_or CONS expr_cons 
+             expr_and 
+             expr_cmp 
+             expr_sum 
+             expr_mul 
+             expr_unary 
+             expr_app 
+             expr_atom 
+             (?)
+
+** In state 181, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 181, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 177.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+BORROW IDENT EQUAL expr FOR IDENT EQUAL expr IN
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+BORROW IDENT EQUAL expr FOR IDENT EQUAL expr IN expr 
+                                                expr_base 
+                                                expr_assign 
+                                                expr_cons 
+                                                expr_or CONS expr_cons 
+                                                expr_and 
+                                                expr_cmp 
+                                                expr_sum 
+                                                expr_mul 
+                                                expr_unary 
+                                                expr_app 
+                                                expr_atom 
+                                                (?)
+
+** In state 177, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 177, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 175.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+BORROW IDENT EQUAL expr FOR IDENT EQUAL
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+BORROW IDENT EQUAL expr FOR IDENT EQUAL expr IN expr 
+                                        expr_base 
+                                        expr_assign 
+                                        expr_cons 
+                                        expr_or CONS expr_cons 
+                                        expr_and 
+                                        expr_cmp 
+                                        expr_sum 
+                                        expr_mul 
+                                        expr_unary 
+                                        expr_app 
+                                        expr_atom 
+                                        (?)
+
+** In state 175, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 175, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 168.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+stack_prefix FUN IDENT FATARROW
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+stack_prefix FUN IDENT FATARROW expr 
+                                expr_base 
+                                expr_assign 
+                                expr_cons 
+                                expr_or CONS expr_cons 
+                                expr_and 
+                                expr_cmp 
+                                expr_sum 
+                                expr_mul 
+                                expr_unary 
+                                expr_app 
+                                expr_atom 
+                                (?)
+
+** In state 168, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 168, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 164.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+stack_prefix REC IDENT IDENT FATARROW
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+stack_prefix REC IDENT IDENT FATARROW expr 
+                                      expr_base 
+                                      expr_assign 
+                                      expr_cons 
+                                      expr_or CONS expr_cons 
+                                      expr_and 
+                                      expr_cmp 
+                                      expr_sum 
+                                      expr_mul 
+                                      expr_unary 
+                                      expr_app 
+                                      expr_atom 
+                                      (?)
+
+** In state 164, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 164, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 157.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+match_prefix expr WITH LBRACKET RBRACKET FATARROW expr BAR IDENT CONS IDENT FATARROW
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+match_prefix expr WITH LBRACKET RBRACKET FATARROW expr BAR IDENT CONS IDENT FATARROW expr 
+                                                                                     expr_base 
+                                                                                     expr_assign 
+                                                                                     expr_cons 
+                                                                                     expr_or CONS expr_cons 
+                                                                                     expr_and 
+                                                                                     expr_cmp 
+                                                                                     expr_sum 
+                                                                                     expr_mul 
+                                                                                     expr_unary 
+                                                                                     expr_app 
+                                                                                     expr_atom 
+                                                                                     (?)
+
+** In state 157, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 157, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 151.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+match_prefix expr WITH LBRACKET RBRACKET FATARROW
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+match_prefix expr WITH LBRACKET RBRACKET FATARROW expr BAR IDENT CONS IDENT FATARROW expr 
+                                                  expr_base 
+                                                  expr_assign 
+                                                  expr_cons 
+                                                  expr_or CONS expr_cons 
+                                                  expr_and 
+                                                  expr_cmp 
+                                                  expr_sum 
+                                                  expr_mul 
+                                                  expr_unary 
+                                                  expr_app 
+                                                  expr_atom 
+                                                  (?)
+
+** In state 151, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 151, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 147.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+match_prefix expr WITH LEFT LPAREN IDENT RPAREN FATARROW expr BAR RIGHT LPAREN IDENT RPAREN FATARROW
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+match_prefix expr WITH LEFT LPAREN IDENT RPAREN FATARROW expr BAR RIGHT LPAREN IDENT RPAREN FATARROW expr 
+                                                                                                     expr_base 
+                                                                                                     expr_assign 
+                                                                                                     expr_cons 
+                                                                                                     expr_or CONS expr_cons 
+                                                                                                     expr_and 
+                                                                                                     expr_cmp 
+                                                                                                     expr_sum 
+                                                                                                     expr_mul 
+                                                                                                     expr_unary 
+                                                                                                     expr_app 
+                                                                                                     expr_atom 
+                                                                                                     (?)
+
+** In state 147, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 147, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 140.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+match_prefix expr WITH LEFT LPAREN IDENT RPAREN FATARROW
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+match_prefix expr WITH LEFT LPAREN IDENT RPAREN FATARROW expr BAR RIGHT LPAREN IDENT RPAREN FATARROW expr 
+                                                         expr_base 
+                                                         expr_assign 
+                                                         expr_cons 
+                                                         expr_or CONS expr_cons 
+                                                         expr_and 
+                                                         expr_cmp 
+                                                         expr_sum 
+                                                         expr_mul 
+                                                         expr_unary 
+                                                         expr_app 
+                                                         expr_atom 
+                                                         (?)
+
+** In state 140, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 140, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 131.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+stack_prefix LBRACKET expr COMMA
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+expr_mul 
+expr_unary 
+expr_app 
+expr_atom 
+stack_prefix LBRACKET list_items_opt RBRACKET 
+                      list_items 
+                      expr COMMA list_items 
+                                 expr 
+                                 expr_base 
+                                 expr_assign 
+                                 expr_cons 
+                                 expr_or CONS expr_cons 
+                                 expr_and 
+                                 expr_cmp 
+                                 expr_sum 
+                                 expr_mul 
+                                 expr_unary 
+                                 expr_app 
+                                 expr_atom 
+                                 (?)
+
+** In state 131, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 131, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 126.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+stack_prefix LBRACKET
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+expr_mul 
+expr_unary 
+expr_app 
+expr_atom 
+stack_prefix LBRACKET list_items_opt RBRACKET 
+                      list_items 
+                      expr 
+                      expr_base 
+                      expr_assign 
+                      expr_cons 
+                      expr_or CONS expr_cons 
+                      expr_and 
+                      expr_cmp 
+                      expr_sum 
+                      expr_mul 
+                      expr_unary 
+                      expr_app 
+                      expr_atom 
+                      (?)
+
+** In state 126, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 126, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 123.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+stack_prefix LEFT LPAREN
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+expr_mul 
+expr_unary 
+expr_app 
+expr_atom 
+stack_prefix LEFT LPAREN expr RPAREN 
+                         expr_base 
+                         expr_assign 
+                         expr_cons 
+                         expr_or CONS expr_cons 
+                         expr_and 
+                         expr_cmp 
+                         expr_sum 
+                         expr_mul 
+                         expr_unary 
+                         expr_app 
+                         expr_atom 
+                         (?)
+
+** In state 123, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 123, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 120.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+bind_prefix IDENT EQUAL expr IN
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+bind_prefix IDENT EQUAL expr IN expr 
+                                expr_base 
+                                expr_assign 
+                                expr_cons 
+                                expr_or CONS expr_cons 
+                                expr_and 
+                                expr_cmp 
+                                expr_sum 
+                                expr_mul 
+                                expr_unary 
+                                expr_app 
+                                expr_atom 
+                                (?)
+
+** In state 120, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 120, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 118.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+bind_prefix IDENT EQUAL
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+bind_prefix IDENT EQUAL expr IN expr 
+                        expr_base 
+                        expr_assign 
+                        expr_cons 
+                        expr_or CONS expr_cons 
+                        expr_and 
+                        expr_cmp 
+                        expr_sum 
+                        expr_mul 
+                        expr_unary 
+                        expr_app 
+                        expr_atom 
+                        (?)
+
+** In state 118, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 118, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 115.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+bind_prefix LPAREN IDENT COMMA IDENT RPAREN EQUAL expr IN
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+bind_prefix LPAREN IDENT COMMA IDENT RPAREN EQUAL expr IN expr 
+                                                          expr_base 
+                                                          expr_assign 
+                                                          expr_cons 
+                                                          expr_or CONS expr_cons 
+                                                          expr_and 
+                                                          expr_cmp 
+                                                          expr_sum 
+                                                          expr_mul 
+                                                          expr_unary 
+                                                          expr_app 
+                                                          expr_atom 
+                                                          (?)
+
+** In state 115, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 115, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 113.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+bind_prefix LPAREN IDENT COMMA IDENT RPAREN EQUAL
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+bind_prefix LPAREN IDENT COMMA IDENT RPAREN EQUAL expr IN expr 
+                                                  expr_base 
+                                                  expr_assign 
+                                                  expr_cons 
+                                                  expr_or CONS expr_cons 
+                                                  expr_and 
+                                                  expr_cmp 
+                                                  expr_sum 
+                                                  expr_mul 
+                                                  expr_unary 
+                                                  expr_app 
+                                                  expr_atom 
+                                                  (?)
+
+** In state 113, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 113, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 104.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+stack_prefix LPAREN expr COMMA
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+expr_mul 
+expr_unary 
+expr_app 
+expr_atom 
+stack_prefix LPAREN expr COMMA expr RPAREN 
+                               expr_base 
+                               expr_assign 
+                               expr_cons 
+                               expr_or CONS expr_cons 
+                               expr_and 
+                               expr_cmp 
+                               expr_sum 
+                               expr_mul 
+                               expr_unary 
+                               expr_app 
+                               expr_atom 
+                               (?)
+
+** In state 104, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 104, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 101.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+expr_assign ASSIGN
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_assign ASSIGN expr_cons 
+                   expr_or CONS expr_cons 
+                   expr_and 
+                   expr_cmp 
+                   expr_sum 
+                   expr_mul 
+                   expr_unary 
+                   expr_app 
+                   expr_atom 
+                   (?)
+
+** In state 101, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 101, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 100.
+** Token involved: ASSIGN
+** This state is reached from expr_eof after reading:
+
+REGION expr_assign
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+(?)
+
+** In state 100, looking ahead at ASSIGN, shifting is permitted
+** because of the following sub-derivation:
+
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+expr_mul 
+expr_unary 
+expr_app 
+expr_atom 
+REGION expr 
+       expr_base 
+       expr_assign 
+       expr_assign . ASSIGN expr_cons 
+
+** In state 100, looking ahead at ASSIGN, reducing production
+** expr_base -> expr_assign
+** is permitted because of the following sub-derivation:
+
+expr_assign ASSIGN expr_cons // lookahead token appears
+expr_cons // lookahead token is inherited
+expr_or // lookahead token is inherited
+expr_and // lookahead token is inherited
+expr_cmp // lookahead token is inherited
+expr_sum // lookahead token is inherited
+expr_mul // lookahead token is inherited
+expr_unary // lookahead token is inherited
+expr_app // lookahead token is inherited
+expr_atom // lookahead token is inherited
+REGION expr // lookahead token is inherited
+       expr_base // lookahead token is inherited
+       expr_assign . 
+
+** Conflict (shift/reduce) in state 89.
+** Token involved: TIMES
+** This state is reached from expr_eof after reading:
+
+REGION expr_base COLON ty_prod
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+expr_mul 
+(?)
+
+** In state 89, looking ahead at TIMES, shifting is permitted
+** because of the following sub-derivation:
+
+expr_unary 
+expr_app 
+expr_atom 
+REGION expr 
+       expr_base COLON ty 
+                       ty_sum 
+                       ty_prod 
+                       ty_prod . TIMES ty_atom 
+
+** In state 89, looking ahead at TIMES, reducing production
+** ty_sum -> ty_prod
+** is permitted because of the following sub-derivation:
+
+expr_mul TIMES expr_unary // lookahead token appears
+expr_unary // lookahead token is inherited
+expr_app // lookahead token is inherited
+expr_atom // lookahead token is inherited
+REGION expr // lookahead token is inherited
+       expr_base COLON ty // lookahead token is inherited
+                       ty_sum // lookahead token is inherited
+                       ty_prod . 
+
+** Conflict (shift/reduce) in state 78.
+** Token involved: PLUS
+** This state is reached from expr_eof after reading:
+
+REGION expr_base COLON ty_sum
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+(?)
+
+** In state 78, looking ahead at PLUS, reducing production
+** ty -> ty_sum
+** is permitted because of the following sub-derivation:
+
+expr_sum PLUS expr_mul // lookahead token appears
+expr_mul // lookahead token is inherited
+expr_unary // lookahead token is inherited
+expr_app // lookahead token is inherited
+expr_atom // lookahead token is inherited
+REGION expr // lookahead token is inherited
+       expr_base COLON ty // lookahead token is inherited
+                       ty_sum . 
+
+** In state 78, looking ahead at PLUS, shifting is permitted
+** because of the following sub-derivation:
+
+expr_mul 
+expr_unary 
+expr_app 
+expr_atom 
+REGION expr 
+       expr_base COLON ty 
+                       ty_sum 
+                       ty_sum . PLUS ty_prod 
+
+** Conflict (shift/reduce) in state 61.
+** Token involved: COLON
+** This state is reached from expr_eof after reading:
+
+REGION expr_base
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+(?)
+
+** In state 61, looking ahead at COLON, reducing production
+** expr -> expr_base
+** is permitted because of the following sub-derivation:
+
+expr_base COLON ty // lookahead token appears
+expr_assign // lookahead token is inherited
+expr_cons // lookahead token is inherited
+expr_or // lookahead token is inherited
+expr_and // lookahead token is inherited
+expr_cmp // lookahead token is inherited
+expr_sum // lookahead token is inherited
+expr_mul // lookahead token is inherited
+expr_unary // lookahead token is inherited
+expr_app // lookahead token is inherited
+expr_atom // lookahead token is inherited
+REGION expr // lookahead token is inherited
+       expr_base . 
+
+** In state 61, looking ahead at COLON, shifting is permitted
+** because of the following sub-derivation:
+
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+expr_mul 
+expr_unary 
+expr_app 
+expr_atom 
+REGION expr 
+       expr_base . COLON ty 
+
+** Conflict (shift/reduce) in state 59.
+** Token involved: AND
+** This state is reached from expr_eof after reading:
+
+REGION expr_and
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+(?)
+
+** In state 59, looking ahead at AND, shifting is permitted
+** because of the following sub-derivation:
+
+expr_cmp 
+expr_sum 
+expr_mul 
+expr_unary 
+expr_app 
+expr_atom 
+REGION expr 
+       expr_base 
+       expr_assign 
+       expr_cons 
+       expr_or CONS expr_cons 
+       expr_and 
+       expr_and . AND expr_cmp 
+
+** In state 59, looking ahead at AND, reducing production
+** expr_or -> expr_and
+** is permitted because of the following sub-derivation:
+
+expr_and AND expr_cmp // lookahead token appears
+expr_cmp // lookahead token is inherited
+expr_sum // lookahead token is inherited
+expr_mul // lookahead token is inherited
+expr_unary // lookahead token is inherited
+expr_app // lookahead token is inherited
+expr_atom // lookahead token is inherited
+REGION expr // lookahead token is inherited
+       expr_base // lookahead token is inherited
+       expr_assign // lookahead token is inherited
+       expr_cons // lookahead token is inherited
+       expr_or // lookahead token is inherited
+       expr_and . 
+
+** Conflict (shift/reduce) in state 57.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+expr_or CONS
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+             expr_or CONS expr_cons 
+             expr_and 
+             expr_cmp 
+             expr_sum 
+             expr_mul 
+             expr_unary 
+             expr_app 
+             expr_atom 
+             (?)
+
+** In state 57, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 57, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 55.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+expr_and AND
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_and AND expr_cmp 
+             expr_sum 
+             expr_mul 
+             expr_unary 
+             expr_app 
+             expr_atom 
+             (?)
+
+** In state 55, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 55, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 52.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+expr_cmp EQ
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_cmp EQ expr_sum 
+            expr_mul 
+            expr_unary 
+            expr_app 
+            expr_atom 
+            (?)
+
+** In state 52, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 52, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 50.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+expr_cmp GE
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_cmp GE expr_sum 
+            expr_mul 
+            expr_unary 
+            expr_app 
+            expr_atom 
+            (?)
+
+** In state 50, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 50, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 48.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+expr_cmp GT
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_cmp GT expr_sum 
+            expr_mul 
+            expr_unary 
+            expr_app 
+            expr_atom 
+            (?)
+
+** In state 48, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 48, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 46.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+expr_cmp LE
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_cmp LE expr_sum 
+            expr_mul 
+            expr_unary 
+            expr_app 
+            expr_atom 
+            (?)
+
+** In state 46, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 46, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 44.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+expr_sum MINUS
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+expr_sum MINUS expr_mul 
+               expr_unary 
+               expr_app 
+               expr_atom 
+               (?)
+
+** In state 44, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 44, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 42.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+expr_cmp LT
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_cmp LT expr_sum 
+            expr_mul 
+            expr_unary 
+            expr_app 
+            expr_atom 
+            (?)
+
+** In state 42, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 42, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 41.
+** Tokens involved: LT LE GT GE EQ
+** The following explanations concentrate on token LT.
+** This state is reached from expr_eof after reading:
+
+REGION expr_cmp
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+(?)
+
+** In state 41, looking ahead at LT, reducing production
+** expr_and -> expr_cmp
+** is permitted because of the following sub-derivation:
+
+expr_cmp LT expr_sum // lookahead token appears
+expr_sum // lookahead token is inherited
+expr_mul // lookahead token is inherited
+expr_unary // lookahead token is inherited
+expr_app // lookahead token is inherited
+expr_atom // lookahead token is inherited
+REGION expr // lookahead token is inherited
+       expr_base // lookahead token is inherited
+       expr_assign // lookahead token is inherited
+       expr_cons // lookahead token is inherited
+       expr_or // lookahead token is inherited
+       expr_and // lookahead token is inherited
+       expr_cmp . 
+
+** In state 41, looking ahead at LT, shifting is permitted
+** because of the following sub-derivation:
+
+expr_sum 
+expr_mul 
+expr_unary 
+expr_app 
+expr_atom 
+REGION expr 
+       expr_base 
+       expr_assign 
+       expr_cons 
+       expr_or CONS expr_cons 
+       expr_and 
+       expr_cmp 
+       expr_cmp . LT expr_sum 
+
+** Conflict (shift/reduce) in state 39.
+** Tokens involved: UNIT TRUE STACK RIGHT REGION QUESTION LPAREN LEFT LBRACKET INT_LITERAL IF IDENT FALSE BANG ABSURD
+** The following explanations concentrate on token LPAREN.
+** This state is reached from expr_eof after reading:
+
+expr_app
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+expr_mul 
+expr_unary 
+expr_app 
+expr_app expr_atom 
+         (?)
+
+** In state 39, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 39, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 36.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+expr_mul TIMES
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+expr_mul 
+expr_mul TIMES expr_unary 
+               expr_app 
+               expr_atom 
+               (?)
+
+** In state 36, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 36, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 35.
+** Token involved: TIMES
+** This state is reached from expr_eof after reading:
+
+REGION expr_mul
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+expr_mul 
+(?)
+
+** In state 35, looking ahead at TIMES, shifting is permitted
+** because of the following sub-derivation:
+
+expr_unary 
+expr_app 
+expr_atom 
+REGION expr 
+       expr_base 
+       expr_assign 
+       expr_cons 
+       expr_or CONS expr_cons 
+       expr_and 
+       expr_cmp 
+       expr_sum 
+       expr_mul 
+       expr_mul . TIMES expr_unary 
+
+** In state 35, looking ahead at TIMES, reducing production
+** expr_sum -> expr_mul
+** is permitted because of the following sub-derivation:
+
+expr_mul TIMES expr_unary // lookahead token appears
+expr_unary // lookahead token is inherited
+expr_app // lookahead token is inherited
+expr_atom // lookahead token is inherited
+REGION expr // lookahead token is inherited
+       expr_base // lookahead token is inherited
+       expr_assign // lookahead token is inherited
+       expr_cons // lookahead token is inherited
+       expr_or // lookahead token is inherited
+       expr_and // lookahead token is inherited
+       expr_cmp // lookahead token is inherited
+       expr_sum // lookahead token is inherited
+       expr_mul . 
+
+** Conflict (shift/reduce) in state 34.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+expr_or OR
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_or OR expr_and 
+           expr_cmp 
+           expr_sum 
+           expr_mul 
+           expr_unary 
+           expr_app 
+           expr_atom 
+           (?)
+
+** In state 34, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 34, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 33.
+** Tokens involved: OR CONS
+** The following explanations concentrate on token OR.
+** This state is reached from expr_eof after reading:
+
+REGION expr_or
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+(?)
+
+** In state 33, looking ahead at OR, reducing production
+** expr_cons -> expr_or
+** is permitted because of the following sub-derivation:
+
+expr_or OR expr_and // lookahead token appears
+expr_and // lookahead token is inherited
+expr_cmp // lookahead token is inherited
+expr_sum // lookahead token is inherited
+expr_mul // lookahead token is inherited
+expr_unary // lookahead token is inherited
+expr_app // lookahead token is inherited
+expr_atom // lookahead token is inherited
+REGION expr // lookahead token is inherited
+       expr_base // lookahead token is inherited
+       expr_assign // lookahead token is inherited
+       expr_cons // lookahead token is inherited
+       expr_or . 
+
+** In state 33, looking ahead at OR, shifting is permitted
+** because of the following sub-derivation:
+
+expr_and 
+expr_cmp 
+expr_sum 
+expr_mul 
+expr_unary 
+expr_app 
+expr_atom 
+REGION expr 
+       expr_base 
+       expr_assign 
+       expr_cons 
+       expr_or CONS expr_cons 
+       expr_or . OR expr_and 
+
+** Conflict (shift/reduce) in state 32.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+stack_prefix LPAREN
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+expr_mul 
+expr_unary 
+expr_app 
+expr_atom 
+stack_prefix LPAREN expr COMMA expr RPAREN 
+                    expr_base 
+                    expr_assign 
+                    expr_cons 
+                    expr_or CONS expr_cons 
+                    expr_and 
+                    expr_cmp 
+                    expr_sum 
+                    expr_mul 
+                    expr_unary 
+                    expr_app 
+                    expr_atom 
+                    (?)
+
+** In state 32, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 32, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 30.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+expr_sum PLUS
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+expr_sum PLUS expr_mul 
+              expr_unary 
+              expr_app 
+              expr_atom 
+              (?)
+
+** In state 30, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 30, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 29.
+** Tokens involved: PLUS MINUS
+** The following explanations concentrate on token PLUS.
+** This state is reached from expr_eof after reading:
+
+REGION expr_sum
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+(?)
+
+** In state 29, looking ahead at PLUS, reducing production
+** expr_cmp -> expr_sum
+** is permitted because of the following sub-derivation:
+
+expr_sum PLUS expr_mul // lookahead token appears
+expr_mul // lookahead token is inherited
+expr_unary // lookahead token is inherited
+expr_app // lookahead token is inherited
+expr_atom // lookahead token is inherited
+REGION expr // lookahead token is inherited
+       expr_base // lookahead token is inherited
+       expr_assign // lookahead token is inherited
+       expr_cons // lookahead token is inherited
+       expr_or // lookahead token is inherited
+       expr_and // lookahead token is inherited
+       expr_cmp // lookahead token is inherited
+       expr_sum . 
+
+** In state 29, looking ahead at PLUS, shifting is permitted
+** because of the following sub-derivation:
+
+expr_mul 
+expr_unary 
+expr_app 
+expr_atom 
+REGION expr 
+       expr_base 
+       expr_assign 
+       expr_cons 
+       expr_or CONS expr_cons 
+       expr_and 
+       expr_cmp 
+       expr_sum 
+       expr_sum . PLUS expr_mul 
+
+** Conflict (shift/reduce) in state 27.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+match_prefix
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+match_prefix expr WITH LEFT LPAREN IDENT RPAREN FATARROW expr BAR RIGHT LPAREN IDENT RPAREN FATARROW expr 
+             expr_base 
+             expr_assign 
+             expr_cons 
+             expr_or CONS expr_cons 
+             expr_and 
+             expr_cmp 
+             expr_sum 
+             expr_mul 
+             expr_unary 
+             expr_app 
+             expr_atom 
+             (?)
+
+** In state 27, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 27, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 26.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+stack_prefix RIGHT LPAREN
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+expr_mul 
+expr_unary 
+expr_app 
+expr_atom 
+stack_prefix RIGHT LPAREN expr RPAREN 
+                          expr_base 
+                          expr_assign 
+                          expr_cons 
+                          expr_or CONS expr_cons 
+                          expr_and 
+                          expr_cmp 
+                          expr_sum 
+                          expr_mul 
+                          expr_unary 
+                          expr_app 
+                          expr_atom 
+                          (?)
+
+** In state 26, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 26, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 23.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+ABSURD
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+expr_mul 
+expr_unary 
+expr_app 
+expr_atom 
+ABSURD expr 
+       expr_base 
+       expr_assign 
+       expr_cons 
+       expr_or CONS expr_cons 
+       expr_and 
+       expr_cmp 
+       expr_sum 
+       expr_mul 
+       expr_unary 
+       expr_app 
+       expr_atom 
+       (?)
+
+** In state 23, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 23, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 22.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+BANG
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+expr_mul 
+expr_unary 
+expr_app 
+expr_atom 
+BANG expr_atom 
+     (?)
+
+** In state 22, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 22, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 21.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+BORROW IDENT EQUAL
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+BORROW IDENT EQUAL expr FOR IDENT EQUAL expr IN expr 
+                   expr_base 
+                   expr_assign 
+                   expr_cons 
+                   expr_or CONS expr_cons 
+                   expr_and 
+                   expr_cmp 
+                   expr_sum 
+                   expr_mul 
+                   expr_unary 
+                   expr_app 
+                   expr_atom 
+                   (?)
+
+** In state 21, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 21, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 17.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+FORK
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+FORK expr 
+     expr_base 
+     expr_assign 
+     expr_cons 
+     expr_or CONS expr_cons 
+     expr_and 
+     expr_cmp 
+     expr_sum 
+     expr_mul 
+     expr_unary 
+     expr_app 
+     expr_atom 
+     (?)
+
+** In state 17, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 17, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 15.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+IF
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+expr_mul 
+expr_unary 
+expr_app 
+expr_atom 
+IF expr THEN expr ELSE expr 
+   expr_base 
+   expr_assign 
+   expr_cons 
+   expr_or CONS expr_cons 
+   expr_and 
+   expr_cmp 
+   expr_sum 
+   expr_mul 
+   expr_unary 
+   expr_app 
+   expr_atom 
+   (?)
+
+** In state 15, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 15, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 9.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+LPAREN
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+expr_mul 
+expr_unary 
+expr_app 
+expr_atom 
+LPAREN expr RPAREN 
+       expr_base 
+       expr_assign 
+       expr_cons 
+       expr_or CONS expr_cons 
+       expr_and 
+       expr_cmp 
+       expr_sum 
+       expr_mul 
+       expr_unary 
+       expr_app 
+       expr_atom 
+       (?)
+
+** In state 9, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 9, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 8.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+MINUS
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+expr_mul 
+expr_unary 
+MINUS expr_unary 
+      expr_app 
+      expr_atom 
+      (?)
+
+** In state 8, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 8, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 7.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+NOT
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+expr_mul 
+expr_unary 
+NOT expr_unary 
+    expr_app 
+    expr_atom 
+    (?)
+
+** In state 7, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 7, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 5.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+REF
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+REF expr_base 
+    expr_assign 
+    expr_cons 
+    expr_or CONS expr_cons 
+    expr_and 
+    expr_cmp 
+    expr_sum 
+    expr_mul 
+    expr_unary 
+    expr_app 
+    expr_atom 
+    (?)
+
+** In state 5, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 5, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 4.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+REGION
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+expr_mul 
+expr_unary 
+expr_app 
+expr_atom 
+REGION expr 
+       expr_base 
+       expr_assign 
+       expr_cons 
+       expr_or CONS expr_cons 
+       expr_and 
+       expr_cmp 
+       expr_sum 
+       expr_mul 
+       expr_unary 
+       expr_app 
+       expr_atom 
+       (?)
+
+** In state 4, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 4, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 
+
+** Conflict (shift/reduce) in state 0.
+** Token involved: LPAREN
+** This state is reached from expr_eof after reading:
+
+
+
+** The derivations that appear below have the following common factor:
+** (The question mark symbol (?) represents the spot where the derivations begin to differ.)
+
+expr_eof 
+expr EOF 
+expr_base 
+expr_assign 
+expr_cons 
+expr_or CONS expr_cons 
+expr_and 
+expr_cmp 
+expr_sum 
+expr_mul 
+expr_unary 
+expr_app 
+expr_atom 
+(?)
+
+** In state 0, looking ahead at LPAREN, shifting is permitted
+** because of the following sub-derivation:
+
+. LPAREN expr RPAREN 
+
+** In state 0, looking ahead at LPAREN, reducing production
+** stack_prefix ->
+** is permitted because of the following sub-derivation:
+
+stack_prefix LPAREN expr COMMA expr RPAREN // lookahead token appears
+. 

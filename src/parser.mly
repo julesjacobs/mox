@@ -43,17 +43,35 @@ let rec list_literal alloc elems =
 %start <Ast.expr> expr_eof
 %start <Ast.ty> ty_eof
 %start <string list> modes_eof
-
-%left BAR
-%right CONS
+%type <Ast.bind_kind> bind_prefix
+%type <Ast.bind_kind> match_prefix
 %left OR
 %left AND
 %nonassoc EQ LT GT LE GE
 %left PLUS MINUS
 %left TIMES
-%right ARROW
 
 %%
+
+%inline open_lbracket:
+  | LBRACKET { () }
+
+%inline open_lparen:
+  | LPAREN { () }
+
+%inline open_inl:
+  | LEFT LPAREN { () }
+
+%inline open_inr:
+  | RIGHT LPAREN { () }
+
+%inline with_opt_stack(Open):
+  | Open       { Heap }
+  | STACK Open { Stack }
+
+%inline kw_with_opt_stack(Kw):
+  | Kw         { Heap }
+  | STACK Kw   { Stack }
 
 expr_eof:
   | expr EOF { $1 }
@@ -67,8 +85,8 @@ expr_base:
   | bind_prefix IDENT EQUAL expr IN expr { Let ($1, $2, $4, $6) }
   | bind_prefix LPAREN IDENT COMMA IDENT RPAREN EQUAL expr IN expr
       { LetPair ($1, $3, $5, $8, $10) }
-  | stack_prefix FUN IDENT FATARROW expr { Fun ($1, $3, $5) }
-  | stack_prefix REC IDENT IDENT FATARROW expr { FunRec ($1, $3, $4, $6) }
+  | kw_with_opt_stack(FUN) IDENT FATARROW expr { Fun ($1, $2, $4) }
+  | kw_with_opt_stack(REC) IDENT IDENT FATARROW expr { FunRec ($1, $2, $3, $5) }
   | match_prefix expr WITH LEFT LPAREN IDENT RPAREN FATARROW expr
       BAR RIGHT LPAREN IDENT RPAREN FATARROW expr
       { Match ($1, $2, $6, $9, $13, $16) }
@@ -84,7 +102,6 @@ expr_assign:
   | expr_cons { $1 }
 
 expr_cons:
-  | STACK expr_or CONS expr_cons { ListCons (Stack, $2, $4) }
   | expr_or CONS expr_cons { ListCons (Heap, $1, $3) }
   | expr_or { $1 }
 
@@ -128,19 +145,15 @@ expr_atom:
   | UNIT { Unit }
   | TRUE { Bool true }
   | FALSE { Bool false }
-  | LBRACKET list_items_opt RBRACKET { list_literal Heap $2 }
-  | STACK LBRACKET list_items_opt RBRACKET { list_literal Stack $3 }
+  | with_opt_stack(open_lbracket) list_items_opt RBRACKET { list_literal $1 $2 }
   | INT_LITERAL { Int $1 }
   | QUESTION { Hole }
   | IF expr THEN expr ELSE expr { If ($2, $4, $6) }
   | ABSURD expr { Absurd $2 }
   | REGION expr { Region $2 }
-  | LEFT LPAREN expr RPAREN { Inl (Heap, $3) }
-  | STACK LEFT LPAREN expr RPAREN { Inl (Stack, $4) }
-  | RIGHT LPAREN expr RPAREN { Inr (Heap, $3) }
-  | STACK RIGHT LPAREN expr RPAREN { Inr (Stack, $4) }
-  | LPAREN expr COMMA expr RPAREN { Pair (Heap, $2, $4) }
-  | STACK LPAREN expr COMMA expr RPAREN { Pair (Stack, $3, $5) }
+  | with_opt_stack(open_inl) expr RPAREN { Inl ($1, $2) }
+  | with_opt_stack(open_inr) expr RPAREN { Inr ($1, $2) }
+  | with_opt_stack(open_lparen) expr COMMA expr RPAREN { Pair ($1, $2, $4) }
   | LPAREN expr RPAREN { $2 }
 
 list_items_opt:
@@ -150,10 +163,6 @@ list_items_opt:
 list_items:
   | expr { [ $1 ] }
   | expr COMMA list_items { $1 :: $3 }
-
-stack_prefix:
-  | STACK { Stack }
-  | /* empty */ { Heap }
 
 bind_prefix:
   | LET { Regular }

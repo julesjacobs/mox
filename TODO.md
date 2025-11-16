@@ -30,6 +30,12 @@
 
 - Allow users to introduce new mode axes and points on those axes
 
+# Make stack allocation more general
+
+- Allow data to escape to parent region if it was allocated there
+- Allow it to work with mutable data
+- Investigate traditional region systems
+
 # Codex todolist
 
 - Reduce Menhir conflicts by tightening precedence/expr grammar now that BinOp exists.
