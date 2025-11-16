@@ -157,6 +157,17 @@ let force_future_local (future : future_mode) =
 
 let force_storage_unique (storage : storage_mode) =
   Modesolver.Uniqueness.restrict_domain [Uniqueness.unique] storage.uniqueness
+
+(* Monotone: de-duplicate identical patterns across constructors. *)
+let fresh_storage ~alloc () =
+  let s = fresh_storage_mode () in
+  (match alloc with Ast.Stack -> force_storage_local s | Ast.Heap -> ());
+  s
+
+let fresh_future ~alloc () =
+  let f = fresh_future_mode () in
+  (match alloc with Ast.Stack -> force_future_local f | Ast.Heap -> ());
+  f
 module Mode_consts = struct
   let uniqueness value = Modesolver.Uniqueness.new_var ~domain:[value] ()
   let contention value = Modesolver.Contention.new_var ~domain:[value] ()
@@ -1091,18 +1102,13 @@ let rec infer_with_env env expr =
       let storage = fresh_storage_mode () in
       mk_list elem_ty storage
   | Ast.ListCons (alloc, head, tail) ->
-      let head_fv = free_vars head in
-      let tail_fv = free_vars tail in
-      let env_head, env_tail = split_env env head_fv tail_fv in
-      let head_ty = infer_with_env env_head head in
-      let tail_ty = infer_with_env env_tail tail in
-      let elem_ty = TyMeta (fresh_meta ()) in
-      let storage = fresh_storage_mode () in
-      let () =
-        match alloc with
-        | Ast.Stack -> force_storage_local storage
-        | Ast.Heap -> ()
+      let head_ty, tail_ty =
+        let fv_h = free_vars head and fv_t = free_vars tail in
+        let env_h, env_t = split_env env fv_h fv_t in
+        infer_with_env env_h head, infer_with_env env_t tail
       in
+      let elem_ty = TyMeta (fresh_meta ()) in
+      let storage = fresh_storage ~alloc () in
       let list_ty = mk_list elem_ty storage in
       assert_subtype head_ty elem_ty;
       assert_subtype elem_ty head_ty;
@@ -1133,12 +1139,7 @@ let rec infer_with_env env expr =
       ty_join
   | Ast.Int _ -> TyInt
   | Ast.BinOp (lhs, op, rhs) ->
-      let fv_lhs = free_vars lhs in
-      let fv_rhs = free_vars rhs in
-      let env_lhs, env_rhs = split_env env fv_lhs fv_rhs in
-      let ty_lhs = infer_with_env env_lhs lhs in
-      let ty_rhs = infer_with_env env_rhs rhs in
-      infer_binop op ty_lhs ty_rhs
+      infer_split env lhs rhs (infer_binop op)
   | Ast.IntNeg e ->
       let ty = infer_with_env env e in
       assert_subtype ty TyInt;
@@ -1149,8 +1150,7 @@ let rec infer_with_env env expr =
       TyBool
   | Ast.FunRec (alloc, f, x, body) ->
       let ty_param = TyMeta (fresh_meta ()) in
-      let future = fresh_future_mode () in
-      let () = match alloc with Ast.Stack -> force_future_local future | Ast.Heap -> () in
+      let future = fresh_future ~alloc () in
       Modesolver.Linearity.restrict_domain [Linearity.many] future.linearity;
       let ty_cod = TyMeta (fresh_meta ()) in
       let fun_ty = TyArrow (ty_param, future, ty_cod) in
@@ -1163,29 +1163,16 @@ let rec infer_with_env env expr =
       assert_subtype ty_cod body_ty;
       fun_ty
   | Ast.Pair (alloc, e1, e2) ->
-    let left_fv = free_vars e1 in
-    let right_fv = free_vars e2 in
-    let env_left, env_right = split_env env left_fv right_fv in
-    let ty1 = infer_with_env env_left e1 in
-    let ty2 = infer_with_env env_right e2 in
-    let storage = fresh_storage_mode () in
-    let () = match alloc with Ast.Stack -> force_storage_local storage | Ast.Heap -> () in
-    let ty = mk_pair ty1 storage ty2 in
-    ty
+      infer_split env e1 e2 (fun ty1 ty2 ->
+        mk_pair ty1 (fresh_storage ~alloc ()) ty2)
   | Ast.Inl (alloc, e) ->
-    let ty_left = infer_with_env env e in
-    let ty_right = TyMeta (fresh_meta ()) in
-    let storage = fresh_storage_mode () in
-    let () = match alloc with Ast.Stack -> force_storage_local storage | Ast.Heap -> () in
-    let ty = mk_sum ty_left storage ty_right in
-    ty
+      let ty_left = infer_with_env env e in
+      let ty_right = TyMeta (fresh_meta ()) in
+      mk_sum ty_left (fresh_storage ~alloc ()) ty_right
   | Ast.Inr (alloc, e) ->
-    let ty_left = TyMeta (fresh_meta ()) in
-    let ty_right = infer_with_env env e in
-    let storage = fresh_storage_mode () in
-    let () = match alloc with Ast.Stack -> force_storage_local storage | Ast.Heap -> () in
-    let ty = mk_sum ty_left storage ty_right in
-    ty
+      let ty_left = TyMeta (fresh_meta ()) in
+      let ty_right = infer_with_env env e in
+      mk_sum ty_left (fresh_storage ~alloc ()) ty_right
   | Ast.Hole -> TyMeta (fresh_meta ())
   | Ast.Absurd e ->
     let ty = infer_with_env env e in
@@ -1235,29 +1222,23 @@ let rec infer_with_env env expr =
     assert_subtype ty2 ty_join;
     ty_join
   | Ast.App (e1, e2) ->
-    let fn_fv = free_vars e1 in
-    let arg_fv = free_vars e2 in
-    let env_fn, env_arg = split_env env fn_fv arg_fv in
-    let ty1 = infer_with_env env_fn e1 in
-    let ty2 = infer_with_env env_arg e2 in
-    let ty_dom = TyMeta (fresh_meta ()) in
-    let ty_cod = TyMeta (fresh_meta ()) in
-    let future = fresh_future_mode () in
-    let ty_f = TyArrow (ty_dom, future, ty_cod) in
-    assert_subtype ty1 ty_f;
-    assert_subtype ty2 ty_dom;
-    ty_cod
+    infer_split env e1 e2 (fun ty1 ty2 ->
+      let ty_dom = TyMeta (fresh_meta ()) in
+      let ty_cod = TyMeta (fresh_meta ()) in
+      let future = fresh_future_mode () in
+      let ty_f = TyArrow (ty_dom, future, ty_cod) in
+      assert_subtype ty1 ty_f;
+      assert_subtype ty2 ty_dom;
+      ty_cod)
   | Ast.Fun (alloc, x, e) ->
     let ty_param = TyMeta (fresh_meta ()) in
-    let future = fresh_future_mode () in
-    let () = match alloc with Ast.Stack -> force_future_local future | Ast.Heap -> () in
+    let future = fresh_future ~alloc () in
     let captured_vars = free_vars_without e [ x ] in
     let captured_env = restrict_env env captured_vars in
     let locked_env = lock_env captured_env future in
     let env' = (x, ty_param) :: locked_env in
     let ty_body = infer_with_env env' e in
-    let ty_arrow = TyArrow (ty_param, future, ty_body) in
-    ty_arrow
+    TyArrow (ty_param, future, ty_body)
   | Ast.Annot (e, ty_syntax) ->
     let ty' = infer_with_env env e in
     let ty = ty_of_ast ty_syntax in
@@ -1303,6 +1284,14 @@ let rec infer_with_env env expr =
     let body_ty = infer_with_env locked_env e in
     assert_subtype body_ty TyUnit;
     TyUnit
+
+and infer_split env e1 e2 k =
+  (* Monotone: reduce duplication of split + infer for two expressions. *)
+  let fv1 = free_vars e1 and fv2 = free_vars e2 in
+  let env1, env2 = split_env env fv1 fv2 in
+  let t1 = infer_with_env env1 e1 in
+  let t2 = infer_with_env env2 e2 in
+  k t1 t2
 
 let infer expr =
   try infer_with_env [] expr with
