@@ -116,7 +116,7 @@ and constraint_ =
       { original : meta;
         locked : meta;
         future : future_mode }
-  | In of 
+  | In of
       { target : meta;
         mode_vars : mode_vars }
 
