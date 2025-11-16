@@ -114,10 +114,8 @@ let (x, y) = pair in x
 > ('c ->[a=a2 l=many p=p1] ('b *[u=u1 a=a1] 'a))
 > where
 >   'c alias 'd
->   'b <= 'd
 >   'd <= 'b
 >   'b in {u=u2; c=c1; l=l1; p=p2; a=a3}
->   'a <= 'd
 >   'd <= 'a
 >   'a in {u=u2; c=c1; l=l1; p=p2; a=a3}
 > mode vars

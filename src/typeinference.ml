@@ -1237,7 +1237,6 @@ let rec infer_with_env env expr =
     let env' = (f, fun_ty) :: (x, ty_param) :: locked_env in
     let body_ty = infer_with_env env' body in
     assert_subtype body_ty ty_cod;
-    assert_subtype ty_cod body_ty;
     fun_ty
   | Ast.Annot (e, ty_syntax) ->
     let ty' = infer_with_env env e in
