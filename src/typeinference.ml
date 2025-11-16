@@ -20,6 +20,8 @@ let rec free_vars expr =
       let fv_t = free_vars t_branch in
       let fv_e = free_vars e_branch in
       StringSet.union fv_cond (StringSet.union fv_t fv_e)
+  | Ast.BinOp (lhs, _, rhs) ->
+      StringSet.union (free_vars lhs) (free_vars rhs)
   | Ast.ListNil -> StringSet.empty
   | Ast.ListCons (_, head, tail) ->
       StringSet.union (free_vars head) (free_vars tail)
@@ -29,19 +31,7 @@ let rec free_vars expr =
       let fv_cons = free_vars_without cons_branch [ x; xs ] in
       StringSet.union fv_scrut (StringSet.union fv_nil fv_cons)
   | Ast.Int _ -> StringSet.empty
-  | Ast.IntAdd (lhs, rhs)
-  | Ast.IntSub (lhs, rhs)
-  | Ast.IntMul (lhs, rhs) ->
-      StringSet.union (free_vars lhs) (free_vars rhs)
   | Ast.IntNeg e -> free_vars e
-  | Ast.IntEq (lhs, rhs)
-  | Ast.IntLt (lhs, rhs)
-  | Ast.IntLe (lhs, rhs)
-  | Ast.IntGt (lhs, rhs)
-  | Ast.IntGe (lhs, rhs)
-  | Ast.BoolAnd (lhs, rhs)
-  | Ast.BoolOr (lhs, rhs) ->
-      StringSet.union (free_vars lhs) (free_vars rhs)
   | Ast.BoolNot e -> free_vars e
   | Ast.Hole -> StringSet.empty
   | Ast.Absurd e -> free_vars e
@@ -1045,6 +1035,21 @@ let lock_env env future =
      weakened capabilities allowed by [future]. *)
   List.map (fun (name, ty) -> (name, lock_type ty future)) env
 
+let infer_binop op ty_lhs ty_rhs =
+  match op with
+  | Ast.Add | Ast.Sub | Ast.Mul ->
+      assert_subtype ty_lhs TyInt;
+      assert_subtype ty_rhs TyInt;
+      TyInt
+  | Ast.Eq | Ast.Lt | Ast.Le | Ast.Gt | Ast.Ge ->
+      assert_subtype ty_lhs TyInt;
+      assert_subtype ty_rhs TyInt;
+      TyBool
+  | Ast.And | Ast.Or ->
+      assert_subtype ty_lhs TyBool;
+      assert_subtype ty_rhs TyBool;
+      TyBool
+
 
 let rec infer_with_env env expr = 
   match expr with
@@ -1134,44 +1139,17 @@ let rec infer_with_env env expr =
       assert_subtype ty_cons ty_join;
       ty_join
   | Ast.Int _ -> TyInt
-  | Ast.IntAdd (lhs, rhs)
-  | Ast.IntSub (lhs, rhs)
-  | Ast.IntMul (lhs, rhs) ->
+  | Ast.BinOp (lhs, op, rhs) ->
       let fv_lhs = free_vars lhs in
       let fv_rhs = free_vars rhs in
       let env_lhs, env_rhs = split_env env fv_lhs fv_rhs in
       let ty_lhs = infer_with_env env_lhs lhs in
       let ty_rhs = infer_with_env env_rhs rhs in
-      assert_subtype ty_lhs TyInt;
-      assert_subtype ty_rhs TyInt;
-      TyInt
+      infer_binop op ty_lhs ty_rhs
   | Ast.IntNeg e ->
       let ty = infer_with_env env e in
       assert_subtype ty TyInt;
       TyInt
-  | Ast.IntEq (lhs, rhs)
-  | Ast.IntLt (lhs, rhs)
-  | Ast.IntLe (lhs, rhs)
-  | Ast.IntGt (lhs, rhs)
-  | Ast.IntGe (lhs, rhs) ->
-      let fv_lhs = free_vars lhs in
-      let fv_rhs = free_vars rhs in
-      let env_lhs, env_rhs = split_env env fv_lhs fv_rhs in
-      let ty_lhs = infer_with_env env_lhs lhs in
-      let ty_rhs = infer_with_env env_rhs rhs in
-      assert_subtype ty_lhs TyInt;
-      assert_subtype ty_rhs TyInt;
-      TyBool
-  | Ast.BoolAnd (lhs, rhs)
-  | Ast.BoolOr (lhs, rhs) ->
-      let fv_lhs = free_vars lhs in
-      let fv_rhs = free_vars rhs in
-      let env_lhs, env_rhs = split_env env fv_lhs fv_rhs in
-      let ty_lhs = infer_with_env env_lhs lhs in
-      let ty_rhs = infer_with_env env_rhs rhs in
-      assert_subtype ty_lhs TyBool;
-      assert_subtype ty_rhs TyBool;
-      TyBool
   | Ast.BoolNot e ->
       let ty = infer_with_env env e in
       assert_subtype ty TyBool;

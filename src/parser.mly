@@ -89,28 +89,28 @@ expr_cons:
   | expr_or { $1 }
 
 expr_or:
-  | expr_or OR expr_and { BoolOr ($1, $3) }
+  | expr_or OR expr_and { BinOp ($1, Or, $3) }
   | expr_and { $1 }
 
 expr_and:
-  | expr_and AND expr_cmp { BoolAnd ($1, $3) }
+  | expr_and AND expr_cmp { BinOp ($1, And, $3) }
   | expr_cmp { $1 }
 
 expr_cmp:
-  | expr_cmp EQ expr_sum { IntEq ($1, $3) }
-  | expr_cmp LT expr_sum { IntLt ($1, $3) }
-  | expr_cmp LE expr_sum { IntLe ($1, $3) }
-  | expr_cmp GT expr_sum { IntGt ($1, $3) }
-  | expr_cmp GE expr_sum { IntGe ($1, $3) }
+  | expr_cmp EQ expr_sum { BinOp ($1, Eq, $3) }
+  | expr_cmp LT expr_sum { BinOp ($1, Lt, $3) }
+  | expr_cmp LE expr_sum { BinOp ($1, Le, $3) }
+  | expr_cmp GT expr_sum { BinOp ($1, Gt, $3) }
+  | expr_cmp GE expr_sum { BinOp ($1, Ge, $3) }
   | expr_sum { $1 }
 
 expr_sum:
-  | expr_sum PLUS expr_mul { IntAdd ($1, $3) }
-  | expr_sum MINUS expr_mul { IntSub ($1, $3) }
+  | expr_sum PLUS expr_mul { BinOp ($1, Add, $3) }
+  | expr_sum MINUS expr_mul { BinOp ($1, Sub, $3) }
   | expr_mul { $1 }
 
 expr_mul:
-  | expr_mul TIMES expr_unary { IntMul ($1, $3) }
+  | expr_mul TIMES expr_unary { BinOp ($1, Mul, $3) }
   | expr_unary { $1 }
 
 expr_unary:

@@ -26,6 +26,13 @@ let rec string_of_expr = function
   | If (cond, t_branch, e_branch) ->
       Printf.sprintf "(if %s then %s else %s)"
         (string_of_expr cond) (string_of_expr t_branch) (string_of_expr e_branch)
+  | BinOp (lhs, op, rhs) ->
+      let sym =
+        match op with
+        | Add -> "+" | Sub -> "-" | Mul -> "*" | Eq -> "==" | Lt -> "<"
+        | Le -> "<=" | Gt -> ">" | Ge -> ">=" | And -> "and" | Or -> "or"
+      in
+      Printf.sprintf "(%s %s %s)" (string_of_expr lhs) sym (string_of_expr rhs)
   | ListNil -> "[]"
   | ListCons (alloc, head, tail) ->
       Printf.sprintf "(%s%s :: %s)"
@@ -35,27 +42,7 @@ let rec string_of_expr = function
         (match_prefix kind) (string_of_expr scrutinee)
         (string_of_expr nil_branch) x xs (string_of_expr cons_branch)
   | Int n -> string_of_int n
-  | IntAdd (lhs, rhs) ->
-      Printf.sprintf "(%s + %s)" (string_of_expr lhs) (string_of_expr rhs)
-  | IntSub (lhs, rhs) ->
-      Printf.sprintf "(%s - %s)" (string_of_expr lhs) (string_of_expr rhs)
-  | IntMul (lhs, rhs) ->
-      Printf.sprintf "(%s * %s)" (string_of_expr lhs) (string_of_expr rhs)
   | IntNeg e -> Printf.sprintf "(-%s)" (string_of_expr e)
-  | IntEq (lhs, rhs) ->
-      Printf.sprintf "(%s == %s)" (string_of_expr lhs) (string_of_expr rhs)
-  | IntLt (lhs, rhs) ->
-      Printf.sprintf "(%s < %s)" (string_of_expr lhs) (string_of_expr rhs)
-  | IntLe (lhs, rhs) ->
-      Printf.sprintf "(%s <= %s)" (string_of_expr lhs) (string_of_expr rhs)
-  | IntGt (lhs, rhs) ->
-      Printf.sprintf "(%s > %s)" (string_of_expr lhs) (string_of_expr rhs)
-  | IntGe (lhs, rhs) ->
-      Printf.sprintf "(%s >= %s)" (string_of_expr lhs) (string_of_expr rhs)
-  | BoolAnd (lhs, rhs) ->
-      Printf.sprintf "(%s and %s)" (string_of_expr lhs) (string_of_expr rhs)
-  | BoolOr (lhs, rhs) ->
-      Printf.sprintf "(%s or %s)" (string_of_expr lhs) (string_of_expr rhs)
   | BoolNot e -> Printf.sprintf "(not %s)" (string_of_expr e)
   | Hole -> "?"
   | Absurd e -> Printf.sprintf "(absurd %s)" (string_of_expr e)

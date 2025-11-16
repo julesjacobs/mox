@@ -24,6 +24,18 @@ type ty =
   | TySum of ty * storage_mode * ty
   | TyRef of ty * ref_mode
 
+type bin_op =
+  | Add
+  | Sub
+  | Mul
+  | Eq
+  | Lt
+  | Le
+  | Gt
+  | Ge
+  | And
+  | Or
+
 (** Expressions as described in tex/mox.tex. *)
 type alloc =
   | Stack
@@ -41,21 +53,12 @@ type expr =
   | Unit
   | Bool of bool
   | If of expr * expr * expr
+  | BinOp of expr * bin_op * expr
   | ListNil
   | ListCons of alloc * expr * expr
   | MatchList of bind_kind * expr * expr * ident * ident * expr
   | Int of int
-  | IntAdd of expr * expr
-  | IntSub of expr * expr
-  | IntMul of expr * expr
   | IntNeg of expr
-  | IntEq of expr * expr
-  | IntLt of expr * expr
-  | IntLe of expr * expr
-  | IntGt of expr * expr
-  | IntGe of expr * expr
-  | BoolAnd of expr * expr
-  | BoolOr of expr * expr
   | BoolNot of expr
   | Hole
   | Absurd of expr
