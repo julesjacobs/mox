@@ -85,6 +85,49 @@ async function waitForPlayground(timeoutMs = 20000) {
   throw new Error('Timed out waiting for the WebAssembly bundle to load.');
 }
 
+function injectScriptOnce(src) {
+  return new Promise((resolve, reject) => {
+    const existing = Array.from(document.getElementsByTagName('script')).find(
+      (el) => el.src === src
+    );
+    if (existing) {
+      if (window.MoxPlayground?.process) {
+        resolve(src);
+        return;
+      }
+    }
+    const script = document.createElement('script');
+    script.defer = true;
+    script.src = src;
+    script.onload = () => resolve(src);
+    script.onerror = () => reject(new Error(`Failed to load ${src}`));
+    document.head.appendChild(script);
+  });
+}
+
+async function ensurePlaygroundLoader() {
+  if (window.MoxPlayground?.process) {
+    return;
+  }
+  const candidates = [
+    '/_build/default/playground/mox_playground.bc.wasm.js',
+    './mox_playground.bc.wasm.js'
+  ];
+  let lastError = null;
+  for (const src of candidates) {
+    try {
+      await injectScriptOnce(src);
+      if (window.MoxPlayground?.process) {
+        return;
+      }
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  const message = lastError?.message || 'Unable to load WebAssembly bundle.';
+  throw new Error(message);
+}
+
 function registerLanguage(monaco) {
   monaco.languages.register({ id: 'mox' });
 
@@ -296,8 +339,10 @@ async function loadEditorExamples() {
 
 async function boot() {
   try {
+    const monacoReady = loadMonaco();
+    await ensurePlaygroundLoader();
     const [monaco, playground, exampleBundle] = await Promise.all([
-      loadMonaco(),
+      monacoReady,
       waitForPlayground(),
       loadEditorExamples()
     ]);
