@@ -272,11 +272,6 @@ let string_of_error err = err
 
 let type_error message = raise (Error message)
 
-let assert_callable (future : future_mode) =
-  try Modesolver.Linearity.restrict_domain [Linearity.many; Linearity.once] future.linearity with
-  | Modesolver.Inconsistent _ ->
-      type_error "cannot call a function whose linearity is never"
-
 
 (* -------------------------------------------------------------------------- *)
 
@@ -1334,7 +1329,6 @@ let rec infer_with_env env expr =
     let future = fresh_future_mode () in
     let ty_f = TyArrow (ty_dom, future, ty_cod) in
     assert_subtype ty1 ty_f;
-    (* assert_callable future; -- disable `never` for now *)
     assert_subtype ty2 ty_dom;
     ty_cod
   | Ast.Fun (alloc, x, e) ->
