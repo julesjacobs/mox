@@ -257,23 +257,9 @@ let assert_aliased (uniqueness : Modesolver.Uniqueness.var) =
 let assert_contended (contention : Modesolver.Contention.var) =
   Modesolver.Contention.restrict_domain [Contention.contended] contention
 
-let alias_linearity_relation =
-  Relations.make
-    [ (Linearity.many, Linearity.many);
-      (Linearity.once, Linearity.never);
-      (Linearity.never, Linearity.never) ]
-
 let assert_equal_in assert_leq var1 var2 =
   assert_leq var1 var2;
   assert_leq var2 var1
-
-let assert_equal_areality (left : Modesolver.Areality.var) (right : Modesolver.Areality.var) =
-  Modesolver.Areality.assert_leq_to left right;
-  Modesolver.Areality.assert_leq_to right left
-
-let assert_equal_portability (left : Modesolver.Portability.var) (right : Modesolver.Portability.var) =
-  Modesolver.Portability.assert_leq_to left right;
-  Modesolver.Portability.assert_leq_to right left
 
 (* -------------------------------------------------------------------------- *)
 (* Error reporting.                                                           *)
