@@ -106,6 +106,7 @@ let (x, y) = pair in x
 > ('a ->[a=a1 l=many p=p1] int)
 > where
 >   'a alias 'b
+>   'c <= 'a
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   a1 ∈ {borrowed, global, local, regional}
@@ -140,25 +141,14 @@ rec f x => x
 >   p1 ∈ {nonportable, portable}
 >   a1 ∈ {borrowed, global, local, regional}
 
-rec f x => f (f, f)
-> ('b ->[a=a1 l=many p=p1] 'a)
-> where
->   'c <= 'a
+rec f x => f x + x
+> (int ->[a=a1 l=many p=p1] int)
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   a1 ∈ {borrowed, global, local, regional}
 
+rec f x => (f 1 + 1, f)
+> error: type mismatch between (int * (int -> int)) and int
+
 rec f x => (f x + x, f)
-> (int ->[a=a3 l=many p=p2] (int *[u=u1 a=a2] (int ->[a=a1 l=l1 p=p1] int)))
-> mode vars
->   p1 ∈ {nonportable, portable}
->   l1 ∈ {many, never, once}
->   a1 ∈ {borrowed, global, local, regional}
->   a2 ∈ {borrowed, global, local, regional}
->   u1 ∈ {aliased, unique}
->   p2 ∈ {nonportable, portable}
->   a3 ∈ {borrowed, global, local, regional}
-> mode rels
->   (a3,a2) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
->   (a3,a1) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
->   (p2,p1) ∉ {(nonportable,portable)}
+> error: type mismatch between (int * (int -> int)) and int

@@ -33,6 +33,28 @@ let y = (x,x) in
 let! (a,b) = x in a
 > error: mode solver detected uniqueness inconsistency
 
+(* Borrowing *)
+let x = (1,2) in
+let fst = (fun p => let (x,y) = p in x) in
+borrow y = x for z = fst y in let! (a,b) = y in (z,b)
+> (int *[u=u1 a=a1] int)
+> mode vars
+>   a1 ∈ {borrowed, global, local, regional}
+>   u1 ∈ {aliased, unique}
+
+(* In the borrow, data becomes aliased *)
+let x = (1,2) in
+let fst = (fun p => let! (x,y) = p in x) in
+borrow y = x for z = fst y in let! (a,b) = y in (z,b)
+> error: mode solver detected uniqueness inconsistency
+
+(* In the borrow, data becomes borrowed *)
+let x = (1,2) in
+let r = ref (3,4) in
+let fst = (fun p => let _ = (r := p) in let (x,y) = p in x) in
+borrow y = x for z = fst y in let! (a,b) = y in (z,b)
+> error: mode solver detected areality inconsistency
+
 (* We can store aliased data in unique data *)
 let x = (1,2) in
 let y = (x,x) in

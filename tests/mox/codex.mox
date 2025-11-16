@@ -254,7 +254,7 @@ let refsum = ref left(unit) in region (let y = $right(unit) in refsum := y)
 > error: mode solver detected areality inconsistency
 
 let f = (fun x => x) : unit ->[portable] unit in (f, f)
-> (('b ->[a=a1 l=l1 p=p1] 'a) *[u=u1 a=a2] ('b ->[a=a1 l=l1 p=p1] 'a))
+> ((unit ->[a=a1 l=l1 p=p1] unit) *[u=u1 a=a2] (unit ->[a=a1 l=l1 p=p1] unit))
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
@@ -269,23 +269,12 @@ let f = (fun x => x) : unit ->[portable] unit in (f : unit ->[nonportable] unit)
 > (unit ->[a=global l=many p=nonportable] unit)
 
 let shared = ref unit in let mk = fun _ => shared in (mk unit, mk unit)
-> ('b *[u=u1 a=a1] 'a)
-> where
->   'b in {u=u2; c=c1; l=l1; p=p1; a=a2}
->   'c <= 'b
->   'a in {u=u2; c=c1; l=l1; p=p1; a=a2}
->   'c <= 'a
+> ((ref[c=c2] unit) *[u=u1 a=a1] (ref[c=c1] unit))
 > mode vars
+>   c1 ∈ {contended, shared, uncontended}
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
->   a2 ∈ {borrowed, global, local, regional}
->   p1 ∈ {nonportable, portable}
->   l1 ∈ {many, never, once}
->   c1 ∈ {contended, shared, uncontended}
->   u2 ∈ {aliased, unique}
-> mode rels
->   (u2,u1) ∉ {(unique,aliased)}
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
+>   c2 ∈ {contended, shared, uncontended}
 
 let shared = ref unit in let mk = fun _ => !shared in fork (mk unit)
 > error: mode solver detected portability inconsistency

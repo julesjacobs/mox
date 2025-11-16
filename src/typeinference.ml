@@ -193,6 +193,7 @@ let nonborrowed_mode_vars () : mode_vars =
 let borrowed_mode_vars () : mode_vars =
   let mode = fresh_mode_vars () in
   Modesolver.Areality.restrict_domain [Areality.borrowed] mode.areality;
+  Modesolver.Uniqueness.restrict_domain [Uniqueness.aliased] mode.uniqueness;
   mode
 
 let many_mode_vars () : mode_vars =
@@ -484,11 +485,13 @@ and assert_alias source target =
   | TyRef (source_payload, source_mode), TyRef (target_payload, target_mode) ->
       assert_alias source_payload target_payload;
       assert_equal_in Modesolver.Contention.assert_leq_to source_mode.contention target_mode.contention;
-  | TyArrow (_source_domain, source_future, _source_codomain), TyArrow (_target_domain, target_future, _target_codomain) ->
+  | TyArrow (source_domain, source_future, source_codomain), TyArrow (target_domain, target_future, target_codomain) ->
       (* Assert that linearity is many for aliased functions.*)
       Modesolver.Linearity.restrict_domain [Linearity.many] source_future.linearity;
       Modesolver.Areality.assert_leq_to source_future.areality target_future.areality;
       Modesolver.Portability.assert_leq_to source_future.portability target_future.portability;
+      assert_subtype target_domain source_domain;
+      assert_subtype source_codomain target_codomain;
   | _ ->
       type_error "assert_alias: not equivalent"
 
