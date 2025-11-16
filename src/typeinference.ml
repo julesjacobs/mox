@@ -1227,9 +1227,9 @@ let rec infer_with_env env expr =
     TyArrow (ty_param, future, ty_body)
   | Ast.FunRec (alloc, f, x, body) ->
     let ty_param = TyMeta (fresh_meta ()) in
+    let ty_cod = TyMeta (fresh_meta ()) in
     let future = fresh_future ~alloc () in
     Modesolver.Linearity.restrict_domain [Linearity.many] future.linearity;
-    let ty_cod = TyMeta (fresh_meta ()) in
     let fun_ty = TyArrow (ty_param, future, ty_cod) in
     let captured_vars = free_vars_without body [ f; x ] in
     let captured_env = restrict_env env captured_vars in

@@ -131,3 +131,34 @@ let (x, y) = pair in x
 > mode rels
 >   (u2,u1) ∉ {(unique,aliased)}
 >   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
+
+rec f x => x
+> ('b ->[a=a1 l=many p=p1] 'a)
+> where
+>   'b <= 'a
+> mode vars
+>   p1 ∈ {nonportable, portable}
+>   a1 ∈ {borrowed, global, local, regional}
+
+rec f x => f (f, f)
+> ('b ->[a=a1 l=many p=p1] 'a)
+> where
+>   'c <= 'a
+> mode vars
+>   p1 ∈ {nonportable, portable}
+>   a1 ∈ {borrowed, global, local, regional}
+
+rec f x => (f x + x, f)
+> (int ->[a=a3 l=many p=p2] (int *[u=u1 a=a2] (int ->[a=a1 l=l1 p=p1] int)))
+> mode vars
+>   p1 ∈ {nonportable, portable}
+>   l1 ∈ {many, never, once}
+>   a1 ∈ {borrowed, global, local, regional}
+>   a2 ∈ {borrowed, global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   p2 ∈ {nonportable, portable}
+>   a3 ∈ {borrowed, global, local, regional}
+> mode rels
+>   (a3,a2) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
+>   (a3,a1) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
+>   (p2,p1) ∉ {(nonportable,portable)}
