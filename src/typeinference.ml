@@ -1148,20 +1148,6 @@ let rec infer_with_env env expr =
       let ty = infer_with_env env e in
       assert_subtype ty TyBool;
       TyBool
-  | Ast.FunRec (alloc, f, x, body) ->
-      let ty_param = TyMeta (fresh_meta ()) in
-      let future = fresh_future ~alloc () in
-      Modesolver.Linearity.restrict_domain [Linearity.many] future.linearity;
-      let ty_cod = TyMeta (fresh_meta ()) in
-      let fun_ty = TyArrow (ty_param, future, ty_cod) in
-      let captured_vars = free_vars_without body [ f; x ] in
-      let captured_env = restrict_env env captured_vars in
-      let locked_env = lock_env captured_env future in
-      let env' = (f, fun_ty) :: (x, ty_param) :: locked_env in
-      let body_ty = infer_with_env env' body in
-      assert_subtype body_ty ty_cod;
-      assert_subtype ty_cod body_ty;
-      fun_ty
   | Ast.Pair (alloc, e1, e2) ->
       infer_split env e1 e2 (fun ty1 ty2 ->
         mk_pair ty1 (fresh_storage ~alloc ()) ty2)
@@ -1239,6 +1225,20 @@ let rec infer_with_env env expr =
     let env' = (x, ty_param) :: locked_env in
     let ty_body = infer_with_env env' e in
     TyArrow (ty_param, future, ty_body)
+  | Ast.FunRec (alloc, f, x, body) ->
+    let ty_param = TyMeta (fresh_meta ()) in
+    let future = fresh_future ~alloc () in
+    Modesolver.Linearity.restrict_domain [Linearity.many] future.linearity;
+    let ty_cod = TyMeta (fresh_meta ()) in
+    let fun_ty = TyArrow (ty_param, future, ty_cod) in
+    let captured_vars = free_vars_without body [ f; x ] in
+    let captured_env = restrict_env env captured_vars in
+    let locked_env = lock_env captured_env future in
+    let env' = (f, fun_ty) :: (x, ty_param) :: locked_env in
+    let body_ty = infer_with_env env' body in
+    assert_subtype body_ty ty_cod;
+    assert_subtype ty_cod body_ty;
+    fun_ty
   | Ast.Annot (e, ty_syntax) ->
     let ty' = infer_with_env env e in
     let ty = ty_of_ast ty_syntax in
