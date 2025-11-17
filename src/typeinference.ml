@@ -1104,11 +1104,7 @@ let rec infer_with_env env expr =
       let storage = fresh_storage_mode () in
       mk_list elem_ty storage
   | Ast.ListCons (alloc, head, tail) ->
-      let head_ty, tail_ty =
-        let fv_h = free_vars head and fv_t = free_vars tail in
-        let env_h, env_t = split_env env fv_h fv_t in
-        infer_with_env env_h head, infer_with_env env_t tail
-      in
+      let head_ty, tail_ty = infer_split env head tail in
       let elem_ty = TyMeta (fresh_meta ()) in
       let storage = fresh_storage ~alloc () in
       let list_ty = mk_list elem_ty storage in
