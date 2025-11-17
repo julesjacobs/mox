@@ -1123,7 +1123,7 @@ let rec infer_with_env env expr =
       let fv_nil = free_vars nil_branch in
       let fv_cons = free_vars_without cons_branch [ x; xs ] in
       let branches_fv = StringSet.union fv_nil fv_cons in
-      let env_scrut, env_rest = split_env env fv_scrut branches_fv in
+      let env_scrut, env_branches = split_env env fv_scrut branches_fv in
       let ty_scrut = infer_with_env env_scrut scrut in
       let elem_ty = TyMeta (fresh_meta ()) in
       let storage = fresh_storage_mode () in
@@ -1132,9 +1132,8 @@ let rec infer_with_env env expr =
       (match kind with
        | Ast.Destructive -> force_storage_unique storage
        | Ast.Regular -> ());
-      let env_nil, env_cons = split_env env_rest fv_nil fv_cons in
-      let ty_nil = infer_with_env env_nil nil_branch in
-      let env_cons' = (x, elem_ty) :: (xs, ty_list) :: env_cons in
+      let ty_nil = infer_with_env env_branches nil_branch in
+      let env_cons' = (x, elem_ty) :: (xs, ty_list) :: env_branches in
       let ty_cons = infer_with_env env_cons' cons_branch in
       let ty_join = TyMeta (fresh_meta ()) in
       assert_subtype ty_nil ty_join;
@@ -1193,7 +1192,7 @@ let rec infer_with_env env expr =
     let fv_e1 = free_vars_without e1 [ x1 ] in
     let fv_e2 = free_vars_without e2 [ x2 ] in
     let branches_fv = StringSet.union fv_e1 fv_e2 in
-    let env_scrut, env_rest = split_env env fv_scrut branches_fv in
+    let env_scrut, env_branches = split_env env fv_scrut branches_fv in
     let ty_scrut = infer_with_env env_scrut e in
     let ty_left = TyMeta (fresh_meta ()) in
     let ty_right = TyMeta (fresh_meta ()) in
@@ -1203,9 +1202,8 @@ let rec infer_with_env env expr =
     (match kind with
      | Ast.Destructive -> force_storage_unique storage
      | Ast.Regular -> ());
-    let env1, env2 = split_env env_rest fv_e1 fv_e2 in
-    let ty1 = infer_with_env ((x1, ty_left) :: env1) e1 in
-    let ty2 = infer_with_env ((x2, ty_right) :: env2) e2 in
+    let ty1 = infer_with_env ((x1, ty_left) :: env_branches) e1 in
+    let ty2 = infer_with_env ((x2, ty_right) :: env_branches) e2 in
     let ty_join = TyMeta (fresh_meta ()) in
     assert_subtype ty1 ty_join;
     assert_subtype ty2 ty_join;
