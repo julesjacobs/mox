@@ -1140,7 +1140,8 @@ let rec infer_with_env env expr =
       ty_join
   | Ast.Int _ -> TyInt
   | Ast.BinOp (lhs, op, rhs) ->
-      infer_split env lhs rhs (infer_binop op)
+      let ty_lhs, ty_rhs = infer_split env lhs rhs in
+      infer_binop op ty_lhs ty_rhs
   | Ast.IntNeg e ->
       let ty = infer_with_env env e in
       assert_subtype ty TyInt;
@@ -1150,8 +1151,8 @@ let rec infer_with_env env expr =
       assert_subtype ty TyBool;
       TyBool
   | Ast.Pair (alloc, e1, e2) ->
-      infer_split env e1 e2 (fun ty1 ty2 ->
-        mk_pair ty1 (fresh_storage ~alloc ()) ty2)
+      let ty1, ty2 = infer_split env e1 e2 in
+      mk_pair ty1 (fresh_storage ~alloc ()) ty2
   | Ast.Inl (alloc, e) ->
       let ty_left = infer_with_env env e in
       let ty_right = TyMeta (fresh_meta ()) in
@@ -1208,14 +1209,14 @@ let rec infer_with_env env expr =
     assert_subtype ty2 ty_join;
     ty_join
   | Ast.App (e1, e2) ->
-    infer_split env e1 e2 (fun ty1 ty2 ->
-      let ty_dom = TyMeta (fresh_meta ()) in
-      let ty_cod = TyMeta (fresh_meta ()) in
-      let future = fresh_future_mode () in
-      let ty_f = TyArrow (ty_dom, future, ty_cod) in
-      assert_subtype ty1 ty_f;
-      assert_subtype ty2 ty_dom;
-      ty_cod)
+    let ty1, ty2 = infer_split env e1 e2 in
+    let ty_dom = TyMeta (fresh_meta ()) in
+    let ty_cod = TyMeta (fresh_meta ()) in
+    let future = fresh_future_mode () in
+    let ty_f = TyArrow (ty_dom, future, ty_cod) in
+    assert_subtype ty1 ty_f;
+    assert_subtype ty2 ty_dom;
+    ty_cod
   | Ast.Fun (alloc, x, e) ->
     let ty_param = TyMeta (fresh_meta ()) in
     let future = fresh_future ~alloc () in
@@ -1284,13 +1285,13 @@ let rec infer_with_env env expr =
     assert_subtype body_ty TyUnit;
     TyUnit
 
-and infer_split env e1 e2 k =
+and infer_split env e1 e2 =
   (* Monotone: reduce duplication of split + infer for two expressions. *)
   let fv1 = free_vars e1 and fv2 = free_vars e2 in
   let env1, env2 = split_env env fv1 fv2 in
   let t1 = infer_with_env env1 e1 in
   let t2 = infer_with_env env2 e2 in
-  k t1 t2
+  (t1, t2)
 
 let infer expr =
   try infer_with_env [] expr with
