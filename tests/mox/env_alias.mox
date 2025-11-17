@@ -30,21 +30,19 @@ let shared = ((unit, unit) : (unit *[unique] unit)) in
 (* pair: shared variable appears in both components *)
 let shared = ((unit, unit) : (unit *[unique local] unit)) in
 (shared, shared) : (unit *[local] unit) *[local] (unit *[local] unit)
-> ((unit *[u=aliased a=local] unit) *[u=aliased a=local] (unit *[u=aliased a=local] unit))
+> error: mode solver detected uniqueness inconsistency
 
 (* pair: shared variable appears in both components *)
 let shared = ((unit, unit) : (unit *[unique] unit)) in
 (shared, shared) : (unit *[aliased] unit) *[unique] (unit *[aliased] unit)
-> ((unit *[u=aliased a=global] unit) *[u=unique a=global] (unit *[u=aliased a=global] unit))
+> error: mode solver detected uniqueness inconsistency
 
 (* let-binding: shared variable used in initializer and body *)
 let shared = ((unit, unit) : (unit *[local] unit)) in
 let alias = shared in
 (shared, alias)
-> ((unit *[u=aliased a=a1] unit) *[u=u1 a=a2] (unit *[u=aliased a=a1] unit))
+> ((unit *[u=aliased a=local] unit) *[u=u1 a=local] (unit *[u=aliased a=local] unit))
 > mode vars
->   a1 ∈ {borrowed, local}
->   a2 ∈ {borrowed, local}
 >   u1 ∈ {aliased, unique}
 
 (* let-pair: shared variable used alongside destructured pair *)
@@ -52,39 +50,28 @@ let shared = ((unit, unit) : (unit *[unique local] unit)) in
 let pair = (shared, shared) in
 let (x, y) = pair in
 (x, y)
-> ((unit *[u=aliased a=a3] unit) *[u=u1 a=a2] (unit *[u=aliased a=a1] unit))
-> mode vars
->   a1 ∈ {borrowed, local}
->   a2 ∈ {borrowed, local}
->   u1 ∈ {aliased, unique}
->   a3 ∈ {borrowed, local}
-> mode rels
->   (a3,a2) ∈ {(local,local), (borrowed,borrowed)}
+> error: mode solver detected uniqueness inconsistency
 
 (* match: shared variable used in both branches *)
 let shared = ((unit, unit) : (unit *[unique local] unit)) in
 match left(shared) with left(x) => x | right(y) => shared
-> (unit *[u=aliased a=a1] unit)
-> mode vars
->   a1 ∈ {borrowed, local}
+> error: mode solver detected uniqueness inconsistency
 
 (* pair with aliased shared value *)
 let shared = ((unit, unit) : (unit *[aliased] unit)) in
 (shared, shared)
-> ((unit *[u=aliased a=a1] unit) *[u=u1 a=a2] (unit *[u=aliased a=a1] unit))
+> ((unit *[u=aliased a=global] unit) *[u=u1 a=a1] (unit *[u=aliased a=global] unit))
 > mode vars
->   a1 ∈ {borrowed, global, local, regional}
->   a2 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}
 
 (* let-binding success with aliasable shared value *)
 let shared = ((unit, unit) : (unit *[aliased] unit)) in
 let alias = shared in
 (shared, alias)
-> ((unit *[u=aliased a=a1] unit) *[u=u1 a=a2] (unit *[u=aliased a=a1] unit))
+> ((unit *[u=aliased a=global] unit) *[u=u1 a=a1] (unit *[u=aliased a=global] unit))
 > mode vars
->   a1 ∈ {borrowed, global, local, regional}
->   a2 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}
 
 (* let-pair success with aliasable shared value *)
@@ -92,18 +79,12 @@ let shared = ((unit, unit) : (unit *[aliased] unit)) in
 let pair = (shared, shared) in
 let (x, y) = pair in
 (x, y)
-> ((unit *[u=aliased a=a3] unit) *[u=u1 a=a2] (unit *[u=aliased a=a1] unit))
+> ((unit *[u=aliased a=global] unit) *[u=u1 a=a1] (unit *[u=aliased a=global] unit))
 > mode vars
->   a1 ∈ {borrowed, global, local, regional}
->   a2 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}
->   a3 ∈ {borrowed, global, local, regional}
-> mode rels
->   (a3,a2) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
 
 (* match with aliasable shared value still fails: need better inference *)
 let shared = ((unit, unit) : (unit *[aliased local] unit)) in
 match left(shared) with left(x) => x | right(y) => shared
-> (unit *[u=aliased a=a1] unit)
-> mode vars
->   a1 ∈ {borrowed, local}
+> (unit *[u=aliased a=local] unit)

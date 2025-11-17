@@ -105,19 +105,21 @@ let (x, y) = pair in x
 (rec f x => f x + f x)
 > ('a ->[a=a1 l=many p=p1] int)
 > where
->   'a alias 'b
+>   'b <= 'a
 >   'c <= 'a
+>   'a alias 'd
+>   'a <= 'a
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   a1 ∈ {borrowed, global, local, regional}
 
 (rec f x => (x,x))
-> ('c ->[a=a2 l=many p=p1] ('b *[u=u1 a=a1] 'a))
+> ('b ->[a=a2 l=many p=p1] ('a *[u=u1 a=a1] 'a))
 > where
->   'c alias 'd
->   'd <= 'b
->   'b in {u=u2; c=c1; l=l1; p=p2; a=a3}
->   'd <= 'a
+>   'b alias 'a
+>   'a <= 'a
+>   'a <= 'a
+>   'a in {u=u2; c=c1; l=l1; p=p2; a=a3}
 >   'a in {u=u2; c=c1; l=l1; p=p2; a=a3}
 > mode vars
 >   a1 ∈ {borrowed, global, local, regional}

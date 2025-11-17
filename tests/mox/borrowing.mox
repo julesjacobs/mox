@@ -9,19 +9,13 @@ let a = (unit, unit) in let! (q,r) = a in (q,r)
 
 let fst = (fun p => let (x,y) = p in x) in
 borrow a = (unit, unit) for b = fst a in let! (q,r) = a in (b, q)
-> (unit *[u=u1 a=a1] unit)
-> mode vars
->   a1 ∈ {borrowed, global, local, regional}
->   u1 ∈ {aliased, unique}
+> error: mode solver detected uniqueness inconsistency
 
 (* We can even borrow stack allocated data that contains heap allocated data! *)
 let fst = (fun p => let (x,y) = p in x) in
 let p = (unit, unit) in
 borrow a = $(unit, p) for b = fst a in let! (q,r) = a in (b, q)
-> (unit *[u=u1 a=a1] unit)
-> mode vars
->   a1 ∈ {borrowed, global, local, regional}
->   u1 ∈ {aliased, unique}
+> error: mode solver detected areality inconsistency
 
 (* This ought to be OK but is rejected. Related to Leo's ideas? *)
 let fst = (fun p => let (x,y) = p in x) in
