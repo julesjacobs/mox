@@ -1090,12 +1090,11 @@ let rec infer_with_env env expr =
       let fv_then = free_vars then_branch in
       let fv_else = free_vars else_branch in
       let branches_fv = StringSet.union fv_then fv_else in
-      let env_cond, env_rest = split_env env fv_cond branches_fv in
+      let env_cond, env_branches = split_env env fv_cond branches_fv in
       let cond_ty = infer_with_env env_cond cond in
       assert_subtype cond_ty TyBool;
-      let env_then, env_else = split_env env_rest fv_then fv_else in
-      let ty_then = infer_with_env env_then then_branch in
-      let ty_else = infer_with_env env_else else_branch in
+      let ty_then = infer_with_env env_branches then_branch in
+      let ty_else = infer_with_env env_branches else_branch in
       let ty_join = TyMeta (fresh_meta ()) in
       assert_subtype ty_then ty_join;
       assert_subtype ty_else ty_join;
