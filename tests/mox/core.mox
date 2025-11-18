@@ -105,20 +105,24 @@ let (x, y) = pair in x
 (rec f x => f x + f x)
 > ('a ->[a=a1 l=many p=p1] int)
 > where
->   'a alias 'b
+>   'b <= 'a
 >   'c <= 'a
+>   'a alias 'd
+>   'a <= 'a
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   a1 ∈ {borrowed, global, local, regional}
 
 (rec f x => (x,x))
-> ('c ->[a=a2 l=many p=p1] ('b *[u=u1 a=a1] 'a))
+> ('b ->[a=a2 l=many p=p1] ('a *[u=u1 a=a1] 'a))
 > where
->   'c alias 'd
->   'd <= 'b
->   'b in {u=u2; c=c1; l=l1; p=p2; a=a3}
->   'd <= 'a
+>   'b alias 'a
+>   'a <= 'a
+>   'a <= 'a
 >   'a in {u=u2; c=c1; l=l1; p=p2; a=a3}
+>   'a in {u=u2; c=c1; l=l1; p=p2; a=a3}
+>   'a in {u=u3; c=c2; l=l2; p=p3; a=a4}
+>   'a in {u=u3; c=c2; l=l2; p=p3; a=a4}
 > mode vars
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
@@ -129,8 +133,14 @@ let (x, y) = pair in x
 >   l1 ∈ {many, never, once}
 >   c1 ∈ {contended, shared, uncontended}
 >   u2 ∈ {aliased, unique}
+>   a4 ∈ {borrowed, global, local, regional}
+>   p3 ∈ {nonportable, portable}
+>   l2 ∈ {many, never, once}
+>   c2 ∈ {contended, shared, uncontended}
+>   u3 ∈ {aliased, unique}
 > mode rels
 >   (u2,u1) ∉ {(unique,aliased)}
+>   (a4,a1) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
 >   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
 
 rec f x => x

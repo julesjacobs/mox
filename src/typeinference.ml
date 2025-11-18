@@ -399,29 +399,26 @@ let rec outer_equiv ty1 ty2 =
       set_meta_solution meta TyInt
   | TyBool, TyMeta meta | TyMeta meta, TyBool ->
       set_meta_solution meta TyBool
-  | TyList _, TyMeta meta | TyMeta meta, TyList _ ->
-      let elem = fresh_meta () in
+  | TyList (elem, _), TyMeta meta
+  | TyMeta meta, TyList (elem, _) ->
       let storage = fresh_storage_mode () in
-      set_meta_solution meta (mk_list (TyMeta elem) storage)
-  | TyPair _, TyMeta meta | TyMeta meta, TyPair _ ->
+      set_meta_solution meta (mk_list elem storage)
+  | TyPair (left, _, right), TyMeta meta
+  | TyMeta meta, TyPair (left, _, right) ->
       let storage = fresh_storage_mode () in
-      let left = fresh_meta () in
-      let right = fresh_meta () in
-      set_meta_solution meta (mk_pair (TyMeta left) storage (TyMeta right))
-  | TySum _, TyMeta meta | TyMeta meta, TySum _ ->
+      set_meta_solution meta (mk_pair left storage right)
+  | TySum (left, _, right), TyMeta meta
+  | TyMeta meta, TySum (left, _, right) ->
       let storage = fresh_storage_mode () in
-      let left = fresh_meta () in
-      let right = fresh_meta () in
-      set_meta_solution meta (mk_sum (TyMeta left) storage (TyMeta right))
-  | TyRef _, TyMeta meta | TyMeta meta, TyRef _ ->
-      let payload = fresh_meta () in
+      set_meta_solution meta (mk_sum left storage right)
+  | TyRef (payload, _), TyMeta meta
+  | TyMeta meta, TyRef (payload, _) ->
       let ref_mode = fresh_ref_mode () in
-      set_meta_solution meta (mk_ref (TyMeta payload) ref_mode)
-  | TyArrow _, TyMeta meta | TyMeta meta, TyArrow _ ->
+      set_meta_solution meta (mk_ref payload ref_mode)
+  | TyArrow (domain, _, codomain), TyMeta meta
+  | TyMeta meta, TyArrow (domain, _, codomain) ->
       let future = fresh_future_mode () in
-      let domain = fresh_meta () in
-      let codomain = fresh_meta () in
-      set_meta_solution meta (TyArrow (TyMeta domain, future, TyMeta codomain))
+      set_meta_solution meta (TyArrow (domain, future, codomain))
   | ty_left, ty_right ->
       let left = string_of_ty_shallow ty_left in
       let right = string_of_ty_shallow ty_right in
@@ -555,13 +552,33 @@ and fire_constraint constraint_record =
     | In { target; mode_vars } ->
         assert_in (TyMeta target) mode_vars )
 
+and meta_occurs_in meta ty =
+  match zonk ty with
+  | TyUnit | TyEmpty | TyInt | TyBool -> false
+  | TyList (elem, _) -> meta_occurs_in meta elem
+  | TyPair (left, _, right) | TySum (left, _, right) ->
+      meta_occurs_in meta left || meta_occurs_in meta right
+  | TyRef (payload, _) -> meta_occurs_in meta payload
+  | TyArrow (domain, _, codomain) ->
+      meta_occurs_in meta domain || meta_occurs_in meta codomain
+  | TyMeta other -> meta.id = other.id
+
 and set_meta_solution meta ty =
   match meta.solution with
   | Some _ ->
       type_error (Printf.sprintf "meta %d already solved" meta.id)
   | None ->
+      if meta_occurs_in meta ty then
+        type_error (Printf.sprintf "occurs check failed: ?%d in %s"
+                      meta.id (string_of_ty_shallow ty));
       meta.solution <- Some ty;
       List.iter fire_constraint meta.constraints
+
+and alias_binding ty =
+  let alias_meta = fresh_meta () in
+  let alias_ty = TyMeta alias_meta in
+  assert_alias ty alias_ty;
+  alias_ty
 
 (* -------------------------------------------------------------------------- *)
 (* Converting annotated syntax *)
@@ -1005,12 +1022,6 @@ let rec lookup env name =
   match env with
   | [] -> None
   | (bound, ty) :: rest -> if String.equal bound name then Some ty else lookup rest name
-
-let alias_binding ty =
-  let alias_meta = fresh_meta () in
-  let alias_ty = TyMeta alias_meta in
-  assert_alias ty alias_ty;
-  alias_ty
 
 let alias_env_for env vars =
   if StringSet.is_empty vars then env
