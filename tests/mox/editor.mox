@@ -37,10 +37,7 @@ let! (a,b) = x in a
 let x = (1,2) in
 let fst = (fun p => let (x,y) = p in x) in
 borrow y = x for z = fst y in let! (a,b) = y in (z,b)
-> (int *[u=u1 a=a1] int)
-> mode vars
->   a1 ∈ {borrowed, global, local, regional}
->   u1 ∈ {aliased, unique}
+> error: mode solver detected uniqueness inconsistency
 
 (* In the borrow, data becomes aliased *)
 let x = (1,2) in

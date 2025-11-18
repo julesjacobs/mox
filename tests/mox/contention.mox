@@ -8,10 +8,10 @@ let r = ref unit in r := unit
 > unit
 
 let r = ref unit in fork (r := unit)
-> error: mode solver detected contention inconsistency
+> error: mode solver detected portability/contention inconsistency
 
 let r = ref unit in fork (let x = !r in unit)
-> error: mode solver detected contention inconsistency
+> error: mode solver detected portability/contention inconsistency
 
 let r = ref unit in 
 let g = fun x => r := x in

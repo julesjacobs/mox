@@ -134,9 +134,6 @@ let fresh_storage_mode () : storage_mode =
   { uniqueness = Modesolver.Uniqueness.new_var ();
     areality = Modesolver.Areality.new_var () }
 
-let fresh_ref_mode () : ref_mode =
-  { contention = Modesolver.Contention.new_var () }
-
 let fresh_future_mode () : future_mode =
   { linearity = Modesolver.Linearity.new_var ();
     portability = Modesolver.Portability.new_var ();
@@ -399,29 +396,21 @@ let rec outer_equiv ty1 ty2 =
       set_meta_solution meta TyInt
   | TyBool, TyMeta meta | TyMeta meta, TyBool ->
       set_meta_solution meta TyBool
-  | TyList _, TyMeta meta | TyMeta meta, TyList _ ->
-      let elem = fresh_meta () in
-      let storage = fresh_storage_mode () in
-      set_meta_solution meta (mk_list (TyMeta elem) storage)
-  | TyPair _, TyMeta meta | TyMeta meta, TyPair _ ->
-      let storage = fresh_storage_mode () in
-      let left = fresh_meta () in
-      let right = fresh_meta () in
-      set_meta_solution meta (mk_pair (TyMeta left) storage (TyMeta right))
-  | TySum _, TyMeta meta | TyMeta meta, TySum _ ->
-      let storage = fresh_storage_mode () in
-      let left = fresh_meta () in
-      let right = fresh_meta () in
-      set_meta_solution meta (mk_sum (TyMeta left) storage (TyMeta right))
-  | TyRef _, TyMeta meta | TyMeta meta, TyRef _ ->
-      let payload = fresh_meta () in
-      let ref_mode = fresh_ref_mode () in
-      set_meta_solution meta (mk_ref (TyMeta payload) ref_mode)
-  | TyArrow _, TyMeta meta | TyMeta meta, TyArrow _ ->
-      let future = fresh_future_mode () in
-      let domain = fresh_meta () in
-      let codomain = fresh_meta () in
-      set_meta_solution meta (TyArrow (TyMeta domain, future, TyMeta codomain))
+  | TyList _ as list_ty, TyMeta meta
+  | TyMeta meta, (TyList _ as list_ty) ->
+      set_meta_solution meta list_ty
+  | TyPair _ as pair_ty, TyMeta meta
+  | TyMeta meta, (TyPair _ as pair_ty) ->
+      set_meta_solution meta pair_ty
+  | TySum _ as sum_ty, TyMeta meta
+  | TyMeta meta, (TySum _ as sum_ty) ->
+      set_meta_solution meta sum_ty
+  | TyRef _ as ref_ty, TyMeta meta
+  | TyMeta meta, (TyRef _ as ref_ty) ->
+      set_meta_solution meta ref_ty
+  | TyArrow _ as arrow_ty, TyMeta meta
+  | TyMeta meta, (TyArrow _ as arrow_ty) ->
+      set_meta_solution meta arrow_ty
   | ty_left, ty_right ->
       let left = string_of_ty_shallow ty_left in
       let right = string_of_ty_shallow ty_right in
