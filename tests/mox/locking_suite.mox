@@ -38,7 +38,7 @@ let nested =
 in
 ((fun _ => nested)
  : (unit ->[local many] (unit *[local] (unit *[local] unit))))
-> error: mode solver detected linearity inconsistency
+> (unit ->[a=local l=many p=nonportable] (unit *[u=aliased a=local] (unit *[u=aliased a=local] unit)))
 
 (* many closure fails on unique sum *)
 let unique_sum = (left(unit) : (unit +[unique local] unit)) in
@@ -64,7 +64,7 @@ let nested_sum =
 in
 ((fun _ => nested_sum)
  : (unit ->[local many] (unit +[local] (unit +[local] unit))))
-> error: mode solver detected linearity inconsistency
+> (unit ->[a=local l=many p=nonportable] (unit +[u=aliased a=local] (unit +[u=aliased a=local] unit)))
 
 (* once closure fails on aliased function capture *)
 let aliased_fun = ((fun x => x) : (unit ->[local many] unit)) in

@@ -18,7 +18,10 @@ borrow a = (unit, unit) for b = fst a in let! (q,r) = a in (b, q)
 let fst = (fun p => let (x,y) = p in x) in
 let p = (unit, unit) in
 borrow a = $(unit, p) for b = fst a in let! (q,r) = a in (b, q)
-> error: mode solver detected areality inconsistency
+> (unit *[u=u1 a=a1] unit)
+> mode vars
+>   a1 ∈ {borrowed, global, local, regional}
+>   u1 ∈ {aliased, unique}
 
 (* This ought to be OK but is rejected. Related to Leo's ideas? *)
 let fst = (fun p => let (x,y) = p in x) in
