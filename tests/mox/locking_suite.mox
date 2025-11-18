@@ -24,7 +24,7 @@ let alias = base in
 let base = ((unit, unit) : (unit *[unique local] unit)) in
 let alias = base in
 ((fun _ => alias) : (unit ->[local many] (unit *[local] unit)))
-> error: mode solver detected linearity inconsistency
+> (unit ->[a=local l=many p=nonportable] (unit *[u=aliased a=local] unit))
 
 (* many closure fails on nested unique pair *)
 let nested = ((unit, (unit, unit)) : (unit *[unique local] (unit *[unique local] unit))) in
@@ -38,7 +38,7 @@ let nested =
 in
 ((fun _ => nested)
  : (unit ->[local many] (unit *[local] (unit *[local] unit))))
-> error: mode solver detected linearity inconsistency
+> (unit ->[a=local l=many p=nonportable] (unit *[u=aliased a=local] (unit *[u=aliased a=local] unit)))
 
 (* many closure fails on unique sum *)
 let unique_sum = (left(unit) : (unit +[unique local] unit)) in
@@ -48,7 +48,7 @@ let unique_sum = (left(unit) : (unit +[unique local] unit)) in
 (* many closure succeeds on aliased sum *)
 let unique_sum = (left(unit) : (unit +[unique local] unit)) in
 ((fun _ => unique_sum) : (unit ->[local many] (unit +[local] unit)))
-> error: mode solver detected linearity inconsistency
+> (unit ->[a=local l=many p=nonportable] (unit +[u=aliased a=local] unit))
 
 (* many closure fails on nested unique sum *)
 let nested_sum =
@@ -64,7 +64,7 @@ let nested_sum =
 in
 ((fun _ => nested_sum)
  : (unit ->[local many] (unit +[local] (unit +[local] unit))))
-> error: mode solver detected linearity inconsistency
+> (unit ->[a=local l=many p=nonportable] (unit +[u=aliased a=local] (unit +[u=aliased a=local] unit)))
 
 (* once closure fails on aliased function capture *)
 let aliased_fun = ((fun x => x) : (unit ->[local many] unit)) in
@@ -194,7 +194,7 @@ let inner =
 in
 ((fun _ => inner)
  : (unit ->[local once] (unit ->[local many] (unit *[local] unit))))
-> error: mode solver detected linearity inconsistency
+> (unit ->[a=local l=once p=nonportable] (unit ->[a=local l=many p=nonportable] (unit *[u=aliased a=local] unit)))
 
 (* many closure succeeds when capturing a once-closure as a value *)
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
