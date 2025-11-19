@@ -425,14 +425,8 @@ and outer_equiv ty1 ty2 =
       let right = string_of_ty_shallow ty_right in
       type_error (Printf.sprintf "type mismatch between %s and %s" left right)
 
-and assert_subtype lower upper =
-  assert_lock lower upper (future_for_sub ())
-
-and assert_alias source target =
-  assert_lock source target (future_for_alias ())
-
-and assert_lock original locked future =
-  log_lock "lock %s into %s"
+and assert_leq original locked future =
+  log_lock "leq %s into %s"
     (string_of_ty_shallow original) (string_of_ty_shallow locked);
   outer_equiv original locked;
   match (zonk original, zonk locked) with
@@ -453,20 +447,20 @@ and assert_lock original locked future =
       Modesolver.assert_linearity_dagger future.linearity locked_storage.uniqueness;
       Modesolver.Areality.assert_leq_to original_storage.areality locked_storage.areality;
       Modesolver.Areality.assert_leq_to original_storage.areality future.areality;
-      assert_lock original_left locked_left future;
-      assert_lock original_right locked_right future
+      assert_leq original_left locked_left future;
+      assert_leq original_right locked_right future
   | TyList (original_elem, original_storage), TyList (locked_elem, locked_storage) ->
       log_lock "list storage lock";
       Modesolver.Uniqueness.assert_leq_to original_storage.uniqueness locked_storage.uniqueness;
       Modesolver.assert_linearity_dagger future.linearity locked_storage.uniqueness;
       Modesolver.Areality.assert_leq_to original_storage.areality locked_storage.areality;
       Modesolver.Areality.assert_leq_to original_storage.areality future.areality;
-      assert_lock original_elem locked_elem future
+      assert_leq original_elem locked_elem future
   | TyRef (original_payload, original_mode), TyRef (locked_payload, locked_mode) ->
       log_lock "ref lock enforcement";
       Modesolver.Contention.assert_leq_to original_mode.contention locked_mode.contention;
       Modesolver.assert_portability_dagger future.portability locked_mode.contention;
-      assert_lock original_payload locked_payload future
+      assert_leq original_payload locked_payload future
   | TyArrow (original_domain, original_future, original_codomain), TyArrow (locked_domain, locked_future, locked_codomain) ->
       log_lock "arrow lock enforcement";
       (* Locking leaves functions untouched provided ambient future ≤ function future. *)
@@ -477,13 +471,19 @@ and assert_lock original locked future =
   | _ ->
       type_error "assert_lock: not equivalent"
 
+and assert_subtype lower upper =
+  assert_leq lower upper (future_for_sub ())
+
+and assert_alias source target =
+  assert_leq source target (future_for_alias ())
+
 and fire_constraint constraint_record =
   if constraint_record.fired then ()
   else (
     constraint_record.fired <- true;
     match constraint_record.constraint_ with
     | Leq { original; locked; future } ->
-        assert_lock (TyMeta original) (TyMeta locked) future
+        assert_leq (TyMeta original) (TyMeta locked) future
     | In { target; mode_vars } ->
         assert_in (TyMeta target) mode_vars )
 
@@ -980,7 +980,7 @@ let split_env env fv1 fv2 =
 
 let lock_type ty future =
   let locked_ty = TyMeta (fresh_meta ()) in
-  assert_lock ty locked_ty future;
+  assert_leq ty locked_ty future;
   locked_ty
 
 let lock_env env future =
