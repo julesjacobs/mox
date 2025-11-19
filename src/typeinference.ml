@@ -220,9 +220,6 @@ let fresh_meta ?solution ?(constraints = []) () : meta =
 (* -------------------------------------------------------------------------- *)
 (* Constraint management. *)
 
-let add_constraint meta constraint_ =
-  meta.constraints <- constraint_ :: meta.constraints
-
 (* -------------------------------------------------------------------------- *)
 (* Mode helpers                                                               *)
 
@@ -296,11 +293,31 @@ let push_ref_to_payload (ref_mode : ref_mode) (container_mode : mode_vars) =
   assert_equal_in Modesolver.Portability.assert_leq_in payload_mode.portability container_mode.portability;
   payload_mode
 
-let rec assert_in ty mode_vars =
+let debug_lock_enabled =
+  match Sys.getenv_opt "MOX_DEBUG_LOCK" with
+  | Some ("0" | "" ) -> false
+  | Some _ -> true
+  | None -> false
+
+let log_lock fmt =
+  if debug_lock_enabled then
+    Printf.ksprintf (fun s -> prerr_endline ("[lock] " ^ s)) fmt
+  else
+    Printf.ksprintf (fun _ -> ()) fmt
+
+(* Core constraint propagation and meta assignment. *)
+(* Core constraint propagation and meta assignment. *)
+let rec add_constraint meta constraint_record =
+  match meta.solution with
+  | Some _ -> fire_constraint constraint_record
+  | None -> meta.constraints <- constraint_record :: meta.constraints
+
+and assert_in ty mode_vars =
   match zonk ty with
   | TyMeta meta ->
     (* Record α : m by attaching an in-placement constraint to the meta. *)
-    add_constraint meta (mk_constraint (In { target = meta; mode_vars }))
+    let constraint_ = mk_constraint (In { target = meta; mode_vars }) in
+    add_constraint meta constraint_
   | TyUnit -> ()
   | TyEmpty -> ()
   | TyInt -> ()
@@ -325,39 +342,27 @@ let rec assert_in ty mode_vars =
     Modesolver.Linearity.assert_leq_in future.linearity mode_vars.linearity;
     Modesolver.Portability.assert_leq_in future.portability mode_vars.portability
 
-let mk_pair left storage right =
+and mk_pair left storage right =
   let ty = TyPair (left, storage, right) in
   assert_in ty (fresh_mode_vars ());
   ty
 
-let mk_sum left storage right =
+and mk_sum left storage right =
   let ty = TySum (left, storage, right) in
   assert_in ty (fresh_mode_vars ());
   ty
 
-let mk_list elem storage =
+and mk_list elem storage =
   let ty = TyList (elem, storage) in
   assert_in ty (fresh_mode_vars ());
   ty
 
-let mk_ref payload ref_mode =
+and mk_ref payload ref_mode =
   let ty = TyRef (payload, ref_mode) in
   assert_in ty (fresh_mode_vars ());
   ty
 
-let debug_lock_enabled =
-  match Sys.getenv_opt "MOX_DEBUG_LOCK" with
-  | Some ("0" | "" ) -> false
-  | Some _ -> true
-  | None -> false
-
-let log_lock fmt =
-  if debug_lock_enabled then
-    Printf.ksprintf (fun s -> prerr_endline ("[lock] " ^ s)) fmt
-  else
-    Printf.ksprintf (fun _ -> ()) fmt
-
-let rec string_of_ty_shallow ty =
+and string_of_ty_shallow ty =
   match zonk ty with
   | TyUnit -> "unit"
   | TyEmpty -> "empty"
@@ -378,8 +383,7 @@ let rec string_of_ty_shallow ty =
       | Some solution -> string_of_ty_shallow solution
       | None -> Printf.sprintf "?%d" meta.id)
 
-(* Core constraint propagation and meta assignment. *)
-let rec outer_equiv ty1 ty2 =
+and outer_equiv ty1 ty2 =
   match (zonk ty1, zonk ty2) with
   | TyMeta meta1, TyMeta meta2 -> ()
   | TyUnit, TyUnit -> ()
@@ -820,6 +824,22 @@ let collect_metas ty =
           set, acc
         else
           let set = IntSet.add meta.id set in
+          let set, acc =
+            List.fold_left (fun (set, acc) constraint_record ->
+              match constraint_record.constraint_ with
+              | Sub { lower; upper } ->
+                  let set, acc = aux set acc (TyMeta lower) in
+                  aux set acc (TyMeta upper)
+              | Alias { source; target } ->
+                  let set, acc = aux set acc (TyMeta source) in
+                  aux set acc (TyMeta target)
+              | Lock { original; locked; future } ->
+                  let set, acc = aux set acc (TyMeta original) in
+                  aux set acc (TyMeta locked)
+              | In { target; mode_vars } ->
+                  aux set acc (TyMeta target)
+            ) (set, acc) meta.constraints
+          in
           (match meta.solution with
           | Some solution -> aux set acc solution
           | None -> set, meta :: acc)

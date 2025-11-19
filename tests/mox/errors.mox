@@ -15,13 +15,13 @@ left(unit)
 >   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
 
 unit unit
-> error: type mismatch between unit and (?708 -> ?709)
+> error: type mismatch between unit and (?717 -> ?718)
 
 let (x, y) = unit in x
-> error: type mismatch between unit and (?710 * ?711)
+> error: type mismatch between unit and (?719 * ?720)
 
 match unit with left(x) => x | right(y) => y
-> error: type mismatch between unit and (?712 + ?713)
+> error: type mismatch between unit and (?721 + ?722)
 
 let x = unit in (x : empty)
 > error: type mismatch between unit and empty

@@ -1,14 +1,30 @@
 fun f => rec map xs => match xs with [] => [] | x :: xs => f x :: map xs
 > (('d ->[a=a5 l=many p=p3] 'c) ->[a=a4 l=l1 p=p2] ((list[u=u2 a=a3] 'b) ->[a=a2 l=many p=p1] (list[u=u1 a=a1] 'a)))
 > where
->   'e <= 'd
->   'c <= 'f
->   'g <= 'b
->   'b <= 'h
+>   'e <= 'b
+>   'b <= 'f
 >   'b in {u=u3; c=c1; l=l2; p=p4; a=a6}
->   'i <= 'a
->   'a <= 'j
->   'a in {u=u4; c=c2; l=l3; p=p5; a=a7}
+>   'f <= 'e
+>   'e in {u=u4; c=c2; l=l3; p=p5; a=a7}
+>   'f <= 'g
+>   'f in {u=u5; c=c3; l=l4; p=p6; a=a8}
+>   'g <= 'h
+>   'h <= 'd
+>   'j <= 'i
+>   'i <= 'j
+>   'a <= 'i
+>   'i in {u=u6; c=c4; l=l5; p=p7; a=a9}
+>   'k <= 'a
+>   'a in {u=u7; c=c5; l=l6; p=p8; a=a10}
+>   'l <= 'k
+>   'l in {u=u8; c=c6; l=l7; p=p9; a=a11}
+>   'j <= 'k
+>   'k in {u=u9; c=c7; l=l8; p=p10; a=a12}
+>   'j <= 'm
+>   'm <= 'j
+>   'j in {u=u10; c=c8; l=l9; p=p11; a=a13}
+>   'n <= 'm
+>   'c <= 'n
 > mode vars
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
@@ -31,10 +47,69 @@ fun f => rec map xs => match xs with [] => [] | x :: xs => f x :: map xs
 >   l3 ∈ {many, never, once}
 >   c2 ∈ {contended, shared, uncontended}
 >   u4 ∈ {aliased, unique}
+>   a8 ∈ {borrowed, global, local, regional}
+>   p6 ∈ {nonportable, portable}
+>   l4 ∈ {many, never, once}
+>   c3 ∈ {contended, shared, uncontended}
+>   u5 ∈ {aliased, unique}
+>   a9 ∈ {borrowed, global, local, regional}
+>   p7 ∈ {nonportable, portable}
+>   l5 ∈ {many, never, once}
+>   c4 ∈ {contended, shared, uncontended}
+>   u6 ∈ {aliased, unique}
+>   a10 ∈ {borrowed, global, local, regional}
+>   p8 ∈ {nonportable, portable}
+>   l6 ∈ {many, never, once}
+>   c5 ∈ {contended, shared, uncontended}
+>   u7 ∈ {aliased, unique}
+>   a11 ∈ {borrowed, global, local, regional}
+>   p9 ∈ {nonportable, portable}
+>   l7 ∈ {many, never, once}
+>   c6 ∈ {contended, shared, uncontended}
+>   u8 ∈ {aliased, unique}
+>   a12 ∈ {borrowed, global, local, regional}
+>   p10 ∈ {nonportable, portable}
+>   l8 ∈ {many, never, once}
+>   c7 ∈ {contended, shared, uncontended}
+>   u9 ∈ {aliased, unique}
+>   a13 ∈ {borrowed, global, local, regional}
+>   p11 ∈ {nonportable, portable}
+>   l9 ∈ {many, never, once}
+>   c8 ∈ {contended, shared, uncontended}
+>   u10 ∈ {aliased, unique}
 > mode rels
->   (u4,u1) ∉ {(unique,aliased)}
+>   (u7,u1) ∉ {(unique,aliased)}
 >   (u3,u2) ∉ {(unique,aliased)}
->   (a7,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
+>   (a13,a1) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
+>   (a12,a1) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
+>   (a11,a1) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
+>   (a10,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
+>   (a9,a1) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
+>   (a8,a3) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
+>   (a7,a3) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
 >   (a6,a3) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
 >   (a5,a2) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
+>   (p3,p1) ∉ {(nonportable,portable)}
+
+fun f => fun x => f x
+> (('d ->[a=a3 l=l3 p=p3] 'c) ->[a=a2 l=l2 p=p2] ('b ->[a=a1 l=l1 p=p1] 'a))
+> where
+>   'b <= 'e
+>   'e <= 'f
+>   'f <= 'd
+>   'g <= 'a
+>   'c <= 'g
+> mode vars
+>   p1 ∈ {nonportable, portable}
+>   l1 ∈ {many, never, once}
+>   a1 ∈ {borrowed, global, local, regional}
+>   p2 ∈ {nonportable, portable}
+>   l2 ∈ {many, never, once}
+>   a2 ∈ {borrowed, global, local, regional}
+>   p3 ∈ {nonportable, portable}
+>   l3 ∈ {many, never, once}
+>   a3 ∈ {borrowed, global, local, regional}
+> mode rels
+>   (a3,a1) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
+>   (l3,l1) ∉ {(once,many), (never,many), (never,once)}
 >   (p3,p1) ∉ {(nonportable,portable)}

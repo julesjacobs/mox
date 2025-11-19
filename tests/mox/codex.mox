@@ -108,9 +108,14 @@ let! (a,b) = $(unit, unit) in a
 match left(unit) with left(x) => left(x) | right(y) => right(y)
 > (unit +[u=u1 a=a1] 'a)
 > where
+>   'c <= 'b
+>   'c in {u=u2; c=c1; l=l1; p=p1; a=a2}
 >   'b <= 'a
->   'c <= 'a
->   'a in {u=u2; c=c1; l=l1; p=p1; a=a2}
+>   'b in {u=u3; c=c2; l=l2; p=p2; a=a3}
+>   'b in {u=u4; c=c3; l=l3; p=p3; a=a4}
+>   'd <= 'a
+>   'd in {u=u5; c=c4; l=l4; p=p4; a=a5}
+>   'a in {u=u6; c=c5; l=l5; p=p5; a=a6}
 > mode vars
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
@@ -119,9 +124,31 @@ match left(unit) with left(x) => left(x) | right(y) => right(y)
 >   l1 ∈ {many, never, once}
 >   c1 ∈ {contended, shared, uncontended}
 >   u2 ∈ {aliased, unique}
+>   a3 ∈ {borrowed, global, local, regional}
+>   p2 ∈ {nonportable, portable}
+>   l2 ∈ {many, never, once}
+>   c2 ∈ {contended, shared, uncontended}
+>   u3 ∈ {aliased, unique}
+>   a4 ∈ {borrowed, global, local, regional}
+>   p3 ∈ {nonportable, portable}
+>   l3 ∈ {many, never, once}
+>   c3 ∈ {contended, shared, uncontended}
+>   u4 ∈ {aliased, unique}
+>   a5 ∈ {borrowed, global, local, regional}
+>   p4 ∈ {nonportable, portable}
+>   l4 ∈ {many, never, once}
+>   c4 ∈ {contended, shared, uncontended}
+>   u5 ∈ {aliased, unique}
+>   a6 ∈ {borrowed, global, local, regional}
+>   p5 ∈ {nonportable, portable}
+>   l5 ∈ {many, never, once}
+>   c5 ∈ {contended, shared, uncontended}
+>   u6 ∈ {aliased, unique}
 > mode rels
->   (u2,u1) ∉ {(unique,aliased)}
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
+>   (u6,u1) ∉ {(unique,aliased)}
+>   (a6,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
+>   (a5,a1) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
+>   (a3,a1) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
 
 ref unit : ref unit
 > (ref[c=uncontended] unit)
