@@ -107,9 +107,9 @@ fun f => fun x => f x
 >   l2 ∈ {many, never, once}
 >   a2 ∈ {borrowed, global, local, regional}
 >   p3 ∈ {nonportable, portable}
->   l3 ∈ {many, never, once}
+>   l3 ∈ {many, once}
 >   a3 ∈ {borrowed, global, local, regional}
 > mode rels
 >   (a3,a1) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
->   (l3,l1) ∉ {(once,many), (never,many), (never,once)}
+>   (l3,l1) ∉ {(once,many)}
 >   (p3,p1) ∉ {(nonportable,portable)}

@@ -110,7 +110,7 @@ let (x, y) = pair in x
 >   'e <= 'd
 >   'd <= 'a
 >   'c <= 'e
->   'a alias 'c
+>   'a <=[l=many] 'c
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   a1 ∈ {borrowed, global, local, regional}
@@ -124,7 +124,7 @@ let (x, y) = pair in x
 >   'b in {u=u2; c=c1; l=l1; p=p2; a=a3}
 >   'd in {u=u3; c=c2; l=l2; p=p3; a=a4}
 >   'd in {u=u3; c=c2; l=l2; p=p3; a=a4}
->   'c alias 'd
+>   'c <=[l=many] 'd
 > mode vars
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}

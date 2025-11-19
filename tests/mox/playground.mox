@@ -14,7 +14,7 @@ fun x => x
 (fun x => (fun y => x))
 > ('c ->[a=a2 l=l2 p=p2] ('b ->[a=a1 l=l1 p=p1] 'a))
 > where
->   lock 'c -> 'a with a=a1 l=l1 p=p1
+>   'c <=[p=p1 l=l1 a=a1] 'a
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
@@ -44,7 +44,7 @@ let f = (fun x => x p) in
 >   'e <= 'c
 >   'f <= 'e
 >   'g <= 'f
->   lock 'd -> 'g with a=a5 l=many p=p4
+>   'd <=[p=p4 l=many a=a5] 'g
 >   'h <= 'a
 >   'i <= 'h
 >   'b <= 'i
@@ -53,15 +53,15 @@ let f = (fun x => x p) in
 >   l1 ∈ {many, never, once}
 >   a1 ∈ {borrowed, global, local, regional}
 >   p2 ∈ {nonportable, portable}
->   l2 ∈ {many, never, once}
+>   l2 ∈ {many, once}
 >   a2 ∈ {borrowed, global, local, regional}
 >   a3 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 >   p3 ∈ {nonportable, portable}
 >   l3 ∈ {many, never, once}
 >   a4 ∈ {borrowed, global, local, regional}
->   p4 ∈ {nonportable, portable}
 >   a5 ∈ {borrowed, global, local, regional}
+>   p4 ∈ {nonportable, portable}
 > mode rels
 >   (a5,a3) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
 >   (a5,a1) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}

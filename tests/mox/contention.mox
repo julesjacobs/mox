@@ -80,8 +80,9 @@ r := unit
 > unit
 
 let r = ref unit in (r,r)
-> ((ref[c=uncontended] unit) *[u=u1 a=a1] (ref[c=uncontended] unit))
+> ((ref[c=c1] unit) *[u=u1 a=a1] (ref[c=c1] unit))
 > mode vars
+>   c1 ∈ {contended, shared, uncontended}
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 

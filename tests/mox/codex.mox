@@ -175,14 +175,16 @@ fork unit
 > unit
 
 let shared = ref unit in (shared, shared)
-> ((ref[c=uncontended] unit) *[u=u1 a=a1] (ref[c=uncontended] unit))
+> ((ref[c=c1] unit) *[u=u1 a=a1] (ref[c=c1] unit))
 > mode vars
+>   c1 ∈ {contended, shared, uncontended}
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 
 let shared = ref unit in let alias = shared in (shared, alias)
-> ((ref[c=uncontended] unit) *[u=u1 a=a1] (ref[c=uncontended] unit))
+> ((ref[c=c1] unit) *[u=u1 a=a1] (ref[c=c1] unit))
 > mode vars
+>   c1 ∈ {contended, shared, uncontended}
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 
@@ -196,7 +198,7 @@ let shared = (unit, unit) in (fun f => f shared, fun g => g shared)
 >   l1 ∈ {many, once}
 >   a1 ∈ {borrowed, global, local, regional}
 >   p2 ∈ {nonportable, portable}
->   l2 ∈ {many, never, once}
+>   l2 ∈ {many, once}
 >   a2 ∈ {borrowed, global, local, regional}
 >   a3 ∈ {borrowed, global, local, regional}
 >   a4 ∈ {borrowed, global, local, regional}
@@ -205,7 +207,7 @@ let shared = (unit, unit) in (fun f => f shared, fun g => g shared)
 >   l3 ∈ {many, once}
 >   a5 ∈ {borrowed, global, local, regional}
 >   p4 ∈ {nonportable, portable}
->   l4 ∈ {many, never, once}
+>   l4 ∈ {many, once}
 >   a6 ∈ {borrowed, global, local, regional}
 >   a7 ∈ {borrowed, global, local, regional}
 > mode rels
@@ -221,7 +223,7 @@ let shared = ((unit, unit) : (unit *[unique] unit)) in (fun f => f shared, fun g
 >   l1 ∈ {many, once}
 >   a1 ∈ {borrowed, global, local, regional}
 >   p2 ∈ {nonportable, portable}
->   l2 ∈ {many, never, once}
+>   l2 ∈ {many, once}
 >   a2 ∈ {borrowed, global, local, regional}
 >   a3 ∈ {borrowed, global, local, regional}
 >   a4 ∈ {borrowed, global, local, regional}
@@ -230,7 +232,7 @@ let shared = ((unit, unit) : (unit *[unique] unit)) in (fun f => f shared, fun g
 >   l3 ∈ {many, once}
 >   a5 ∈ {borrowed, global, local, regional}
 >   p4 ∈ {nonportable, portable}
->   l4 ∈ {many, never, once}
+>   l4 ∈ {many, once}
 >   a6 ∈ {borrowed, global, local, regional}
 >   a7 ∈ {borrowed, global, local, regional}
 > mode rels

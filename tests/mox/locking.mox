@@ -2,7 +2,7 @@
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
 ((fun _ => unique_pair)
  : (unit ->[local many] (unit *[unique local] unit)))
-> error: mode solver detected linearity inconsistency
+> error: mode solver detected uniqueness inconsistency
 
 (* once-qualified closures can retain unique storage *)
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in

@@ -106,13 +106,7 @@ and meta =
     mutable constraints : constraint_record list }
 
 and constraint_ =
-  | Sub of
-      { lower : meta;
-        upper : meta }
-  | Alias of
-      { source : meta;
-        target : meta }
-  | Lock of
+  | Leq of
       { original : meta;
         locked : meta;
         future : future_mode }
@@ -223,20 +217,20 @@ let fresh_meta ?solution ?(constraints = []) () : meta =
 (* -------------------------------------------------------------------------- *)
 (* Mode helpers                                                               *)
 
-let assert_storage_leq_to (lower : storage_mode) (upper : storage_mode) =
-  Modesolver.Uniqueness.assert_leq_to lower.uniqueness upper.uniqueness;
-  Modesolver.Areality.assert_leq_to lower.areality upper.areality
-
-let assert_ref_leq_to (lower : ref_mode) (upper : ref_mode) =
-  Modesolver.Contention.assert_leq_to lower.contention upper.contention
-
 let assert_future_leq_to (lower : future_mode) (upper : future_mode) =
   Modesolver.Linearity.assert_leq_to lower.linearity upper.linearity;
   Modesolver.Portability.assert_leq_to lower.portability upper.portability;
   Modesolver.Areality.assert_leq_to lower.areality upper.areality
 
-let assert_aliased (uniqueness : Modesolver.Uniqueness.var) =
-  Modesolver.Uniqueness.restrict_domain [Uniqueness.aliased] uniqueness
+let future_for_sub () : future_mode =
+  { linearity = Mode_consts.linearity Linearity.once;
+    portability = Mode_consts.portability Portability.nonportable;
+    areality = Mode_consts.areality Areality.borrowed }
+
+let future_for_alias () : future_mode =
+  { linearity = Mode_consts.linearity Linearity.many;
+    portability = Mode_consts.portability Portability.nonportable;
+    areality = Mode_consts.areality Areality.borrowed }
 
 let assert_equal_in assert_leq var1 var2 =
   assert_leq var1 var2;
@@ -432,72 +426,10 @@ and outer_equiv ty1 ty2 =
       type_error (Printf.sprintf "type mismatch between %s and %s" left right)
 
 and assert_subtype lower upper =
-  outer_equiv lower upper;
-  match (zonk lower, zonk upper) with
-  | TyMeta lower_meta, TyMeta upper_meta ->
-      let constraint_ = mk_constraint (Sub { lower = lower_meta; upper = upper_meta }) in
-      add_constraint lower_meta constraint_;
-      add_constraint upper_meta constraint_
-  | TyUnit, TyUnit -> ()
-  | TyEmpty, TyEmpty -> ()
-  | TyInt, TyInt -> ()
-  | TyBool, TyBool -> ()
-  | TyList (lower_elem, lower_storage), TyList (upper_elem, upper_storage) ->
-      assert_subtype lower_elem upper_elem;
-      assert_storage_leq_to lower_storage upper_storage
-  | TyPair (lower_left, lower_storage, lower_right), TyPair (upper_left, upper_storage, upper_right) ->
-      assert_subtype lower_left upper_left;
-      assert_subtype lower_right upper_right;
-      assert_storage_leq_to lower_storage upper_storage
-  | TySum (lower_left, lower_storage, lower_right), TySum (upper_left, upper_storage, upper_right) ->
-      assert_subtype lower_left upper_left;
-      assert_subtype lower_right upper_right;
-      assert_storage_leq_to lower_storage upper_storage
-  | TyRef (lower_payload, lower_mode), TyRef (upper_payload, upper_mode) ->
-      assert_subtype lower_payload upper_payload;
-      assert_subtype upper_payload lower_payload;
-      assert_ref_leq_to lower_mode upper_mode
-  | TyArrow (lower_domain, lower_future, lower_codomain), TyArrow (upper_domain, upper_future, upper_codomain) ->
-      assert_subtype upper_domain lower_domain;
-      assert_subtype lower_codomain upper_codomain;
-      assert_future_leq_to lower_future upper_future
-  | _ ->
-      type_error "assert_subtype: not a subtype"
+  assert_lock lower upper (future_for_sub ())
 
 and assert_alias source target =
-  outer_equiv source target;
-  match (zonk source, zonk target) with
-  | TyMeta source_meta, TyMeta target_meta ->
-      let constraint_ = mk_constraint (Alias { source = source_meta; target = target_meta }) in
-      add_constraint source_meta constraint_;
-      add_constraint target_meta constraint_
-  | TyUnit, TyUnit -> ()
-  | TyEmpty, TyEmpty -> ()
-  | TyInt, TyInt -> ()
-  | TyBool, TyBool -> ()
-  | TyList (source_elem, source_storage), TyList (target_elem, target_storage) ->
-      assert_aliased target_storage.uniqueness;
-      Modesolver.Areality.assert_leq_to source_storage.areality target_storage.areality;
-      assert_alias source_elem target_elem
-  | TyPair (source_left, source_storage, source_right), TyPair (target_left, target_storage, target_right) 
-  | TySum (source_left, source_storage, source_right), TySum (target_left, target_storage, target_right) ->
-      (* Make sure target_storage is aliased, areality is copied. *)
-      assert_aliased target_storage.uniqueness;
-      Modesolver.Areality.assert_leq_to source_storage.areality target_storage.areality;
-      assert_alias source_left target_left;
-      assert_alias source_right target_right;
-  | TyRef (source_payload, source_mode), TyRef (target_payload, target_mode) ->
-      assert_alias source_payload target_payload;
-      assert_equal_in Modesolver.Contention.assert_leq_to source_mode.contention target_mode.contention;
-  | TyArrow (source_domain, source_future, source_codomain), TyArrow (target_domain, target_future, target_codomain) ->
-      (* Assert that linearity is many for aliased functions.*)
-      Modesolver.Linearity.restrict_domain [Linearity.many] source_future.linearity;
-      Modesolver.Areality.assert_leq_to source_future.areality target_future.areality;
-      Modesolver.Portability.assert_leq_to source_future.portability target_future.portability;
-      assert_subtype target_domain source_domain;
-      assert_subtype source_codomain target_codomain;
-  | _ ->
-      type_error "assert_alias: not equivalent"
+  assert_lock source target (future_for_alias ())
 
 and assert_lock original locked future =
   log_lock "lock %s into %s"
@@ -506,7 +438,7 @@ and assert_lock original locked future =
   match (zonk original, zonk locked) with
   | TyMeta original_meta, TyMeta locked_meta ->
       log_lock "record meta constraint original=?%d locked=?%d" original_meta.id locked_meta.id;
-      let constraint_ = mk_constraint (Lock { original = original_meta; locked = locked_meta; future = future }) in
+      let constraint_ = mk_constraint (Leq { original = original_meta; locked = locked_meta; future }) in
       add_constraint original_meta constraint_;
       add_constraint locked_meta constraint_
   | TyUnit, TyUnit -> ()
@@ -550,11 +482,7 @@ and fire_constraint constraint_record =
   else (
     constraint_record.fired <- true;
     match constraint_record.constraint_ with
-    | Sub { lower; upper } ->
-        assert_subtype (TyMeta lower) (TyMeta upper)
-    | Alias { source; target } ->
-        assert_alias (TyMeta source) (TyMeta target)
-    | Lock { original; locked; future } ->
+    | Leq { original; locked; future } ->
         assert_lock (TyMeta original) (TyMeta locked) future
     | In { target; mode_vars } ->
         assert_in (TyMeta target) mode_vars )
@@ -760,6 +688,17 @@ let render_port state var =
 let render_cont state var =
   render_mode_var state state.c (remember_cont_var state) Modes.Contention.to_string var
 
+let future_mode_diffs state (future : future_mode) =
+  let baseline = future_for_sub () in
+  let add_if_diff label render var baseline_var acc =
+    if Modesolver.get_domain var = Modesolver.get_domain baseline_var then acc
+    else (Printf.sprintf "%s=%s" label (render state var)) :: acc
+  in
+  []
+  |> add_if_diff "a" render_are future.areality baseline.areality
+  |> add_if_diff "l" render_lin future.linearity baseline.linearity
+  |> add_if_diff "p" render_port future.portability baseline.portability
+
 let string_of_storage_mode state (storage : storage_mode) =
   Printf.sprintf "u=%s a=%s"
     (render_uni state storage.uniqueness)
@@ -827,13 +766,7 @@ let collect_metas ty =
           let set, acc =
             List.fold_left (fun (set, acc) constraint_record ->
               match constraint_record.constraint_ with
-              | Sub { lower; upper } ->
-                  let set, acc = aux set acc (TyMeta lower) in
-                  aux set acc (TyMeta upper)
-              | Alias { source; target } ->
-                  let set, acc = aux set acc (TyMeta source) in
-                  aux set acc (TyMeta target)
-              | Lock { original; locked; future } ->
+              | Leq { original; locked; _ } ->
                   let set, acc = aux set acc (TyMeta original) in
                   aux set acc (TyMeta locked)
               | In { target; mode_vars } ->
@@ -868,24 +801,17 @@ let render_constraints state metas =
       true)
   in
   let meta_ref meta = MetaNames.name state.meta_names meta.id in
-  let describe_future future = string_of_future_mode state future in
   let describe_constraint cr =
     match cr.constraint_ with
-    | Sub { lower; upper } ->
-        if IntSet.mem lower.id meta_ids || IntSet.mem upper.id meta_ids then
-          Some (Printf.sprintf "%s <= %s" (meta_ref lower) (meta_ref upper))
-        else
-          None
-    | Alias { source; target } ->
-        if IntSet.mem source.id meta_ids || IntSet.mem target.id meta_ids then
-          Some (Printf.sprintf "%s alias %s" (meta_ref source) (meta_ref target))
-        else
-          None
-    | Lock { original; locked; future } ->
+    | Leq { original; locked; future } ->
         if IntSet.mem original.id meta_ids || IntSet.mem locked.id meta_ids then
-          Some
-            (Printf.sprintf "lock %s -> %s with %s"
-               (meta_ref original) (meta_ref locked) (describe_future future))
+          let mode_diffs = future_mode_diffs state future in
+          let modifier =
+            match mode_diffs with
+            | [] -> ""
+            | diffs -> Printf.sprintf "[%s]" (String.concat " " diffs)
+          in
+          Some (Printf.sprintf "%s <=%s %s" (meta_ref original) modifier (meta_ref locked))
         else
           None
     | In { target; mode_vars } ->
