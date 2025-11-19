@@ -460,7 +460,7 @@ and assert_leq original locked future =
       log_lock "ref lock enforcement";
       Modesolver.Contention.assert_leq_to original_mode.contention locked_mode.contention;
       Modesolver.assert_portability_dagger future.portability locked_mode.contention;
-      (* CR jujacobs: check this carefully. *)
+      (* CR jujacobs: check this carefully. Do we need ot make that nonportable? *)
       assert_subtype original_payload locked_payload;
       assert_subtype locked_payload original_payload
   | TyArrow (original_domain, original_future, original_codomain), TyArrow (locked_domain, locked_future, locked_codomain) ->
