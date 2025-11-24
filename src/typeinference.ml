@@ -387,25 +387,51 @@ and mk_ref payload ref_mode =
   ty
 
 and string_of_ty_shallow ty =
-  match zonk ty with
-  | TyUnit -> "unit"
-  | TyEmpty -> "empty"
-  | TyInt -> "int"
-  | TyBool -> "bool"
-  | TyArrow (domain, _, codomain) ->
-      Printf.sprintf "(%s -> %s)" (string_of_ty_shallow domain) (string_of_ty_shallow codomain)
-  | TyPair (left, _, right) ->
-      Printf.sprintf "(%s * %s)" (string_of_ty_shallow left) (string_of_ty_shallow right)
-  | TySum (left, _, right) ->
-      Printf.sprintf "(%s + %s)" (string_of_ty_shallow left) (string_of_ty_shallow right)
-  | TyList (elem, _) ->
-      Printf.sprintf "(list %s)" (string_of_ty_shallow elem)
-  | TyRef (payload, _) ->
-      Printf.sprintf "(ref %s)" (string_of_ty_shallow payload)
-  | TyMeta meta ->
-      (match meta.solution with
-      | Some solution -> string_of_ty_shallow solution
-      | None -> Printf.sprintf "?%d" meta.id)
+  (* Use friendly, stable meta names ('a, 'b, …) instead of raw meta ids so
+     printed types remain consistent across runs. *)
+  let counter = ref 0 in
+  let tbl : (int, string) Hashtbl.t = Hashtbl.create 16 in
+  let rec label_of_index index =
+    let letter = Char.chr (Char.code 'a' + (index mod 26)) in
+    let next = (index / 26) - 1 in
+    let suffix = String.make 1 letter in
+    if next >= 0 then (label_of_index next) ^ suffix else suffix
+  in
+  let fresh_name () =
+    let name = "'" ^ label_of_index !counter in
+    incr counter;
+    name
+  in
+  let name_for meta_id =
+    match Hashtbl.find_opt tbl meta_id with
+    | Some n -> n
+    | None ->
+        let n = fresh_name () in
+        Hashtbl.add tbl meta_id n;
+        n
+  in
+  let rec aux ty =
+    match zonk ty with
+    | TyUnit -> "unit"
+    | TyEmpty -> "empty"
+    | TyInt -> "int"
+    | TyBool -> "bool"
+    | TyArrow (domain, _, codomain) ->
+        Printf.sprintf "(%s -> %s)" (aux domain) (aux codomain)
+    | TyPair (left, _, right) ->
+        Printf.sprintf "(%s * %s)" (aux left) (aux right)
+    | TySum (left, _, right) ->
+        Printf.sprintf "(%s + %s)" (aux left) (aux right)
+    | TyList (elem, _) ->
+        Printf.sprintf "(list %s)" (aux elem)
+    | TyRef (payload, _) ->
+        Printf.sprintf "(ref %s)" (aux payload)
+    | TyMeta meta -> (
+        match meta.solution with
+        | Some solution -> aux solution
+        | None -> name_for meta.id)
+  in
+  aux ty
 
 and outer_equiv ty1 ty2 =
   match (zonk ty1, zonk ty2) with

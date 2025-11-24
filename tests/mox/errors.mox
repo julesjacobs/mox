@@ -18,13 +18,13 @@ left(unit)
 >   r1-r2 <= 0
 
 unit unit
-> error: type mismatch between unit and (?777 -> ?778)
+> error: type mismatch between unit and ('b -> 'a)
 
 let (x, y) = unit in x
-> error: type mismatch between unit and (?779 * ?780)
+> error: type mismatch between unit and ('b * 'a)
 
 match unit with left(x) => x | right(y) => y
-> error: type mismatch between unit and (?781 + ?782)
+> error: type mismatch between unit and ('b + 'a)
 
 let x = unit in (x : empty)
 > error: type mismatch between unit and empty
