@@ -10,6 +10,9 @@ let x = $(1,2) in region x
 >   r1 ∈ [0, inf]
 >   u1 ∈ {aliased, unique}
 
+region (let x = $(1,2) in region x)
+> error: mode solver detected regionality inconsistency (1 <= 0)
+
 region $(1,2)
 > error: mode solver detected regionality inconsistency (1 <= 0)
 
