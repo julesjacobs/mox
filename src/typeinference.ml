@@ -240,8 +240,8 @@ let fresh_meta ?solution ?(constraints = []) () : meta =
 let assert_future_leq_to (lower : future_mode) (upper : future_mode) =
   Modesolver.Linearity.assert_leq_to lower.linearity upper.linearity;
   Modesolver.Portability.assert_leq_to lower.portability upper.portability;
-  Modesolver.Areality.assert_leq_to lower.areality upper.areality;
-  Modesolver.Regionality.assert_leq_to lower.regionality upper.regionality
+  Modesolver.Areality.assert_leq_to lower.areality upper.areality
+  (* Modesolver.Regionality.assert_leq_to lower.regionality upper.regionality *)
 
 let future_for_sub () : future_mode =
   { linearity = Mode_consts.linearity Linearity.once;

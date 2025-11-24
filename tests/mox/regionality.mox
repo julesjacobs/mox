@@ -1,0 +1,34 @@
+let x = $(1,2) in x
+> (int *[u=u1 a=a1 r=0] int)
+> mode vars
+>   a1 ∈ {borrowed, global, local, regional}
+>   u1 ∈ {aliased, unique}
+
+let x = $(1,2) in region x
+> (int *[u=u1 a=global r=r1] int)
+> mode vars
+>   r1 ∈ [0, inf]
+>   u1 ∈ {aliased, unique}
+
+region $(1,2)
+> error: mode solver detected regionality inconsistency (1 <= 0)
+
+region (1,2)
+> (int *[u=u1 a=global r=r1] int)
+> mode vars
+>   r1 ∈ [0, inf]
+>   u1 ∈ {aliased, unique}
+
+let x = $(1,2) in (fun y => y) x
+> (int *[u=u1 a=a1 r=r1] int)
+> mode vars
+>   r1 ∈ [0, inf]
+>   a1 ∈ {borrowed, global, local, regional}
+>   u1 ∈ {aliased, unique}
+
+let x = $(1,2) in if ? then x else x
+> (int *[u=u1 a=a1 r=r1] int)
+> mode vars
+>   r1 ∈ [0, inf]
+>   a1 ∈ {borrowed, global, local, regional}
+>   u1 ∈ {aliased, unique}

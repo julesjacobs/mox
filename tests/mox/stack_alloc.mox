@@ -69,26 +69,13 @@ region
 region
   let x = $(unit, unit) in
   fun y => x
-> ('a ->[a=global r=r2 l=l1 p=p1] (unit *[u=u1 a=a1 r=r1] unit))
-> where
->   'a <= 'b
-> mode vars
->   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
->   u1 ∈ {aliased, unique}
->   p1 ∈ {nonportable, portable}
->   l1 ∈ {many, never, once}
->   r2 ∈ [0, inf]
+> error: mode solver detected regionality inconsistency (1 <= 0)
 
 let a = (region
   let x = $(unit, unit) in
   fun y => x) 
 in a unit
-> (unit *[u=u1 a=a1 r=r1] unit)
-> mode vars
->   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
->   u1 ∈ {aliased, unique}
+> error: mode solver detected regionality inconsistency (1 <= 0)
 
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
 let! (x, y) = unique_pair in
