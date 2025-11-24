@@ -89,6 +89,11 @@ val assert_predecessor : var -> var -> unit
 (** Returns the current dynamic lower bound of the variable. *)
 val get_lower : var -> int
 
+(** Returns the tightest lower/upper bounds on [y - x].
+    The lower bound is [min_int] if there is no path from [x] to [y].
+    The upper bound is [None] if it is unbounded. *)
+val get_diff_bounds : var -> var -> int * int option
+
 (** Returns the tightest upper bound implied by the current constraints. *)
 val get_upper : var -> int
 

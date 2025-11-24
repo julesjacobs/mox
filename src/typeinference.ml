@@ -978,13 +978,61 @@ let axis_relation_lines names vars describe get_relation id_of =
   in
   List.rev lines
 
+let regionality_relation_lines state =
+  let vars = List.rev state.r_vars in
+  let all_pairs =
+    vars
+    |> List.mapi (fun i left ->
+           vars
+           |> List.mapi (fun j right ->
+                  if i >= j then None else Some (left, right))
+           |> List.filter_map (fun x -> x))
+    |> List.concat
+  in
+  let value_str v =
+    if v = Infsolver.infinity then "inf"
+    else if v = min_int then "-inf"
+    else string_of_int v
+  in
+  let lines =
+    List.fold_left
+      (fun acc (left, right) ->
+        let lower, upper = Modesolver.Regionality.get_diff_bounds left right in
+        let has_lb = lower <> min_int in
+        let has_ub = Option.is_some upper in
+        if not has_lb && not has_ub then acc
+        else
+          let left_name =
+            ModeName.name state.r (Modesolver.Regionality.id left)
+          in
+          let right_name =
+            ModeName.name state.r (Modesolver.Regionality.id right)
+          in
+          let diff = Printf.sprintf "%s-%s" right_name left_name in
+          let line =
+            match (has_lb, upper) with
+            | true, Some ub ->
+                Printf.sprintf "%s ∈ [%s, %s]"
+                  diff (value_str lower) (value_str ub)
+            | true, None ->
+                Printf.sprintf "%s ∈ [%s, inf]" diff (value_str lower)
+            | false, Some ub ->
+                Printf.sprintf "%s <= %s" diff (value_str ub)
+            | false, None -> assert false
+          in
+          line :: acc)
+      [] all_pairs
+  in
+  List.rev lines
+
 let render_mode_relations state =
   List.concat
     [ axis_relation_lines state.u state.u_vars Modes.Uniqueness.to_string Modesolver.Uniqueness.get_relation Modesolver.int_id;
       axis_relation_lines state.a state.a_vars Modes.Areality.to_string Modesolver.Areality.get_relation Modesolver.int_id;
       axis_relation_lines state.l state.l_vars Modes.Linearity.to_string Modesolver.Linearity.get_relation Modesolver.int_id;
       axis_relation_lines state.p state.p_vars Modes.Portability.to_string Modesolver.Portability.get_relation Modesolver.int_id;
-      axis_relation_lines state.c state.c_vars Modes.Contention.to_string Modesolver.Contention.get_relation Modesolver.int_id ]
+      axis_relation_lines state.c state.c_vars Modes.Contention.to_string Modesolver.Contention.get_relation Modesolver.int_id;
+      regionality_relation_lines state ]
 
 let string_of_section label lines =
   match lines with

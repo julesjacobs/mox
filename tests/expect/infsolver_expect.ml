@@ -48,7 +48,7 @@ let%expect_test "contradiction when predecessor clashes with bound" =
   [%expect {|
     contradiction: x lower=1 upper=0
     x: [1, 0]
-    y: [0, +oo]
+    y: [0, -1]
   |}]
 
 let%expect_test "infinity sticks through predecessor" =
@@ -106,7 +106,7 @@ let%expect_test "predecessor forward propagation" =
   dump [ ("x", x); ("y", y) ];
   [%expect {|
     x: [10, 10]
-    y: [9, +oo]
+    y: [9, 9]
   |}]
 
 let%expect_test "predecessor backward propagation" =
@@ -117,7 +117,7 @@ let%expect_test "predecessor backward propagation" =
   assert_eq_const y 20;
   dump [ ("x", x); ("y", y) ];
   [%expect {|
-    x: [21, +oo]
+    x: [21, 21]
     y: [20, 20]
   |}]
 
@@ -147,7 +147,7 @@ let%expect_test "contradiction from leq violation" =
   dump [ ("x", x); ("y", y) ];
   [%expect {|
     contradiction: y lower=10 upper=5
-    x: [10, 10]
+    x: [10, 5]
     y: [10, 5]
   |}]
 
@@ -163,8 +163,8 @@ let%expect_test "contradiction from predecessor and leq cycle with constant" =
   dump [ ("x", x); ("y", y) ];
   [%expect {|
     contradiction: y lower=inf upper=100
-    x: [3, +oo]
-    y: [+oo, 100]
+    x: [3, -4611686018427387803]
+    y: [+oo, -4611686018427387803]
   |}]
 
 let%expect_test "infinity propagation through leq" =
@@ -177,4 +177,13 @@ let%expect_test "infinity propagation through leq" =
   [%expect {|
     x: [+oo, +oo]
     y: [+oo, +oo]
+  |}]
+
+let%expect_test "infinity loop pushes up" =
+  reset();
+  let x = create_var ~name:"x" () in
+  assert_predecessor x x;
+  dump [ ("x", x) ];
+  [%expect {|
+    x: [+oo, +oo]
   |}]

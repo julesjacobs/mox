@@ -39,6 +39,7 @@ $left(unit)
 > mode rels
 >   (u2,u1) ∉ {(unique,aliased)}
 >   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
+>   r2-r1 <= 0
 
 $fun x => x
 > ('a ->[a=local r=0 l=l1 p=p1] 'a)

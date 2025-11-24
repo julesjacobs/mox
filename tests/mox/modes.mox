@@ -4,6 +4,8 @@
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
+> mode rels
+>   r1-r2 ∈ [0, inf]
 
 (((left(unit)), (right(unit))) : ((unit +[unique local] empty) * (unit +[unique local] unit)))
 > error: mode solver detected uniqueness inconsistency
@@ -15,6 +17,8 @@
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
 >   r3 ∈ [0, inf]
+> mode rels
+>   r1-r3 <= 0
 
 (* redundant mode annotation *)
 ((unit, unit) : (unit *[global] unit))

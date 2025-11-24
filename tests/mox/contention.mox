@@ -49,6 +49,10 @@ let g = f : unit ->[portable] unit in
 >   a1 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}
 >   r3 ∈ [0, inf]
+> mode rels
+>   r2-r3 <= 0
+>   r1-r3 <= 0
+>   r1-r2 ∈ [0, inf]
 
 let f = (fun x => x) : unit ->[nonportable] unit in
 f : unit ->[portable] unit

@@ -224,6 +224,30 @@ module Solver = struct
             if candidate < acc then candidate else acc)
           row base
 
+  let get_diff_bounds x y =
+    let lower =
+      match get_dist x.id y.id with Some w -> w | None -> min_int
+    in
+    let upper_from_backedge =
+      match get_dist y.id x.id with
+      | Some w -> Some (-w)
+      | None -> None
+    in
+    let upper_from_global =
+      let upper_y = implied_upper y.id in
+      if upper_y = infinity then None
+      else
+        let lower_x = get_lower x in
+        Some (upper_y - lower_x)
+    in
+    let upper =
+      match (upper_from_backedge, upper_from_global) with
+      | Some u1, Some u2 -> Some (min u1 u2)
+      | Some u, None | None, Some u -> Some u
+      | None, None -> None
+    in
+    (lower, upper)
+
   let get_upper x = 
     implied_upper x.id
 

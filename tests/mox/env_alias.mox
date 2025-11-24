@@ -20,6 +20,9 @@ let non_shared2 = ((unit, unit) : (unit *[unique] unit)) in
 >   r5 ∈ [0, inf]
 >   r6 ∈ [0, inf]
 >   r7 ∈ [0, inf]
+> mode rels
+>   r4-r5 <= 0
+>   r1-r4 ∈ [0, inf]
 
 (* application: non-shared variables used in both functions, but one is many *)
 let non_shared1 = ((unit, unit) : (unit *[unique] unit)) in
@@ -42,6 +45,9 @@ let shared = ((unit, unit) : (unit *[unique local] unit)) in
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
 >   r3 ∈ [0, inf]
+> mode rels
+>   r2-r3 <= 0
+>   r1-r2 ∈ [0, inf]
 
 (* pair: shared variable appears in both components *)
 let shared = ((unit, unit) : (unit *[unique] unit)) in
@@ -51,6 +57,9 @@ let shared = ((unit, unit) : (unit *[unique] unit)) in
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
 >   r3 ∈ [0, inf]
+> mode rels
+>   r2-r3 <= 0
+>   r1-r2 ∈ [0, inf]
 
 (* let-binding: shared variable used in initializer and body *)
 let shared = ((unit, unit) : (unit *[local] unit)) in
@@ -63,6 +72,8 @@ let alias = shared in
 >   r2 ∈ [0, inf]
 >   a2 ∈ {borrowed, local}
 >   u1 ∈ {aliased, unique}
+> mode rels
+>   r1-r2 ∈ [0, inf]
 
 (* let-pair: shared variable used alongside destructured pair *)
 let shared = ((unit, unit) : (unit *[unique local] unit)) in
@@ -80,6 +91,8 @@ let (x, y) = pair in
 >   a3 ∈ {borrowed, local}
 > mode rels
 >   (a3,a2) ∈ {(local,local), (borrowed,borrowed)}
+>   r2-r3 <= 0
+>   r1-r2 ∈ [0, inf]
 
 (* match: shared variable used in both branches *)
 let shared = ((unit, unit) : (unit *[unique local] unit)) in
@@ -99,6 +112,8 @@ let shared = ((unit, unit) : (unit *[aliased] unit)) in
 >   r2 ∈ [0, inf]
 >   a2 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
+> mode rels
+>   r1-r2 ∈ [0, inf]
 
 (* let-binding success with aliasable shared value *)
 let shared = ((unit, unit) : (unit *[aliased] unit)) in
@@ -111,6 +126,8 @@ let alias = shared in
 >   r2 ∈ [0, inf]
 >   a2 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
+> mode rels
+>   r1-r2 ∈ [0, inf]
 
 (* let-pair success with aliasable shared value *)
 let shared = ((unit, unit) : (unit *[aliased] unit)) in
@@ -128,6 +145,8 @@ let (x, y) = pair in
 >   a3 ∈ {borrowed, global, local, regional}
 > mode rels
 >   (a3,a2) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
+>   r2-r3 <= 0
+>   r1-r2 ∈ [0, inf]
 
 (* match with aliasable shared value still fails: need better inference *)
 let shared = ((unit, unit) : (unit *[aliased local] unit)) in

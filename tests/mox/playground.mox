@@ -80,6 +80,9 @@ let f = (fun x => x p) in
 >   (a5,a3) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
 >   (a5,a1) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
 >   (p4,p1) ∉ {(nonportable,portable)}
+>   r3-r5 <= 0
+>   r1-r5 <= 0
+>   r1-r3 ∈ [0, inf]
 
 let x = (unit, unit) in
 let y = (x,x) in

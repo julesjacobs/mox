@@ -4,6 +4,8 @@
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
+> mode rels
+>   r1-r2 <= 0
 
 (* sum distributing modes across branches *)
 (((left(unit)), (left(unit))) : ((unit +[unique local] empty) * (unit +[unique local] empty)))

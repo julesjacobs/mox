@@ -4,3 +4,5 @@
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
+> mode rels
+>   r1-r2 <= 0

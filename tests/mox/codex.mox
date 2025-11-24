@@ -37,6 +37,7 @@ left(unit)
 > mode rels
 >   (u2,u1) ∉ {(unique,aliased)}
 >   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
+>   r1-r2 <= 0
 
 right(unit)
 > ('a +[u=u1 a=a1 r=r1] unit)
@@ -55,6 +56,7 @@ right(unit)
 > mode rels
 >   (u2,u1) ∉ {(unique,aliased)}
 >   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
+>   r1-r2 <= 0
 
 fun x => x
 > ('a ->[a=a1 r=r1 l=l1 p=p1] 'a)
@@ -164,6 +166,9 @@ match left(unit) with left(x) => left(x) | right(y) => right(y)
 >   (a6,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
 >   (a5,a1) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
 >   (a3,a1) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
+>   r1-r6 <= 0
+>   r1-r5 <= 0
+>   r1-r3 <= 0
 
 ref unit : ref unit
 > (ref[c=uncontended] unit)
@@ -236,6 +241,8 @@ let shared = (unit, unit) in (fun f => f shared, fun g => g shared)
 >   a7 ∈ {borrowed, global, local, regional}
 > mode rels
 >   (a5,a4) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
+>   r4-r5 <= 0
+>   r1-r4 ∈ [0, inf]
 
 let shared = ((unit, unit) : (unit *[unique] unit)) in (fun f => f shared, fun g => g shared)
 > ((((unit *[u=aliased a=a7 r=r7] unit) ->[a=a6 r=r6 l=l4 p=p4] 'd) ->[a=a5 r=r5 l=l3 p=p3] 'c) *[u=u1 a=a4 r=r4] (((unit *[u=aliased a=a3 r=r3] unit) ->[a=a2 r=r2 l=l2 p=p2] 'b) ->[a=a1 r=r1 l=l1 p=p1] 'a))
@@ -268,6 +275,8 @@ let shared = ((unit, unit) : (unit *[unique] unit)) in (fun f => f shared, fun g
 >   a7 ∈ {borrowed, global, local, regional}
 > mode rels
 >   (a5,a4) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
+>   r4-r5 <= 0
+>   r1-r4 ∈ [0, inf]
 
 let shared = ((unit, unit) : (unit *[unique] unit)) in fork (let shared2 = shared in shared2)
 > error: type mismatch between (unit * unit) and unit
@@ -326,6 +335,8 @@ let f = (fun x => x) : unit ->[portable] unit in (f, f)
 >   r2 ∈ [0, inf]
 >   a2 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
+> mode rels
+>   r1-r2 ∈ [0, inf]
 
 let f = (fun x => x) : unit ->[nonportable] unit in (f : unit ->[portable] unit)
 > error: mode solver detected portability inconsistency
@@ -377,6 +388,8 @@ let shared = ((unit, unit) : (unit *[aliased local] unit)) in let alias = shared
 >   r2 ∈ [0, inf]
 >   a2 ∈ {borrowed, local}
 >   u1 ∈ {aliased, unique}
+> mode rels
+>   r1-r2 ∈ [0, inf]
 
 let shared = ((unit, unit) : (unit *[aliased local] unit)) in match left(shared) with left(x) => x | right(y) => shared
 > (unit *[u=aliased a=a1 r=r1] unit)

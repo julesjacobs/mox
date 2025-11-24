@@ -15,6 +15,7 @@ left(unit)
 > mode rels
 >   (u2,u1) ∉ {(unique,aliased)}
 >   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
+>   r1-r2 <= 0
 
 unit unit
 > error: type mismatch between unit and (?758 -> ?759)

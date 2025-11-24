@@ -56,5 +56,6 @@ module Regionality : sig
   val join_to : var -> var -> var
   val bottom_in : var
   val get_bounds : var -> int * int
+  val get_diff_bounds : var -> var -> int * int option
   val id : var -> int
 end

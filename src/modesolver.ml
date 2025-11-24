@@ -335,4 +335,6 @@ module Regionality = struct
   let bottom_in = new_var ~domain:[Modes.Regionality.Infty] ()
 
   let get_bounds v = lift (fun () -> (Infsolver.get_lower v, Infsolver.get_upper v))
+
+  let get_diff_bounds v1 v2 = lift (fun () -> Infsolver.get_diff_bounds v1 v2)
 end

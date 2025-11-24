@@ -18,6 +18,7 @@ unit
 > mode rels
 >   (u2,u1) ∉ {(unique,aliased)}
 >   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
+>   r1-r2 <= 0
 
 [unit]
 > (list[u=u1 a=a1 r=r1] unit)
@@ -159,6 +160,8 @@ let (x, y) = pair in x
 >   (u2,u1) ∉ {(unique,aliased)}
 >   (a4,a1) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
 >   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
+>   r1-r4 <= 0
+>   r1-r3 <= 0
 
 rec f x => x
 > ('b ->[a=a1 r=r1 l=many p=p1] 'a)
