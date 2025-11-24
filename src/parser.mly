@@ -43,6 +43,7 @@ let rec list_literal alloc elems =
 %token LPAREN RPAREN LBRACKET RBRACKET COMMA EQUAL BAR ARROW FATARROW PLUS MINUS TIMES CONS COLON
 %token EQ LT GT LE GE
 %token <string> IDENT
+%token <int> STACKCONS
 %token <int> INT_LITERAL
 %token EOF
 
@@ -112,8 +113,12 @@ expr_assign:
   | expr_cons { $1 }
 
 expr_cons:
-  | expr_or CONS expr_cons { ListCons (Heap, $1, $3) }
-  | expr_or { $1 }
+  | expr_or cons_suffix { $2 $1 }
+
+cons_suffix:
+  | STACKCONS expr_cons { fun head -> ListCons (alloc_of_stack_depth $1, head, $2) }
+  | CONS expr_cons { fun head -> ListCons (Heap, head, $2) }
+  | /* empty */ { fun head -> head }
 
 expr_or:
   | expr_or OR expr_and { BinOp ($1, Or, $3) }

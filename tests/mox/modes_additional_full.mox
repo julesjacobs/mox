@@ -14,7 +14,7 @@
 (* nested arrow with modes *)
 ((fun f => fun x => f (fun y => x))
  : ((unit ->[local once portable] unit) ->[regional once portable] (unit ->[local once portable] unit)))
-> error: type mismatch between (?1040 -> ?1041) and unit
+> error: type mismatch between (?1059 -> ?1060) and unit
 
 (* invalid pair: areality violation *)
 (((unit, unit), unit) : ((unit *[unique local] unit) *[unique global] unit))

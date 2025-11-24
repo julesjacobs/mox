@@ -59,6 +59,7 @@ rule token = parse
   | ">"                  { GT }
   | "="                  { EQUAL }
   | "|"                  { BAR }
+  | '$'+ "::" as s       { STACKCONS (String.length s - 2) }
   | "$"                  { STACK }
   | "["                  { LBRACKET }
   | "]"                  { RBRACKET }

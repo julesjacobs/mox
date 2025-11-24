@@ -9,6 +9,22 @@ region (1,2)
 >   r1 ∈ [0, inf]
 >   u1 ∈ {aliased, unique}
 
+(* Original region of value is tracked *)
+let x = $(1,2) in region x
+> (int *[u=u1 a=global r=0] int)
+> mode vars
+>   u1 ∈ {aliased, unique}
+
+(* Can allocate in upper region with $$, $$$, etc. *)
+region
+  let x = $$(1,2) in
+  let cond = true in
+  region 
+    if cond then x else $$$(2,3)
+> (int *[u=u1 a=global r=0] int)
+> mode vars
+>   u1 ∈ {aliased, unique}
+
 (* Automatic modalities: can store global data in stack allocated data *)
 let x = (1,2) in
 region

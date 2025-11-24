@@ -35,8 +35,12 @@ let rec string_of_expr = function
       Printf.sprintf "(%s %s %s)" (string_of_expr lhs) sym (string_of_expr rhs)
   | ListNil -> "[]"
   | ListCons (alloc, head, tail) ->
-      Printf.sprintf "(%s%s :: %s)"
-        (stack_prefix alloc) (string_of_expr head) (string_of_expr tail)
+      let cons =
+        let prefix = stack_prefix alloc in
+        if prefix = "" then "::" else prefix ^ "::"
+      in
+      Printf.sprintf "(%s %s %s)"
+        (string_of_expr head) cons (string_of_expr tail)
   | MatchList (kind, scrutinee, nil_branch, x, xs, cons_branch) ->
       Printf.sprintf "(%s %s with [] => %s | %s :: %s => %s)"
         (match_prefix kind) (string_of_expr scrutinee)

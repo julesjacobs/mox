@@ -9,6 +9,20 @@ region $$(1,2)
 > mode vars
 >   u1 ∈ {aliased, unique}
 
+(1 $$:: [])
+> (list[u=u1 a=a1 r=r1] int)
+> mode vars
+>   r1 ∈ [0, 1]
+>   a1 ∈ {borrowed, global, local, regional}
+>   u1 ∈ {aliased, unique}
+
+(unit $$:: (unit :: []))
+> (list[u=u1 a=a1 r=r1] unit)
+> mode vars
+>   r1 ∈ [0, 1]
+>   a1 ∈ {borrowed, global, local, regional}
+>   u1 ∈ {aliased, unique}
+
 $$(unit, unit)
 > (unit *[u=u1 a=a1 r=r1] unit)
 > mode vars
