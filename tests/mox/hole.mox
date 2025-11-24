@@ -9,14 +9,14 @@
 (? : (unit -> unit))
 > (unit ->[a=global r=r1 l=many p=nonportable] unit)
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 
 (left(?) : (unit + empty))
 > (unit +[u=aliased a=global r=r1] empty)
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 
 ((?, unit) : (unit * unit))
 > (unit *[u=aliased a=global r=r1] unit)
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]

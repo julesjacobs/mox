@@ -1,25 +1,28 @@
 $(unit, unit)
-> (unit *[u=u1 a=local r=r0] unit)
+> (unit *[u=u1 a=a1 r=0] unit)
 > mode vars
+>   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 
 $left(unit)
-> (unit +[u=u1 a=local r=r0] 'a)
+> (unit +[u=u1 a=a1 r=0] 'a)
 > where
->   'a in {u=u2; c=c1; l=l1; p=p1; a=a1; r=r1}
+>   'a in {u=u2; c=c1; l=l1; p=p1; a=a2; r=r1}
 > mode vars
+>   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
->   r1 ∈ [r0, rinf]
->   a1 ∈ {global, local, regional}
+>   r1 ∈ [0, inf]
+>   a2 ∈ {borrowed, global, local, regional}
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
 >   c1 ∈ {contended, shared, uncontended}
 >   u2 ∈ {aliased, unique}
 > mode rels
 >   (u2,u1) ∉ {(unique,aliased)}
+>   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
 
 $fun x => x
-> ('a ->[a=local r=r0 l=l1 p=p1] 'a)
+> ('a ->[a=local r=0 l=l1 p=p1] 'a)
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
@@ -28,7 +31,10 @@ region unit
 > unit
 
 region $(unit, unit)
-> error: mode solver detected areality inconsistency
+> (unit *[u=u1 a=global r=r1] unit)
+> mode vars
+>   r1 ∈ [0, inf]
+>   u1 ∈ {aliased, unique}
 
 region
   let x = $(unit, unit) in
@@ -40,18 +46,28 @@ region
   let (a,b) = x in (unit, unit)
 > (unit *[u=u1 a=global r=r1] unit)
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   u1 ∈ {aliased, unique}
 
 region
   let x = $(unit, unit) in
   let y = (x, x) in y
-> error: mode solver detected areality inconsistency
+> ((unit *[u=aliased a=global r=r3] unit) *[u=u1 a=global r=r2] (unit *[u=aliased a=global r=r1] unit))
+> mode vars
+>   r1 ∈ [0, inf]
+>   r2 ∈ [0, inf]
+>   u1 ∈ {aliased, unique}
+>   r3 ∈ [0, inf]
 
 region
   let x = $(unit, unit) in
   let y = (x, x) in y
-> error: mode solver detected areality inconsistency
+> ((unit *[u=aliased a=global r=r3] unit) *[u=u1 a=global r=r2] (unit *[u=aliased a=global r=r1] unit))
+> mode vars
+>   r1 ∈ [0, inf]
+>   r2 ∈ [0, inf]
+>   u1 ∈ {aliased, unique}
+>   r3 ∈ [0, inf]
 
 region
   let a = (unit, unit) in 
@@ -61,18 +77,31 @@ region
   let (e,f) = z in e
 > (unit *[u=aliased a=global r=r1] unit)
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 
 region
   let x = $(unit, unit) in
   fun y => x
-> error: mode solver detected areality inconsistency
+> ('a ->[a=global r=r2 l=l1 p=p1] (unit *[u=u1 a=a1 r=r1] unit))
+> where
+>   'a <= 'b
+> mode vars
+>   r1 ∈ [0, inf]
+>   a1 ∈ {borrowed, global, local, regional}
+>   u1 ∈ {aliased, unique}
+>   p1 ∈ {nonportable, portable}
+>   l1 ∈ {many, never, once}
+>   r2 ∈ [0, inf]
 
 let a = (region
   let x = $(unit, unit) in
   fun y => x) 
 in a unit
-> error: mode solver detected areality inconsistency
+> (unit *[u=u1 a=a1 r=r1] unit)
+> mode vars
+>   r1 ∈ [0, inf]
+>   a1 ∈ {borrowed, global, local, regional}
+>   u1 ∈ {aliased, unique}
 
 let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
 let! (x, y) = unique_pair in

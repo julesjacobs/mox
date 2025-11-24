@@ -268,8 +268,8 @@ module Regionality_spec = struct
   let default = Infty
 
   let show = function
-    | Infty -> "rinf"
-    | Region n -> Printf.sprintf "r%d" n
+    | Infty -> "inf"
+    | Region n -> string_of_int n
 
   let equal a b =
     match (a, b) with

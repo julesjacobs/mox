@@ -6,13 +6,13 @@ fun x => x
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, global, local, regional}
 
 (fun x => x) : (unit -> unit)
 > (unit ->[a=global r=r1 l=many p=nonportable] unit)
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 
 (fun x => (fun y => x))
 > ('c ->[a=a2 r=r2 l=l2 p=p2] ('b ->[a=a1 r=r1 l=l1 p=p1] 'a))
@@ -21,11 +21,11 @@ fun x => x
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   p2 ∈ {nonportable, portable}
 >   l2 ∈ {many, never, once}
->   r2 ∈ [r0, rinf]
+>   r2 ∈ [0, inf]
 >   a2 ∈ {borrowed, global, local, regional}
 
 (fun x => (fun y => y))
@@ -33,17 +33,17 @@ fun x => x
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   p2 ∈ {nonportable, portable}
 >   l2 ∈ {many, never, once}
->   r2 ∈ [r0, rinf]
+>   r2 ∈ [0, inf]
 >   a2 ∈ {borrowed, global, local, regional}
 
 (unit, unit) : (unit *[local unique] unit)
 > (unit *[u=unique a=local r=r1] unit)
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 
 (fun p =>
 let f = (fun x => x p) in
@@ -60,18 +60,18 @@ let f = (fun x => x p) in
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   p2 ∈ {nonportable, portable}
 >   l2 ∈ {many, once}
->   r2 ∈ [r0, rinf]
+>   r2 ∈ [0, inf]
 >   a2 ∈ {borrowed, global, local, regional}
->   r3 ∈ [r0, rinf]
+>   r3 ∈ [0, inf]
 >   a3 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 >   p3 ∈ {nonportable, portable}
 >   l3 ∈ {many, never, once}
->   r4 ∈ [r0, rinf]
+>   r4 ∈ [0, inf]
 >   a4 ∈ {borrowed, global, local, regional}
 >   a5 ∈ {borrowed, global, local, regional}
 >   p4 ∈ {nonportable, portable}
@@ -85,7 +85,7 @@ let y = (x,x) in
 let! (a,b) = y in a
 > (unit *[u=aliased a=a1 r=r1] unit)
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, global, local, regional}
 
 let x = (unit, unit) in

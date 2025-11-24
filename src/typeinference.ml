@@ -150,7 +150,7 @@ let fresh_mode_vars () : mode_vars =
     areality = Modesolver.Areality.new_var ();
     regionality = Modesolver.Regionality.new_var () }
 
-let force_storage_local (storage : storage_mode) =
+let _force_storage_local (storage : storage_mode) =
   Modesolver.Areality.restrict_domain [Areality.local] storage.areality;
   Modesolver.Regionality.restrict_domain [Regionality.stack] storage.regionality
 
@@ -166,7 +166,7 @@ let fresh_storage ~alloc () =
   let s = fresh_storage_mode () in
   (match alloc with
   | Ast.Stack -> 
-    force_storage_local s;
+    (* force_storage_local s; *)
     Modesolver.Regionality.restrict_domain [Regionality.of_int 0] s.regionality
   | Ast.Heap ->
       Modesolver.Regionality.restrict_domain [Regionality.heap] s.regionality);
@@ -729,7 +729,7 @@ let render_reg state var =
   remember_reg_var state var;
   let lb, ub = Modesolver.Regionality.get_bounds var in
   let to_str n =
-    if n = Infsolver.infinity then "rinf" else Printf.sprintf "r%d" n
+    if n = Infsolver.infinity then "inf" else string_of_int n
   in
   if lb = ub then to_str lb
   else

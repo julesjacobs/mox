@@ -2,5 +2,5 @@
 (((unit, unit), unit) : ((unit *[unique local] unit) *[unique local] unit))
 > ((unit *[u=unique a=local r=r2] unit) *[u=unique a=local r=r1] unit)
 > mode vars
->   r1 ∈ [r0, rinf]
->   r2 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
+>   r2 ∈ [0, inf]

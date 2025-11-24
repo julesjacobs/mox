@@ -26,65 +26,65 @@ fun f => rec map xs => match xs with [] => [] | x :: xs => f x :: map xs
 >   'n <= 'm
 >   'c <= 'n
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 >   p1 ∈ {nonportable, portable}
->   r2 ∈ [r0, rinf]
+>   r2 ∈ [0, inf]
 >   a2 ∈ {borrowed, global, local, regional}
->   r3 ∈ [r0, rinf]
+>   r3 ∈ [0, inf]
 >   a3 ∈ {borrowed, global, local, regional}
 >   u2 ∈ {aliased, unique}
 >   p2 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
->   r4 ∈ [r0, rinf]
+>   r4 ∈ [0, inf]
 >   a4 ∈ {borrowed, global, local, regional}
 >   p3 ∈ {nonportable, portable}
->   r5 ∈ [r0, rinf]
+>   r5 ∈ [0, inf]
 >   a5 ∈ {borrowed, global, local, regional}
->   r6 ∈ [r0, rinf]
+>   r6 ∈ [0, inf]
 >   a6 ∈ {borrowed, global, local, regional}
 >   p4 ∈ {nonportable, portable}
 >   l2 ∈ {many, never, once}
 >   c1 ∈ {contended, shared, uncontended}
 >   u3 ∈ {aliased, unique}
->   r7 ∈ [r0, rinf]
+>   r7 ∈ [0, inf]
 >   a7 ∈ {borrowed, global, local, regional}
 >   p5 ∈ {nonportable, portable}
 >   l3 ∈ {many, never, once}
 >   c2 ∈ {contended, shared, uncontended}
 >   u4 ∈ {aliased, unique}
->   r8 ∈ [r0, rinf]
+>   r8 ∈ [0, inf]
 >   a8 ∈ {borrowed, global, local, regional}
 >   p6 ∈ {nonportable, portable}
 >   l4 ∈ {many, never, once}
 >   c3 ∈ {contended, shared, uncontended}
 >   u5 ∈ {aliased, unique}
->   r9 ∈ [r0, rinf]
+>   r9 ∈ [0, inf]
 >   a9 ∈ {borrowed, global, local, regional}
 >   p7 ∈ {nonportable, portable}
 >   l5 ∈ {many, never, once}
 >   c4 ∈ {contended, shared, uncontended}
 >   u6 ∈ {aliased, unique}
->   r10 ∈ [r0, rinf]
+>   r10 ∈ [0, inf]
 >   a10 ∈ {borrowed, global, local, regional}
 >   p8 ∈ {nonportable, portable}
 >   l6 ∈ {many, never, once}
 >   c5 ∈ {contended, shared, uncontended}
 >   u7 ∈ {aliased, unique}
->   r11 ∈ [r0, rinf]
+>   r11 ∈ [0, inf]
 >   a11 ∈ {borrowed, global, local, regional}
 >   p9 ∈ {nonportable, portable}
 >   l7 ∈ {many, never, once}
 >   c6 ∈ {contended, shared, uncontended}
 >   u8 ∈ {aliased, unique}
->   r12 ∈ [r0, rinf]
+>   r12 ∈ [0, inf]
 >   a12 ∈ {borrowed, global, local, regional}
 >   p10 ∈ {nonportable, portable}
 >   l8 ∈ {many, never, once}
 >   c7 ∈ {contended, shared, uncontended}
 >   u9 ∈ {aliased, unique}
->   r13 ∈ [r0, rinf]
+>   r13 ∈ [0, inf]
 >   a13 ∈ {borrowed, global, local, regional}
 >   p11 ∈ {nonportable, portable}
 >   l9 ∈ {many, never, once}
@@ -115,15 +115,15 @@ fun f => fun x => f x
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   p2 ∈ {nonportable, portable}
 >   l2 ∈ {many, never, once}
->   r2 ∈ [r0, rinf]
+>   r2 ∈ [0, inf]
 >   a2 ∈ {borrowed, global, local, regional}
 >   p3 ∈ {nonportable, portable}
 >   l3 ∈ {many, once}
->   r3 ∈ [r0, rinf]
+>   r3 ∈ [0, inf]
 >   a3 ∈ {borrowed, global, local, regional}
 > mode rels
 >   (a3,a1) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}

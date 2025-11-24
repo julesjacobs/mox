@@ -11,15 +11,15 @@ let non_shared2 = ((unit, unit) : (unit *[unique] unit)) in
  ((fun g => g non_shared2) : ((unit *[unique] unit) -> unit) ->[once] unit))
 > ((((unit *[u=unique a=global r=r7] unit) ->[a=global r=r6 l=many p=nonportable] unit) ->[a=global r=r5 l=once p=nonportable] unit) *[u=u1 a=a1 r=r4] (((unit *[u=unique a=global r=r3] unit) ->[a=global r=r2 l=many p=nonportable] unit) ->[a=global r=r1 l=once p=nonportable] unit))
 > mode vars
->   r1 ∈ [r0, rinf]
->   r2 ∈ [r0, rinf]
->   r3 ∈ [r0, rinf]
->   r4 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
+>   r2 ∈ [0, inf]
+>   r3 ∈ [0, inf]
+>   r4 ∈ [0, inf]
 >   a1 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}
->   r5 ∈ [r0, rinf]
->   r6 ∈ [r0, rinf]
->   r7 ∈ [r0, rinf]
+>   r5 ∈ [0, inf]
+>   r6 ∈ [0, inf]
+>   r7 ∈ [0, inf]
 
 (* application: non-shared variables used in both functions, but one is many *)
 let non_shared1 = ((unit, unit) : (unit *[unique] unit)) in
@@ -39,18 +39,18 @@ let shared = ((unit, unit) : (unit *[unique local] unit)) in
 (shared, shared) : (unit *[local] unit) *[local] (unit *[local] unit)
 > ((unit *[u=aliased a=local r=r3] unit) *[u=aliased a=local r=r2] (unit *[u=aliased a=local r=r1] unit))
 > mode vars
->   r1 ∈ [r0, rinf]
->   r2 ∈ [r0, rinf]
->   r3 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
+>   r2 ∈ [0, inf]
+>   r3 ∈ [0, inf]
 
 (* pair: shared variable appears in both components *)
 let shared = ((unit, unit) : (unit *[unique] unit)) in
 (shared, shared) : (unit *[aliased] unit) *[unique] (unit *[aliased] unit)
 > ((unit *[u=aliased a=global r=r3] unit) *[u=unique a=global r=r2] (unit *[u=aliased a=global r=r1] unit))
 > mode vars
->   r1 ∈ [r0, rinf]
->   r2 ∈ [r0, rinf]
->   r3 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
+>   r2 ∈ [0, inf]
+>   r3 ∈ [0, inf]
 
 (* let-binding: shared variable used in initializer and body *)
 let shared = ((unit, unit) : (unit *[local] unit)) in
@@ -58,9 +58,9 @@ let alias = shared in
 (shared, alias)
 > ((unit *[u=aliased a=a1 r=r1] unit) *[u=u1 a=a2 r=r2] (unit *[u=aliased a=a1 r=r1] unit))
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, local}
->   r2 ∈ [r0, rinf]
+>   r2 ∈ [0, inf]
 >   a2 ∈ {borrowed, local}
 >   u1 ∈ {aliased, unique}
 
@@ -71,12 +71,12 @@ let (x, y) = pair in
 (x, y)
 > ((unit *[u=aliased a=a3 r=r3] unit) *[u=u1 a=a2 r=r2] (unit *[u=aliased a=a1 r=r1] unit))
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, local}
->   r2 ∈ [r0, rinf]
+>   r2 ∈ [0, inf]
 >   a2 ∈ {borrowed, local}
 >   u1 ∈ {aliased, unique}
->   r3 ∈ [r0, rinf]
+>   r3 ∈ [0, inf]
 >   a3 ∈ {borrowed, local}
 > mode rels
 >   (a3,a2) ∈ {(local,local), (borrowed,borrowed)}
@@ -86,7 +86,7 @@ let shared = ((unit, unit) : (unit *[unique local] unit)) in
 match left(shared) with left(x) => x | right(y) => shared
 > (unit *[u=aliased a=a1 r=r1] unit)
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, local}
 
 (* pair with aliased shared value *)
@@ -94,9 +94,9 @@ let shared = ((unit, unit) : (unit *[aliased] unit)) in
 (shared, shared)
 > ((unit *[u=aliased a=a1 r=r1] unit) *[u=u1 a=a2 r=r2] (unit *[u=aliased a=a1 r=r1] unit))
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, global, local, regional}
->   r2 ∈ [r0, rinf]
+>   r2 ∈ [0, inf]
 >   a2 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 
@@ -106,9 +106,9 @@ let alias = shared in
 (shared, alias)
 > ((unit *[u=aliased a=a1 r=r1] unit) *[u=u1 a=a2 r=r2] (unit *[u=aliased a=a1 r=r1] unit))
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, global, local, regional}
->   r2 ∈ [r0, rinf]
+>   r2 ∈ [0, inf]
 >   a2 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 
@@ -119,12 +119,12 @@ let (x, y) = pair in
 (x, y)
 > ((unit *[u=aliased a=a3 r=r3] unit) *[u=u1 a=a2 r=r2] (unit *[u=aliased a=a1 r=r1] unit))
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, global, local, regional}
->   r2 ∈ [r0, rinf]
+>   r2 ∈ [0, inf]
 >   a2 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
->   r3 ∈ [r0, rinf]
+>   r3 ∈ [0, inf]
 >   a3 ∈ {borrowed, global, local, regional}
 > mode rels
 >   (a3,a2) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
@@ -134,5 +134,5 @@ let shared = ((unit, unit) : (unit *[aliased local] unit)) in
 match left(shared) with left(x) => x | right(y) => shared
 > (unit *[u=aliased a=a1 r=r1] unit)
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, local}

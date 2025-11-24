@@ -10,8 +10,8 @@ let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
  : (unit ->[local once] (unit *[unique local] unit)))
 > (unit ->[a=local r=r2 l=once p=nonportable] (unit *[u=unique a=local r=r1] unit))
 > mode vars
->   r1 ∈ [r0, rinf]
->   r2 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
+>   r2 ∈ [0, inf]
 
 (* closures reject functions that exceed their mode budget *)
 let aliased_fun = ((fun x => x) : (unit ->[local many] unit)) in
@@ -19,5 +19,5 @@ let aliased_fun = ((fun x => x) : (unit ->[local many] unit)) in
  : (unit ->[local once] (unit ->[local many] unit)))
 > (unit ->[a=local r=r2 l=once p=nonportable] (unit ->[a=local r=r1 l=many p=nonportable] unit))
 > mode vars
->   r1 ∈ [r0, rinf]
->   r2 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
+>   r2 ∈ [0, inf]

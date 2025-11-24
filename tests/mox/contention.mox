@@ -44,11 +44,11 @@ let g = f : unit ->[portable] unit in
 (f, g)
 > ((unit ->[a=global r=r3 l=many p=portable] unit) *[u=u1 a=a1 r=r2] (unit ->[a=global r=r1 l=many p=portable] unit))
 > mode vars
->   r1 ∈ [r0, rinf]
->   r2 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
+>   r2 ∈ [0, inf]
 >   a1 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}
->   r3 ∈ [r0, rinf]
+>   r3 ∈ [0, inf]
 
 let f = (fun x => x) : unit ->[nonportable] unit in
 f : unit ->[portable] unit
@@ -58,11 +58,11 @@ let f = (fun x => x) : unit ->[portable] unit in
 f : unit ->[nonportable] unit
 > (unit ->[a=global r=r1 l=many p=nonportable] unit)
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 
 let x = $(unit, unit) in 
 fork (let (a,b) = x in a)
-> error: mode solver detected areality inconsistency
+> unit
 
 let r = ref (unit, unit) in
 let x = !r in 
@@ -70,14 +70,16 @@ let! (a,b) = x in unit
 > error: mode solver detected uniqueness inconsistency
 
 ref $(unit, unit)
-> error: mode solver detected areality inconsistency
+> (ref[c=uncontended] (unit *[u=aliased a=global r=0] unit))
 
 let r = ref left(unit) in
 let x = (region
   let y = $right(unit) in
   r := y) in
 !r
-> error: mode solver detected areality inconsistency
+> (unit +[u=aliased a=global r=r1] unit)
+> mode vars
+>   r1 ∈ [0, inf]
 
 let r = ref unit in 
 let s = (r, r) in 
@@ -88,7 +90,7 @@ let r = ref unit in (r,r)
 > ((ref[c=c1] unit) *[u=u1 a=a1 r=r1] (ref[c=c1] unit))
 > mode vars
 >   c1 ∈ {contended, shared, uncontended}
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 
@@ -97,6 +99,6 @@ let r2 = ref unit in
 (r1, r2)
 > ((ref[c=uncontended] unit) *[u=u1 a=a1 r=r1] (ref[c=uncontended] unit))
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}

@@ -3,10 +3,10 @@ left(unit)
 > where
 >   'a in {u=u2; c=c1; l=l1; p=p1; a=a2; r=r2}
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
->   r2 ∈ [r0, rinf]
+>   r2 ∈ [0, inf]
 >   a2 ∈ {borrowed, global, local, regional}
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
@@ -17,13 +17,13 @@ left(unit)
 >   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
 
 unit unit
-> error: type mismatch between unit and (?751 -> ?752)
+> error: type mismatch between unit and (?758 -> ?759)
 
 let (x, y) = unit in x
-> error: type mismatch between unit and (?753 * ?754)
+> error: type mismatch between unit and (?760 * ?761)
 
 match unit with left(x) => x | right(y) => y
-> error: type mismatch between unit and (?755 + ?756)
+> error: type mismatch between unit and (?762 + ?763)
 
 let x = unit in (x : empty)
 > error: type mismatch between unit and empty

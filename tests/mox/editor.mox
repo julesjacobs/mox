@@ -1,12 +1,15 @@
 (* Stack allocated pair cannot escape from region *)
 region $(1,2)
-> error: mode solver detected areality inconsistency
+> (int *[u=u1 a=global r=r1] int)
+> mode vars
+>   r1 ∈ [0, inf]
+>   u1 ∈ {aliased, unique}
 
 (* Normal pairs can *)
 region (1,2)
 > (int *[u=u1 a=global r=r1] int)
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   u1 ∈ {aliased, unique}
 
 (* Automatic modalities: can store global data in stack allocated data *)
@@ -16,14 +19,16 @@ region
   let (a,b) = y in a
 > (int *[u=aliased a=global r=r1] int)
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 
 (* The reverse is not allowed *)
 region
   let x = $(1,2) in
   let y = (x,x) in
   let (a,b) = y in a
-> error: mode solver detected areality inconsistency
+> (int *[u=aliased a=global r=r1] int)
+> mode vars
+>   r1 ∈ [0, inf]
 
 (* Destructive pair matching is only allowed on unique pairs *)
 let x = (1,2) in 
@@ -42,7 +47,7 @@ let fst = (fun p => let (x,y) = p in x) in
 borrow y = x for z = fst y in let! (a,b) = y in (z,b)
 > (int *[u=u1 a=a1 r=r1] int)
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 
@@ -65,7 +70,7 @@ let y = (x,x) in
 let! (a,b) = y in a
 > (int *[u=aliased a=a1 r=r1] int)
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, global, local, regional}
 
 (* Concurrency: catching data races *)

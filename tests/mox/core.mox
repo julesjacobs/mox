@@ -6,10 +6,10 @@ unit
 > where
 >   'a in {u=u2; c=c1; l=l1; p=p1; a=a2; r=r2}
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
->   r2 ∈ [r0, rinf]
+>   r2 ∈ [0, inf]
 >   a2 ∈ {borrowed, global, local, regional}
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
@@ -22,14 +22,14 @@ unit
 [unit]
 > (list[u=u1 a=a1 r=r1] unit)
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 
 unit :: []
 > (list[u=u1 a=a1 r=r1] unit)
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 
@@ -100,17 +100,17 @@ let (x, y) = pair in x
 ((fun x => absurd x) : (empty -> unit))
 > (empty ->[a=global r=r1 l=many p=nonportable] unit)
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 
 (left(unit) : (unit + empty))
 > (unit +[u=aliased a=global r=r1] empty)
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 
 (right(unit) : (empty + unit))
 > (empty +[u=aliased a=global r=r1] unit)
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 
 (rec f x => f x + f x)
 > ('a ->[a=a1 r=r1 l=many p=p1] int)
@@ -123,7 +123,7 @@ let (x, y) = pair in x
 >   'a <=[l=many] 'c
 > mode vars
 >   p1 ∈ {nonportable, portable}
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, global, local, regional}
 
 (rec f x => (x,x))
@@ -137,19 +137,19 @@ let (x, y) = pair in x
 >   'd in {u=u3; c=c2; l=l2; p=p3; a=a4; r=r4}
 >   'c <=[l=many] 'd
 > mode vars
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 >   p1 ∈ {nonportable, portable}
->   r2 ∈ [r0, rinf]
+>   r2 ∈ [0, inf]
 >   a2 ∈ {borrowed, global, local, regional}
->   r3 ∈ [r0, rinf]
+>   r3 ∈ [0, inf]
 >   a3 ∈ {borrowed, global, local, regional}
 >   p2 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
 >   c1 ∈ {contended, shared, uncontended}
 >   u2 ∈ {aliased, unique}
->   r4 ∈ [r0, rinf]
+>   r4 ∈ [0, inf]
 >   a4 ∈ {borrowed, global, local, regional}
 >   p3 ∈ {nonportable, portable}
 >   l2 ∈ {many, never, once}
@@ -166,14 +166,14 @@ rec f x => x
 >   'b <= 'a
 > mode vars
 >   p1 ∈ {nonportable, portable}
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, global, local, regional}
 
 rec f x => f x + x
 > (int ->[a=a1 r=r1 l=many p=p1] int)
 > mode vars
 >   p1 ∈ {nonportable, portable}
->   r1 ∈ [r0, rinf]
+>   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, global, local, regional}
 
 rec f x => (f 1 + 1, f)
