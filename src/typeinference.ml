@@ -240,8 +240,8 @@ let fresh_meta ?solution ?(constraints = []) () : meta =
 let assert_future_leq_to (lower : future_mode) (upper : future_mode) =
   Modesolver.Linearity.assert_leq_to lower.linearity upper.linearity;
   Modesolver.Portability.assert_leq_to lower.portability upper.portability;
-  Modesolver.Areality.assert_leq_to lower.areality upper.areality
-  (* Modesolver.Regionality.assert_leq_to lower.regionality upper.regionality *)
+  Modesolver.Areality.assert_leq_to lower.areality upper.areality;
+  Modesolver.Regionality.assert_leq_to lower.regionality upper.regionality
 
 let future_for_sub () : future_mode =
   { linearity = Mode_consts.linearity Linearity.once;
@@ -458,7 +458,6 @@ and assert_leq original locked future region_delta =
     (string_of_ty_shallow original) (string_of_ty_shallow locked);
   outer_equiv original locked;
   let assert_region_with_delta base target =
-    (* Modesolver.Regionality.decrease_by base region_delta target *)
     Modesolver.Regionality.increase_by target region_delta base
   in
   match (zonk original, zonk locked) with
@@ -480,7 +479,7 @@ and assert_leq original locked future region_delta =
       Modesolver.Areality.assert_leq_to original_storage.areality locked_storage.areality;
       Modesolver.Areality.assert_leq_to original_storage.areality future.areality;
       assert_region_with_delta original_storage.regionality locked_storage.regionality;
-      assert_region_with_delta original_storage.regionality future.regionality;
+      Modesolver.Regionality.assert_leq_to original_storage.regionality future.regionality;
       assert_leq original_left locked_left future region_delta;
       assert_leq original_right locked_right future region_delta
   | TyList (original_elem, original_storage), TyList (locked_elem, locked_storage) ->
@@ -490,7 +489,7 @@ and assert_leq original locked future region_delta =
       Modesolver.Areality.assert_leq_to original_storage.areality locked_storage.areality;
       Modesolver.Areality.assert_leq_to original_storage.areality future.areality;
       assert_region_with_delta original_storage.regionality locked_storage.regionality;
-      assert_region_with_delta original_storage.regionality future.regionality;
+      Modesolver.Regionality.assert_leq_to original_storage.regionality future.regionality;
       assert_leq original_elem locked_elem future region_delta
   | TyRef (original_payload, original_mode), TyRef (locked_payload, locked_mode) ->
       log_lock "ref lock enforcement";
@@ -503,11 +502,12 @@ and assert_leq original locked future region_delta =
       log_lock "arrow lock enforcement";
       (* Locking leaves functions untouched provided ambient future ≤ function future. *)
       assert_future_leq_to original_future future;
-      assert_future_leq_to original_future locked_future;
+      Modesolver.Linearity.assert_leq_to original_future.linearity locked_future.linearity;
+      Modesolver.Portability.assert_leq_to original_future.portability locked_future.portability;
+      Modesolver.Areality.assert_leq_to original_future.areality locked_future.areality;
+      assert_region_with_delta original_future.regionality locked_future.regionality;
       assert_subtype locked_domain original_domain;
       assert_subtype original_codomain locked_codomain;
-      assert_region_with_delta original_future.regionality locked_future.regionality;
-      assert_region_with_delta original_future.regionality future.regionality
   | _ ->
       type_error "assert_lock: not equivalent"
 
