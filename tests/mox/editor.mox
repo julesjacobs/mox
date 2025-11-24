@@ -44,11 +44,13 @@ region
 (* Complex example with fold where we do the recursive call under a region *)
 
 (* No matter how deeply we allocate the cons, we cannot allow this as it can escape arbitrarily many regions. *)
-let fold = fun f => fun z => rec go xs => match xs with [] => z | a :: as => region (f a (go as)) in fold (fun x => fun y => x $$$$$$$:: y) [] [1,2,3]
+let fold = fun f => fun z => rec go xs => match xs with [] => z | a :: as => region (f a (go as)) 
+in fold (fun x => fun y => x $$$$$$$:: y) [] [1,2,3]
 > error: mode solver detected regionality inconsistency (inf <= 6)
 
 (* Interestingly, this type checks, because we only pass the pair up 1 region and then discard it. *)
-let fold = fun f => fun z => rec go xs => match xs with [] => z | a :: as => region (f a (go as)) in fold (fun x => fun y => $$(1,2)) (2,3) [1,2,3]
+let fold = fun f => fun z => rec go xs => match xs with [] => z | a :: as => region (f a (go as)) 
+in fold (fun x => fun y => $$(1,2)) (2,3) [1,2,3]
 > (int *[u=aliased a=a1 r=0] int)
 > mode vars
 >   a1 ∈ {borrowed, global, local, regional}
