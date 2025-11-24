@@ -31,10 +31,7 @@ region unit
 > unit
 
 region $(unit, unit)
-> (unit *[u=u1 a=global r=r1] unit)
-> mode vars
->   r1 ∈ [0, inf]
->   u1 ∈ {aliased, unique}
+> error: mode solver detected Variable 'regionality' Inconsistent: Lower(1) > Upper(0)
 
 region
   let x = $(unit, unit) in
@@ -52,22 +49,12 @@ region
 region
   let x = $(unit, unit) in
   let y = (x, x) in y
-> ((unit *[u=aliased a=global r=r3] unit) *[u=u1 a=global r=r2] (unit *[u=aliased a=global r=r1] unit))
-> mode vars
->   r1 ∈ [0, inf]
->   r2 ∈ [0, inf]
->   u1 ∈ {aliased, unique}
->   r3 ∈ [0, inf]
+> error: mode solver detected Variable 'regionality' Inconsistent: Lower(1) > Upper(0)
 
 region
   let x = $(unit, unit) in
   let y = (x, x) in y
-> ((unit *[u=aliased a=global r=r3] unit) *[u=u1 a=global r=r2] (unit *[u=aliased a=global r=r1] unit))
-> mode vars
->   r1 ∈ [0, inf]
->   r2 ∈ [0, inf]
->   u1 ∈ {aliased, unique}
->   r3 ∈ [0, inf]
+> error: mode solver detected Variable 'regionality' Inconsistent: Lower(1) > Upper(0)
 
 region
   let a = (unit, unit) in 
