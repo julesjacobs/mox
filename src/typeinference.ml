@@ -247,13 +247,13 @@ let future_for_sub () : future_mode =
   { linearity = Mode_consts.linearity Linearity.once;
     portability = Mode_consts.portability Portability.nonportable;
     areality = Mode_consts.areality Areality.borrowed;
-    regionality = Mode_consts.regionality Regionality.heap }
+    regionality = Mode_consts.regionality (Regionality.of_int 0) }
 
 let future_for_alias () : future_mode =
   { linearity = Mode_consts.linearity Linearity.many;
     portability = Mode_consts.portability Portability.nonportable;
     areality = Mode_consts.areality Areality.borrowed;
-    regionality = Mode_consts.regionality Regionality.heap }
+    regionality = Mode_consts.regionality (Regionality.of_int 0) }
 
 let assert_equal_in assert_leq var1 var2 =
   assert_leq var1 var2;
@@ -1088,6 +1088,9 @@ let rec infer_with_env env expr =
   | Ast.Var x ->
     (match lookup env x with
     | Some ty -> ty
+      (* let ty' = TyMeta (fresh_meta ()) in
+      assert_leq ty ty' (future_for_sub ()) 0;
+      ty' *)
     | None -> type_error (Printf.sprintf "Unbound variable %s" x))
   | Ast.Borrow (x, e1, y, e2, e3) ->
       let fv_e2 = free_vars_without e2 [ x ] in

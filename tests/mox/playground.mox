@@ -17,7 +17,7 @@ fun x => x
 (fun x => (fun y => x))
 > ('c ->[a=a2 r=r2 l=l2 p=p2] ('b ->[a=a1 r=r1 l=l1 p=p1] 'a))
 > where
->   'c <=[p=p1 l=l1 a=a1] 'a
+>   'c <=[p=p1 l=l1 r=r1 a=a1] 'a
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
@@ -53,7 +53,7 @@ let f = (fun x => x p) in
 >   'e <= 'c
 >   'f <= 'e
 >   'g <= 'f
->   'd <=[p=p4 l=many a=a5] 'g
+>   'd <=[p=p4 l=many r=r5 a=a5] 'g
 >   'h <= 'a
 >   'i <= 'h
 >   'b <= 'i
@@ -74,6 +74,7 @@ let f = (fun x => x p) in
 >   r4 ∈ [0, inf]
 >   a4 ∈ {borrowed, global, local, regional}
 >   a5 ∈ {borrowed, global, local, regional}
+>   r5 ∈ [0, inf]
 >   p4 ∈ {nonportable, portable}
 > mode rels
 >   (a5,a3) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
