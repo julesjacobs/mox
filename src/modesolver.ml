@@ -288,9 +288,10 @@ module Regionality = struct
 
   let lift f =
     try f () with
-    | Infsolver.Contradiction msg ->
+    | Infsolver.Contradiction { lower_repr; upper_repr; _ } ->
         let detail =
-          if msg = "" then axis_name ^ " inconsistency" else msg
+          Printf.sprintf "regionality inconsistency (%s <= %s)"
+            lower_repr upper_repr
         in
         raise (Inconsistent detail)
 

@@ -42,10 +42,11 @@ let%expect_test "contradiction when predecessor clashes with bound" =
   let y = create_var ~name:"y" () in
   assert_eq_const x 0;
   (try assert_predecessor x y with
-  | Contradiction msg -> Printf.printf "contradiction: %s\n" msg);
+  | Contradiction { var; lower_repr; upper_repr; _ } ->
+      Printf.printf "contradiction: %s lower=%s upper=%s\n" var lower_repr upper_repr);
   dump [ ("x", x); ("y", y) ];
   [%expect {|
-    contradiction: Variable 'x' Inconsistent: Lower(1) > Upper(0)
+    contradiction: x lower=1 upper=0
     x: [1, 0]
     y: [0, +oo]
   |}]
@@ -126,10 +127,11 @@ let%expect_test "contradiction on tightening past upper bound" =
   (try
      assert_eq_const x 10;
      assert_eq_const x 11
-   with Contradiction msg -> Printf.printf "contradiction: %s\n" msg);
+   with Contradiction { var; lower_repr; upper_repr; _ } ->
+     Printf.printf "contradiction: %s lower=%s upper=%s\n" var lower_repr upper_repr);
   dump [ ("x", x) ];
   [%expect {|
-    contradiction: Variable 'x' Inconsistent: Lower(11) > Upper(10)
+    contradiction: x lower=11 upper=10
     x: [11, 10]
   |}]
 
@@ -140,10 +142,11 @@ let%expect_test "contradiction from leq violation" =
   assert_eq_const x 10;
   assert_eq_const y 5;
   (try assert_leq x y with
-  | Contradiction msg -> Printf.printf "contradiction: %s\n" msg);
+  | Contradiction { var; lower_repr; upper_repr; _ } ->
+      Printf.printf "contradiction: %s lower=%s upper=%s\n" var lower_repr upper_repr);
   dump [ ("x", x); ("y", y) ];
   [%expect {|
-    contradiction: Variable 'y' Inconsistent: Lower(10) > Upper(5)
+    contradiction: y lower=10 upper=5
     x: [10, 10]
     y: [10, 5]
   |}]
@@ -155,10 +158,11 @@ let%expect_test "contradiction from predecessor and leq cycle with constant" =
   assert_predecessor x y;
   assert_leq x y;
   (try assert_eq_const y 100 with
-  | Contradiction msg -> Printf.printf "contradiction: %s\n" msg);
+  | Contradiction { var; lower_repr; upper_repr; _ } ->
+      Printf.printf "contradiction: %s lower=%s upper=%s\n" var lower_repr upper_repr);
   dump [ ("x", x); ("y", y) ];
   [%expect {|
-    contradiction: Variable 'y' Inconsistent: Lower(+oo) > Upper(100)
+    contradiction: y lower=inf upper=100
     x: [3, +oo]
     y: [+oo, 100]
   |}]

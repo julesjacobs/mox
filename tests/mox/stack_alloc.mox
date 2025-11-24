@@ -31,7 +31,7 @@ region unit
 > unit
 
 region $(unit, unit)
-> error: mode solver detected Variable 'regionality' Inconsistent: Lower(1) > Upper(0)
+> error: mode solver detected regionality inconsistency (1 <= 0)
 
 region
   let x = $(unit, unit) in
@@ -49,12 +49,12 @@ region
 region
   let x = $(unit, unit) in
   let y = (x, x) in y
-> error: mode solver detected Variable 'regionality' Inconsistent: Lower(1) > Upper(0)
+> error: mode solver detected regionality inconsistency (1 <= 0)
 
 region
   let x = $(unit, unit) in
   let y = (x, x) in y
-> error: mode solver detected Variable 'regionality' Inconsistent: Lower(1) > Upper(0)
+> error: mode solver detected regionality inconsistency (1 <= 0)
 
 region
   let a = (unit, unit) in 

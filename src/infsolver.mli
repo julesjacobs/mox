@@ -15,8 +15,15 @@
 type var
 
 (** Raised when a constraint leads to a logical inconsistency 
-    (e.g., Lower Bound > Upper Bound). *)
-exception Contradiction of string
+    (e.g., Lower Bound > Upper Bound). Carries the offending variable name and
+    the conflicting bounds. *)
+type contradiction =
+  { var : string;
+    lower : int;
+    upper : int;
+    lower_repr : string;
+    upper_repr : string }
+exception Contradiction of contradiction
 
 (* ========================================================================= *)
 (* CONSTANTS                                                                 *)

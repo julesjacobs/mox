@@ -3,11 +3,17 @@ module Solver = struct
   (* 1. SAFE ARITHMETIC                                                      *)
   (* ======================================================================= *)
 
-  exception Contradiction of string
+  type contradiction =
+    { var : string;
+      lower : int;
+      upper : int;
+      lower_repr : string;
+      upper_repr : string }
+  exception Contradiction of contradiction
 
   let infinity = max_int
   let safe_max = max_int - (1 lsl 60) 
-  let string_of_value v = if v = infinity then "+oo" else string_of_int v
+  let string_of_value v = if v = infinity then "inf" else string_of_int v
 
   (* Robust Addition: a + b *)
   let safe_add a b =
@@ -107,10 +113,13 @@ module Solver = struct
     let lb = match get_dist 0 v_id with Some w -> w | None -> 0 in
     let ub = Hashtbl.find st.uppers v_id in
     if lb > ub then
-      raise (Contradiction
-               (Printf.sprintf
-                  "Variable '%s' Inconsistent: Lower(%s) > Upper(%s)"
-                  (var_name v_id) (string_of_value lb) (string_of_value ub)))
+      raise
+        (Contradiction
+           { var = var_name v_id;
+             lower = lb;
+             upper = ub;
+             lower_repr = string_of_value lb;
+             upper_repr = string_of_value ub })
 
   (* Add edge u -> v with weight w *)
   (* This implies v >= u + w *)
