@@ -293,7 +293,9 @@ let f = fun x => fork (x unit) in f (fun _ => unit)
 > unit
 
 let u = region (ref unit) in u
-> (ref[c=uncontended] unit)
+> (ref[c=c1] unit)
+> mode vars
+>   c1 ∈ {contended, shared, uncontended}
 
 let r = region (ref unit) in fork (let x = !r in x)
 > error: mode solver detected contention inconsistency

@@ -166,6 +166,12 @@ module Solver = struct
     (* x <= y  <==>  y >= x + 0 *)
     add_constraint x.id y.id 0
 
+  let decrease_by x delta y =
+    add_constraint x.id y.id delta
+
+  let increase_by x delta y =
+    add_constraint x.id y.id (-delta)
+
   let assert_eq_const x k =
     (* 1. Tighten Static Upper Bound *)
     let current_ub = Hashtbl.find st.uppers x.id in

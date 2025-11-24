@@ -112,7 +112,8 @@ and constraint_ =
   | Leq of
       { original : meta;
         locked : meta;
-        future : future_mode }
+        future : future_mode;
+        region_delta : int }
   | In of
       { target : meta;
         mode_vars : mode_vars }
@@ -164,7 +165,9 @@ let force_storage_unique (storage : storage_mode) =
 let fresh_storage ~alloc () =
   let s = fresh_storage_mode () in
   (match alloc with
-  | Ast.Stack -> force_storage_local s
+  | Ast.Stack -> 
+    force_storage_local s;
+    Modesolver.Regionality.restrict_domain [Regionality.of_int 0] s.regionality
   | Ast.Heap ->
       Modesolver.Regionality.restrict_domain [Regionality.heap] s.regionality);
   s
@@ -450,14 +453,17 @@ and outer_equiv ty1 ty2 =
       let right = string_of_ty_shallow ty_right in
       type_error (Printf.sprintf "type mismatch between %s and %s" left right)
 
-and assert_leq original locked future =
+and assert_leq original locked future region_delta =
   log_lock "leq %s into %s"
     (string_of_ty_shallow original) (string_of_ty_shallow locked);
   outer_equiv original locked;
+  let assert_region_with_delta base target =
+    Modesolver.Regionality.decrease_by base region_delta target
+  in
   match (zonk original, zonk locked) with
   | TyMeta original_meta, TyMeta locked_meta ->
-      log_lock "record meta constraint original=?%d locked=?%d" original_meta.id locked_meta.id;
-      let constraint_ = mk_constraint (Leq { original = original_meta; locked = locked_meta; future }) in
+      log_lock "record meta constraint original=?%d locked=?%d Δr=%d" original_meta.id locked_meta.id region_delta;
+      let constraint_ = mk_constraint (Leq { original = original_meta; locked = locked_meta; future; region_delta }) in
       add_constraint original_meta constraint_;
       add_constraint locked_meta constraint_
   | TyUnit, TyUnit -> ()
@@ -472,19 +478,19 @@ and assert_leq original locked future =
       Modesolver.assert_linearity_dagger future.linearity locked_storage.uniqueness;
       Modesolver.Areality.assert_leq_to original_storage.areality locked_storage.areality;
       Modesolver.Areality.assert_leq_to original_storage.areality future.areality;
-      Modesolver.Regionality.assert_leq_to original_storage.regionality locked_storage.regionality;
-      Modesolver.Regionality.assert_leq_to original_storage.regionality future.regionality;
-      assert_leq original_left locked_left future;
-      assert_leq original_right locked_right future
+      assert_region_with_delta original_storage.regionality locked_storage.regionality;
+      assert_region_with_delta original_storage.regionality future.regionality;
+      assert_leq original_left locked_left future region_delta;
+      assert_leq original_right locked_right future region_delta
   | TyList (original_elem, original_storage), TyList (locked_elem, locked_storage) ->
       log_lock "list storage lock";
       Modesolver.Uniqueness.assert_leq_to original_storage.uniqueness locked_storage.uniqueness;
       Modesolver.assert_linearity_dagger future.linearity locked_storage.uniqueness;
       Modesolver.Areality.assert_leq_to original_storage.areality locked_storage.areality;
       Modesolver.Areality.assert_leq_to original_storage.areality future.areality;
-      Modesolver.Regionality.assert_leq_to original_storage.regionality locked_storage.regionality;
-      Modesolver.Regionality.assert_leq_to original_storage.regionality future.regionality;
-      assert_leq original_elem locked_elem future
+      assert_region_with_delta original_storage.regionality locked_storage.regionality;
+      assert_region_with_delta original_storage.regionality future.regionality;
+      assert_leq original_elem locked_elem future region_delta
   | TyRef (original_payload, original_mode), TyRef (locked_payload, locked_mode) ->
       log_lock "ref lock enforcement";
       Modesolver.Contention.assert_leq_to original_mode.contention locked_mode.contention;
@@ -503,18 +509,18 @@ and assert_leq original locked future =
       type_error "assert_lock: not equivalent"
 
 and assert_subtype lower upper =
-  assert_leq lower upper (future_for_sub ())
+  assert_leq lower upper (future_for_sub ()) 0
 
 and assert_alias source target =
-  assert_leq source target (future_for_alias ())
+  assert_leq source target (future_for_alias ()) 0
 
 and fire_constraint constraint_record =
   if constraint_record.fired then ()
   else (
     constraint_record.fired <- true;
     match constraint_record.constraint_ with
-    | Leq { original; locked; future } ->
-        assert_leq (TyMeta original) (TyMeta locked) future
+    | Leq { original; locked; future; region_delta } ->
+        assert_leq (TyMeta original) (TyMeta locked) future region_delta
     | In { target; mode_vars } ->
         assert_in (TyMeta target) mode_vars )
 
@@ -1040,7 +1046,7 @@ let split_env env fv1 fv2 =
 
 let lock_type ty future =
   let locked_ty = TyMeta (fresh_meta ()) in
-  assert_leq ty locked_ty future;
+  assert_leq ty locked_ty future 0;
   locked_ty
 
 let lock_env env future =
@@ -1063,6 +1069,16 @@ let infer_binop op ty_lhs ty_rhs =
       assert_subtype ty_rhs TyBool;
       TyBool
 
+let enter_region ty =
+  let ty' = TyMeta (fresh_meta ()) in
+  assert_leq ty ty' (future_for_sub ()) 1;
+  ty'
+
+let exit_region ty =
+  let ty' = TyMeta (fresh_meta ()) in
+  assert_leq ty ty' (future_for_sub ()) (-1);
+  ty'
+let env_enter_region env = List.map (fun (name, ty) -> (name, enter_region ty)) env
 
 let rec infer_with_env env expr = 
   match expr with
@@ -1247,10 +1263,12 @@ let rec infer_with_env env expr =
     assert_subtype ty' ty;
     ty
   | Ast.Region e ->
-    let ty = infer_with_env env e in
+    let env' = env_enter_region env in
+    let ty = infer_with_env env' e in
+    let ty' = exit_region ty in
     let mode_vars = global_mode_vars () in
-    assert_in ty mode_vars;
-    ty
+    assert_in ty' mode_vars;
+    ty'
   | Ast.Ref e ->
     let payload = infer_with_env env e in
     mk_ref payload (precise_ref_mode ())

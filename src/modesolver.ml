@@ -317,6 +317,14 @@ module Regionality = struct
 
   let assert_leq_in = assert_leq_to
 
+  let decrease_by v1 delta v2 =
+    (* numeric constraint: region(v2) >= region(v1) + delta *)
+    lift (fun () -> Infsolver.decrease_by v1 delta v2)
+
+  let increase_by v1 delta v2 =
+    (* numeric constraint: region(v2) >= region(v1) - delta *)
+    lift (fun () -> Infsolver.increase_by v1 delta v2)
+
   let join_to v1 v2 =
     let z = new_var () in
     assert_leq_to v1 z;

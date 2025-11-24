@@ -49,6 +49,14 @@ val reset : unit -> unit
     - Raises [Contradiction] if this forces y above its static upper bound. *)
 val assert_leq : var -> var -> unit
 
+(** [decrease_by x delta y] asserts [y >= x + delta].
+    Use positive [delta] to express a lower bound reduction on [y] relative to [x]. *)
+val decrease_by : var -> int -> var -> unit
+
+(** [increase_by x delta y] asserts [y >= x - delta].
+    Equivalent to [decrease_by x (-delta) y]; useful for modeling predecessors. *)
+val increase_by : var -> int -> var -> unit
+
 (** [assert_eq_const x k] asserts that x = k.
     
     Logic:

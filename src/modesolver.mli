@@ -51,6 +51,8 @@ module Regionality : sig
   val restrict_domain : mode list -> var -> unit
   val assert_leq_to : var -> var -> unit
   val assert_leq_in : var -> var -> unit
+  val decrease_by : var -> int -> var -> unit
+  val increase_by : var -> int -> var -> unit
   val join_to : var -> var -> var
   val bottom_in : var
   val get_bounds : var -> int * int
