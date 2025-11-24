@@ -1,206 +1,210 @@
-(* ========================================================================= *)
-(* ROBUST GRAPH-BASED INTEGER SOLVER                                         *)
-(* Domain: [0, +infinity]                                                    *)
-(* Logic:  Dynamic Lower Bounds (Propagation) + Static Upper Bounds (Checks) *)
-(* ========================================================================= *)
+module Solver = struct
+  (* ======================================================================= *)
+  (* 1. SAFE ARITHMETIC                                                      *)
+  (* ======================================================================= *)
 
-type value = int
-type contradiction = string
-exception Contradiction of contradiction
+  exception Contradiction of string
 
-let infinity = max_int
-let zero = 0
+  let infinity = max_int
+  let safe_max = max_int - (1 lsl 60) 
 
-(* Safety buffer: operations clamp to infinity before actually overflowing.
-   We reserve the top ~10^18 values as the "Gravity Well" of infinity. *)
-let safe_max = max_int - (1 lsl 60)
+  (* Robust Addition: a + b *)
+  let safe_add a b =
+    if a = infinity || b = infinity then infinity
+    else 
+      let res = a + b in
+      (* Check overflow or safety buffer *)
+      if (b > 0 && res < a) || res > safe_max then infinity
+      (* Check underflow (domain floor logic not needed inside matrix, 
+         matrix stores relative diffs, which can be negative) *)
+      else res
 
-(* Robust Addition: current + weight *)
-let safe_add (current : value) (weight : int) : value =
-  (* Rule 1: Infinity absorbs everything *)
-  if current = infinity then infinity
-  (* Rule 2: Adding Infinity yields Infinity *)
-  else if weight = infinity then infinity
-  else
-    let res = current + weight in
+  (* ======================================================================= *)
+  (* 2. STATE: The Transitive Closure Matrix                                 *)
+  (* ======================================================================= *)
 
-    (* Rule 3: Overflow / Safety Cap *)
-    (* If adding a positive weight pushes us past safe_max or wraps around *)
-    if weight > 0 && (res < current || res > safe_max) then infinity
+  type var_id = int
 
-    (* Rule 4: Domain Floor [0, ...) *)
-    (* If adding a negative weight pushes below zero, clamp to zero *)
-    else if res < zero then zero
+  (* We use a Hashtbl of Hashtbls for a sparse matrix representation.
+     dist[i][j] stores the max weight path from i to j. *)
+  type matrix = (var_id, (var_id, int) Hashtbl.t) Hashtbl.t
 
-    else res
+  type t = {
+    dist : matrix;
+    uppers : (var_id, int) Hashtbl.t; (* Static Upper Bounds *)
+    names : (var_id, string) Hashtbl.t; (* Debugging names *)
+    mutable nodes : var_id list;      (* List of all active variable IDs *)
+  }
 
-(* ======================================================================= *)
-(* INTERNAL STATE                                                          *)
-(* ======================================================================= *)
+  (* The Global Solver State *)
+  let st = {
+    dist = Hashtbl.create 16;
+    uppers = Hashtbl.create 16;
+    names = Hashtbl.create 16;
+    nodes = [0]; (* 0 is the Source Node (The Universe Zero) *)
+  }
 
-type var_id = int
+  let reset () =
+    Hashtbl.clear st.dist;
+    Hashtbl.clear st.uppers;
+    Hashtbl.clear st.names;
+    st.nodes <- [0];
+    (* Initialize Source: Dist[0][0] = 0 *)
+    let row0 = Hashtbl.create 16 in
+    Hashtbl.add row0 0 0;
+    Hashtbl.add st.dist 0 row0
 
-type edge = {
-  target : var_id;
-  weight : int;
-}
+  (* Matrix Accessors *)
+  let get_dist u v =
+    match Hashtbl.find_opt st.dist u with
+    | None -> None
+    | Some row -> Hashtbl.find_opt row v
 
-type var = {
-  id : var_id;
-  name : string;
-  mutable lower : value; (* Dynamic: Pushed UP by propagation *)
-  mutable upper : value; (* Static: Pushed DOWN by assertions *)
-  mutable edges : edge list; (* Outgoing constraints *)
-  mutable in_queue : bool; (* Optimization for SPFA *)
-}
+  let set_dist u v w =
+    let row = match Hashtbl.find_opt st.dist u with
+      | Some r -> r
+      | None -> 
+          let r = Hashtbl.create 16 in
+          Hashtbl.add st.dist u r;
+          r
+    in
+    Hashtbl.replace row v w
 
-(* Global Context *)
-let vars : (var_id, var) Hashtbl.t = Hashtbl.create 100
-let work_queue : var Queue.t = Queue.create ()
+  (* ======================================================================= *)
+  (* 3. VARIABLE CREATION                                                    *)
+  (* ======================================================================= *)
 
-let next_id_counter = ref 0
-let next_id () =
-  incr next_id_counter;
-  !next_id_counter
+  type var = { id : var_id }
+  let next_id = let c = ref 0 in fun () -> incr c; !c
 
-let reset () =
-  Hashtbl.clear vars;
-  Queue.clear work_queue;
-  next_id_counter := 0
+  let var_name v_id =
+    match Hashtbl.find_opt st.names v_id with
+    | Some n -> n
+    | None -> Printf.sprintf "v%d" v_id
 
-let create_var ?name () =
-  let vid = next_id () in
-  let vname = match name with Some n -> n | None -> "v" ^ string_of_int vid in
-  let v =
-    {
-      id = vid;
-      name = vname;
-      lower = zero; (* Starts at 0 (Universe Floor) *)
-      upper = infinity; (* Starts at +oo (Unconstrained) *)
-      edges = [];
-      in_queue = false;
-    }
-  in
-  Hashtbl.add vars v.id v;
-  v
+  let create_var ?name () =
+    let id = next_id () in
+    let name = match name with Some n -> n | None -> Printf.sprintf "v%d" id in
+    st.nodes <- id :: st.nodes;
+    Hashtbl.add st.uppers id infinity;
+    Hashtbl.add st.names id name;
+    
+    (* Initialize Self-Distance to 0 *)
+    set_dist id id 0;
+    
+    (* Implicit: Lower bound 0. Edge Source(0) -> v weight 0 *)
+    set_dist 0 id 0; 
+    
+    { id }
 
-(* ======================================================================= *)
-(* PROPAGATION ENGINE (SPFA Algorithm)                                     *)
-(* ======================================================================= *)
+  (* ======================================================================= *)
+  (* 4. THE CORE: INCREMENTAL FLOYD-WARSHALL                                 *)
+  (* ======================================================================= *)
 
-let enqueue v =
-  if not v.in_queue then (
-    Queue.add v work_queue;
-    v.in_queue <- true)
+  (* Check consistency for a specific node 'v' *)
+  let check_bounds v_id =
+    let lb = match get_dist 0 v_id with Some w -> w | None -> 0 in
+    let ub = Hashtbl.find st.uppers v_id in
+    if lb > ub then
+      raise (Contradiction
+               (Printf.sprintf "Variable '%s' Inconsistent: Lower(%d) > Upper(%d)"
+                  (var_name v_id) lb ub))
 
-(* Check Consistency: Lower <= Upper *)
-let check_bounds v =
-  if v.lower > v.upper then
-    raise
-      (Contradiction
-         (Printf.sprintf "Variable '%s' Inconsistent: Lower(%d) > Upper(%d)"
-            v.name v.lower v.upper))
+  (* Add edge u -> v with weight w *)
+  (* This implies v >= u + w *)
+  let add_constraint u_id v_id w =
+    (* 1. Check if this constraint is weaker than what we already know *)
+    let current = match get_dist u_id v_id with Some d -> d | None -> min_int in
+    
+    (* If new weight w is not stronger, do nothing. *)
+    if w > current then begin
+      
+      (* 2. Double Loop Update: O(V^2) *)
+      (* For every node i that can reach u... *)
+      (* For every node j that is reachable from v... *)
+      (* Update i -> j using i -> u -> v -> j *)
 
-let rec propagate () =
-  if not (Queue.is_empty work_queue) then begin
-    let u = Queue.pop work_queue in
-    u.in_queue <- false;
+      (* Iterate all known start nodes i *)
+      List.iter (fun i ->
+        match get_dist i u_id with
+        | None -> () (* No path i -> u, so u->v doesn't help i *)
+        | Some d_iu ->
+            (* Iterate all known end nodes j *)
+            List.iter (fun j ->
+              match get_dist v_id j with
+              | None -> () (* No path v -> j *)
+              | Some d_vj -> 
+                  
+                  (* Calculate new path weight: i -> u -> v -> j *)
+                  let new_dist = safe_add (safe_add d_iu w) d_vj in
+                  
+                  (* Existing distance *)
+                  let current_dist = match get_dist i j with Some d -> d | None -> min_int in
+                  
+                  if new_dist > current_dist then begin
+                    set_dist i j new_dist;
 
-    (* Sanity check source before pushing *)
-    check_bounds u;
+                    (* 3. Positive Cycle Detection *)
+                    (* If we just updated a diagonal d[k][k] > 0, set to Infinity *)
+                    if i = j && new_dist > 0 then 
+                       set_dist i i infinity;
+                       
+                    (* 4. Check Consistency (only if we updated a lower bound from 0) *)
+                    if i = 0 then check_bounds j;
+                  end
+            ) st.nodes
+      ) st.nodes
+    end
 
-    List.iter
-      (fun edge ->
-        let v = Hashtbl.find vars edge.target in
+  (* ======================================================================= *)
+  (* 5. PUBLIC API                                                           *)
+  (* ======================================================================= *)
 
-        (* Calculate potential new lower bound for neighbor *)
-        let candidate = safe_add u.lower edge.weight in
+  let assert_leq x y =
+    (* x <= y  <==>  y >= x + 0 *)
+    add_constraint x.id y.id 0
 
-        (* RELAXATION: If we found a strictly greater lower bound *)
-        if candidate > v.lower then begin
-          v.lower <- candidate;
+  let assert_eq_const x k =
+    (* 1. Tighten Static Upper Bound *)
+    let current_ub = Hashtbl.find st.uppers x.id in
+    if k < current_ub then Hashtbl.replace st.uppers x.id k;
+    
+    (* Consistency check immediate *)
+    check_bounds x.id;
 
-          (* Immediate Consistency Check *)
-          check_bounds v;
+    (* 2. Tighten Lower Bound: Source(0) -> x weight k *)
+    add_constraint 0 x.id k
 
-          (* Continue Propagation *)
-          enqueue v
-        end)
-      u.edges;
+  let assert_predecessor x y =
+    
+    (* y = x - 1 *)
+    
+    (* 1. Graph: y >= x - 1 ==> x -> y weight -1 *)
+    add_constraint x.id y.id (-1);
+    
+    (* 2. Graph: x >= y + 1 ==> y -> x weight 1 *)
+    add_constraint y.id x.id 1
+    
+    (* Note: Because we have initial edge 0->x (0) and 0->y (0),
+       adding y->x (1) computes 0->y->x = 0+1 = 1.
+       So 0->x updates to 1. x>=1 is enforced automatically. *)
 
-    propagate ()
-  end
+  (* Inspection *)
+  let get_lower x = 
+    match get_dist 0 x.id with Some w -> w | None -> 0
 
-(* Helper to add graph edges *)
-let add_directed_edge u weight v =
-  u.edges <- { target = v.id; weight } :: u.edges;
-  (* u might immediately force v higher, so queue u *)
-  enqueue u;
-  propagate ()
+  let get_upper x = 
+    Hashtbl.find st.uppers x.id
 
-(* ======================================================================= *)
-(* PUBLIC CONSTRAINT API                                                   *)
-(* ======================================================================= *)
+  let print_model () =
+    Printf.printf "\n--- Transitive Closure Solver ---\n";
+    List.iter (fun i ->
+      if i <> 0 then
+        let lb = match get_dist 0 i with Some w -> if w=infinity then "+oo" else string_of_int w | None -> "0" in
+        let ub = let u = Hashtbl.find st.uppers i in if u=infinity then "+oo" else string_of_int u in
+        Printf.printf "%s: [%s, %s]\n" (var_name i) lb ub
+    ) (List.rev st.nodes)
 
-(* Constraint: x <= y *)
-(* Logic: y >= x + 0. Edge x -> y (weight 0) *)
-let assert_leq x y = add_directed_edge x 0 y
+end
 
-(* Constraint: x = k *)
-(* Logic:
-   1. Upper Bound := k
-   2. Lower Bound := max(Lower, k)
-*)
-let assert_eq_const x k =
-  (* 1. Tighten Upper Bound *)
-  if x.lower > k then
-    raise
-      (Contradiction
-         (Printf.sprintf "'%s' lower bound %d exceeds new constant %d" x.name
-            x.lower k));
-
-  if k < x.upper then x.upper <- k; (* Only tighten, never loosen *)
-
-  (* 2. Tighten Lower Bound *)
-  if k > x.lower then begin
-    x.lower <- k;
-    enqueue x;
-    propagate ()
-  end
-
-(* Constraint: y = x - 1 (implies x >= 1) *)
-(* Logic:
-   1. y >= x - 1  ==> Edge x -> y (weight -1)
-   2. x >= y + 1  ==> Edge y -> x (weight +1)
-
-   Note: Domain Constraint (x >= 1) is handled automatically.
-   Since y >= 0 (universe floor), y -> x (weight 1) pushes x to 1.
-*)
-let assert_predecessor x y =
-  (* x --(-1)--> y *)
-  x.edges <- { target = y.id; weight = -1 } :: x.edges;
-
-  (* y --(+1)--> x *)
-  y.edges <- { target = x.id; weight = 1 } :: y.edges;
-
-  (* Trigger propagation from both *)
-  enqueue x;
-  enqueue y;
-  propagate ()
-
-(* ======================================================================= *)
-(* INTROSPECTION                                                           *)
-(* ======================================================================= *)
-
-let get_lower v = v.lower
-let get_upper v = v.upper
-
-let fmt_val n = if n = infinity then "+oo" else string_of_int n
-
-let print_model () =
-  Printf.printf "\n--- Solver State ---\n";
-  Hashtbl.iter
-    (fun _ v ->
-      Printf.printf "%s: [%s, %s]\n" v.name (fmt_val v.lower) (fmt_val v.upper))
-    vars;
-  Printf.printf "--------------------\n"
+include Solver
