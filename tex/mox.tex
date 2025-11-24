@@ -92,8 +92,8 @@ For future modes the two orders coincide, whereas for past modes the in-placemen
 &\quad \mode{many} \leqin \mode{once} \leqin \mode{never}\\[0.5ex]
 \text{portability (p):}&\quad \mode{portable} \leqto \mode{nonportable}\\
 &\quad \mode{portable} \leqin \mode{nonportable}\\
-\text{areality (a):}&\quad \mode{global} \leqto \mode{regional} \leqto \mode{local}\\
-&\quad \mode{global} \leqin \mode{regional} \leqin \mode{local}
+\text{areality (a):}&\quad \mode{global} \leqto \mode{borrowed}\\
+&\quad \mode{global} \leqin \mode{global},\ \mode{borrowed} \leqin \mode{borrowed}
 \end{alignedat}
 \]
 
@@ -159,7 +159,7 @@ Comparisons such as $s_1 \leqto s_2$ or $r_1 \leqin r_2$ are taken componentwise
 
 The type $\TRef[r]{\tau}$ denotes a mutable cell that stores a value of type $\tau$.
 The uniqueness component $r_{\text{u}}$ tracks how many aliases exist to the cell's handle; the areality component $r_{\text{a}}$ tracks where the cell can reside; and the contention component $r_{\text{c}}$ records how much simultaneous access the cell tolerates.
-Creating a reference defaults to the most precise handle $r_0 = (\mode{unique}, \mode{local}, \mode{uncontended})$, from which weaker capabilities can be derived via subtyping or aliasing.
+Creating a reference defaults to the most precise handle $r_0 = (\mode{unique}, \mode{global}, \mode{uncontended})$, from which weaker capabilities can be derived via subtyping or aliasing.
 
 \bigskip
 
@@ -284,7 +284,7 @@ Typing judgments use linear contexts: $\Gamma_1 \uplus \Gamma_2$ denotes a parti
   {\judge{\Gamma_1 \uplus \Gamma_2}{\Assign{e_1}{e_2}}{\TUnit}}
 \end{mathpar}
 
-We write simply $\RefCell{e}$ when allocating a cell; the resulting handle adopts the most precise capability $r_0 = (\mode{unique}, \mode{local}, \mode{uncontended})$, with weaker modes obtained by subtyping its type.
+We write simply $\RefCell{e}$ when allocating a cell; the resulting handle adopts the most precise capability $r_0 = (\mode{unique}, \mode{global}, \mode{uncontended})$, with weaker modes obtained by subtyping its type.
 A dereference yields the stored payload, and assignment consumes the contexts used to establish the reference and the incoming value.
 
 \vspace{0.5em}\textit{Subsumption}

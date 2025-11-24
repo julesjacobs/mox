@@ -3,8 +3,7 @@
 module Solver : sig
   type sort_areality =
     | Global
-    | Regional
-    | Local
+    | Borrowed
 
   type sort_contention =
     | Uncontended

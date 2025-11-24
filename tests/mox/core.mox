@@ -7,31 +7,31 @@ unit
 >   'a in {u=u2; c=c1; l=l1; p=p1; a=a2; r=r2}
 > mode vars
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 >   r2 ∈ [0, inf]
->   a2 ∈ {borrowed, global, local, regional}
+>   a2 ∈ {borrowed, global}
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
 >   c1 ∈ {contended, shared, uncontended}
 >   u2 ∈ {aliased, unique}
 > mode rels
 >   (u2,u1) ∉ {(unique,aliased)}
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
+>   (a2,a1) ∈ {(global,global), (borrowed,borrowed)}
 >   r1-r2 <= 0
 
 [unit]
 > (list[u=u1 a=a1 r=r1] unit)
 > mode vars
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 
 unit :: []
 > (list[u=u1 a=a1 r=r1] unit)
 > mode vars
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 
 match [unit] with [] => unit | x :: xs => x
@@ -125,7 +125,7 @@ let (x, y) = pair in x
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 
 (rec f x => (x,x))
 > ('c ->[a=a2 r=r2 l=many p=p1] ('b *[u=u1 a=a1 r=r1] 'a))
@@ -139,27 +139,27 @@ let (x, y) = pair in x
 >   'c <=[l=many] 'd
 > mode vars
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 >   p1 ∈ {nonportable, portable}
 >   r2 ∈ [0, inf]
->   a2 ∈ {borrowed, global, local, regional}
+>   a2 ∈ {borrowed, global}
 >   r3 ∈ [0, inf]
->   a3 ∈ {borrowed, global, local, regional}
+>   a3 ∈ {borrowed, global}
 >   p2 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
 >   c1 ∈ {contended, shared, uncontended}
 >   u2 ∈ {aliased, unique}
 >   r4 ∈ [0, inf]
->   a4 ∈ {borrowed, global, local, regional}
+>   a4 ∈ {borrowed, global}
 >   p3 ∈ {nonportable, portable}
 >   l2 ∈ {many, never, once}
 >   c2 ∈ {contended, shared, uncontended}
 >   u3 ∈ {aliased, unique}
 > mode rels
 >   (u2,u1) ∉ {(unique,aliased)}
->   (a4,a1) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
->   (a3,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
+>   (a4,a1) ∉ {(borrowed,global)}
+>   (a3,a1) ∈ {(global,global), (borrowed,borrowed)}
 >   r1-r4 <= 0
 >   r1-r3 <= 0
 
@@ -170,14 +170,14 @@ rec f x => x
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 
 rec f x => f x + x
 > (int ->[a=a1 r=r1 l=many p=p1] int)
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 
 rec f x => (f 1 + 1, f)
 > error: type mismatch between (int * (int -> int)) and int

@@ -1,7 +1,7 @@
 $(unit, unit)
 > (unit *[u=u1 a=a1 r=0] unit)
 > mode vars
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 
 region $$(1,2)
@@ -13,28 +13,28 @@ region $$(1,2)
 > (list[u=u1 a=a1 r=r1] int)
 > mode vars
 >   r1 ∈ [0, 1]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 
 (unit $$:: (unit :: []))
 > (list[u=u1 a=a1 r=r1] unit)
 > mode vars
 >   r1 ∈ [0, 1]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 
 $$(unit, unit)
 > (unit *[u=u1 a=a1 r=r1] unit)
 > mode vars
 >   r1 ∈ [0, 1]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 
 $$$(1,2)
 > (int *[u=u1 a=a1 r=r1] int)
 > mode vars
 >   r1 ∈ [0, 2]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 
 $left(unit)
@@ -42,21 +42,21 @@ $left(unit)
 > where
 >   'a in {u=u2; c=c1; l=l1; p=p1; a=a2; r=r1}
 > mode vars
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 >   r1 ∈ [0, inf]
->   a2 ∈ {borrowed, global, local, regional}
+>   a2 ∈ {borrowed, global}
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
 >   c1 ∈ {contended, shared, uncontended}
 >   u2 ∈ {aliased, unique}
 > mode rels
 >   (u2,u1) ∉ {(unique,aliased)}
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
+>   (a2,a1) ∈ {(global,global), (borrowed,borrowed)}
 >   r2-r1 <= 0
 
 $fun x => x
-> ('a ->[a=local r=0 l=l1 p=p1] 'a)
+> ('a ->[a=global r=0 l=l1 p=p1] 'a)
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
@@ -111,12 +111,12 @@ let a = (region
 in a unit
 > error: mode solver detected regionality inconsistency (1 <= 0)
 
-let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
+let unique_pair = ((unit, unit) : (unit *[unique global] unit)) in
 let! (x, y) = unique_pair in
 x
 > unit
 
-let unique_sum = ((left(unit)) : (unit +[unique local] unit)) in
+let unique_sum = ((left(unit)) : (unit +[unique global] unit)) in
 match! unique_sum with left(x) => x | right(y) => y
 > unit
 

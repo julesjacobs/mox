@@ -1,53 +1,53 @@
 (* many closure fails when capturing unique pair directly *)
-let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
-((fun _ => unique_pair) : (unit ->[local many] (unit *[unique local] unit)))
+let unique_pair = ((unit, unit) : (unit *[unique global] unit)) in
+((fun _ => unique_pair) : (unit ->[global many] (unit *[unique global] unit)))
 > error: mode solver detected uniqueness inconsistency
 
 (* once closure succeeds when capturing unique pair directly *)
-let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
-((fun _ => unique_pair) : (unit ->[local once] (unit *[unique local] unit)))
-> (unit ->[a=local r=r2 l=once p=nonportable] (unit *[u=unique a=local r=r1] unit))
+let unique_pair = ((unit, unit) : (unit *[unique global] unit)) in
+((fun _ => unique_pair) : (unit ->[global once] (unit *[unique global] unit)))
+> (unit ->[a=global r=r2 l=once p=nonportable] (unit *[u=unique a=global r=r1] unit))
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
 
 (* once closure succeeds after rebinding unique pair *)
-let unique_pair1 = ((unit, unit) : (unit *[unique local] unit)) in
+let unique_pair1 = ((unit, unit) : (unit *[unique global] unit)) in
 let unique_pair2 = unique_pair1 in
-((fun _ => unique_pair2) : (unit ->[local once] (unit *[unique local] unit)))
-> (unit ->[a=local r=r2 l=once p=nonportable] (unit *[u=unique a=local r=r1] unit))
+((fun _ => unique_pair2) : (unit ->[global once] (unit *[unique global] unit)))
+> (unit ->[a=global r=r2 l=once p=nonportable] (unit *[u=unique a=global r=r1] unit))
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
 
 (* many closure fails after alias binding to unique pair *)
-let base = ((unit, unit) : (unit *[unique local] unit)) in
+let base = ((unit, unit) : (unit *[unique global] unit)) in
 let alias = base in
-((fun _ => alias) : (unit ->[local many] (unit *[unique local] unit)))
+((fun _ => alias) : (unit ->[global many] (unit *[unique global] unit)))
 > error: mode solver detected uniqueness inconsistency
 
 (* many closure succeeds with aliased storage after alias binding *)
-let base = ((unit, unit) : (unit *[unique local] unit)) in
+let base = ((unit, unit) : (unit *[unique global] unit)) in
 let alias = base in
-((fun _ => alias) : (unit ->[local many] (unit *[local] unit)))
-> (unit ->[a=local r=r2 l=many p=nonportable] (unit *[u=aliased a=local r=r1] unit))
+((fun _ => alias) : (unit ->[global many] (unit *[global] unit)))
+> (unit ->[a=global r=r2 l=many p=nonportable] (unit *[u=aliased a=global r=r1] unit))
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
 
 (* many closure fails on nested unique pair *)
-let nested = ((unit, (unit, unit)) : (unit *[unique local] (unit *[unique local] unit))) in
+let nested = ((unit, (unit, unit)) : (unit *[unique global] (unit *[unique global] unit))) in
 ((fun _ => nested)
- : (unit ->[local many] (unit *[unique local] (unit *[unique local] unit))))
+ : (unit ->[global many] (unit *[unique global] (unit *[unique global] unit))))
 > error: mode solver detected uniqueness inconsistency
 
 (* many closure succeeds on nested pair with aliased storage *)
 let nested =
-  ((unit, (unit, unit)) : (unit *[unique local] (unit *[unique local] unit)))
+  ((unit, (unit, unit)) : (unit *[unique global] (unit *[unique global] unit)))
 in
 ((fun _ => nested)
- : (unit ->[local many] (unit *[local] (unit *[local] unit))))
-> (unit ->[a=local r=r3 l=many p=nonportable] (unit *[u=aliased a=local r=r2] (unit *[u=aliased a=local r=r1] unit)))
+ : (unit ->[global many] (unit *[global] (unit *[global] unit))))
+> (unit ->[a=global r=r3 l=many p=nonportable] (unit *[u=aliased a=global r=r2] (unit *[u=aliased a=global r=r1] unit)))
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
@@ -56,33 +56,33 @@ in
 >   r1-r2 ∈ [0, inf]
 
 (* many closure fails on unique sum *)
-let unique_sum = (left(unit) : (unit +[unique local] unit)) in
-((fun _ => unique_sum) : (unit ->[local many] (unit +[unique local] unit)))
+let unique_sum = (left(unit) : (unit +[unique global] unit)) in
+((fun _ => unique_sum) : (unit ->[global many] (unit +[unique global] unit)))
 > error: mode solver detected uniqueness inconsistency
 
 (* many closure succeeds on aliased sum *)
-let unique_sum = (left(unit) : (unit +[unique local] unit)) in
-((fun _ => unique_sum) : (unit ->[local many] (unit +[local] unit)))
-> (unit ->[a=local r=r2 l=many p=nonportable] (unit +[u=aliased a=local r=r1] unit))
+let unique_sum = (left(unit) : (unit +[unique global] unit)) in
+((fun _ => unique_sum) : (unit ->[global many] (unit +[global] unit)))
+> (unit ->[a=global r=r2 l=many p=nonportable] (unit +[u=aliased a=global r=r1] unit))
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
 
 (* many closure fails on nested unique sum *)
 let nested_sum =
-  (right(left(unit)) : (unit +[unique local] (unit +[unique local] unit)))
+  (right(left(unit)) : (unit +[unique global] (unit +[unique global] unit)))
 in
 ((fun _ => nested_sum)
- : (unit ->[local many] (unit +[unique local] (unit +[unique local] unit))))
+ : (unit ->[global many] (unit +[unique global] (unit +[unique global] unit))))
 > error: mode solver detected uniqueness inconsistency
 
 (* many closure succeeds on nested sum with aliased storage *)
 let nested_sum =
-  (right(left(unit)) : (unit +[unique local] (unit +[unique local] unit)))
+  (right(left(unit)) : (unit +[unique global] (unit +[unique global] unit)))
 in
 ((fun _ => nested_sum)
- : (unit ->[local many] (unit +[local] (unit +[local] unit))))
-> (unit ->[a=local r=r3 l=many p=nonportable] (unit +[u=aliased a=local r=r2] (unit +[u=aliased a=local r=r1] unit)))
+ : (unit ->[global many] (unit +[global] (unit +[global] unit))))
+> (unit ->[a=global r=r3 l=many p=nonportable] (unit +[u=aliased a=global r=r2] (unit +[u=aliased a=global r=r1] unit)))
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
@@ -91,44 +91,44 @@ in
 >   r1-r2 ∈ [0, inf]
 
 (* once closure fails on aliased function capture *)
-let aliased_fun = ((fun x => x) : (unit ->[local many] unit)) in
-((fun _ => aliased_fun) : (unit ->[local once] (unit ->[local many] unit)))
-> (unit ->[a=local r=r2 l=once p=nonportable] (unit ->[a=local r=r1 l=many p=nonportable] unit))
+let aliased_fun = ((fun x => x) : (unit ->[global many] unit)) in
+((fun _ => aliased_fun) : (unit ->[global once] (unit ->[global many] unit)))
+> (unit ->[a=global r=r2 l=once p=nonportable] (unit ->[a=global r=r1 l=many p=nonportable] unit))
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
 
 (* many closure succeeds on once-qualified function capture *)
-let linear_fun = ((fun x => x) : (unit ->[local once] unit)) in
-((fun _ => linear_fun) : (unit ->[local many] (unit ->[local once] unit)))
+let linear_fun = ((fun x => x) : (unit ->[global once] unit)) in
+((fun _ => linear_fun) : (unit ->[global many] (unit ->[global once] unit)))
 > error: mode solver detected linearity inconsistency
 
 (* once closure fails on portable function capture *)
-let portable_fun = ((fun x => x) : (unit ->[local once portable] unit)) in
+let portable_fun = ((fun x => x) : (unit ->[global once portable] unit)) in
 ((fun _ => portable_fun)
- : (unit ->[local once] (unit ->[local once portable] unit)))
-> (unit ->[a=local r=r2 l=once p=nonportable] (unit ->[a=local r=r1 l=once p=portable] unit))
+ : (unit ->[global once] (unit ->[global once portable] unit)))
+> (unit ->[a=global r=r2 l=once p=nonportable] (unit ->[a=global r=r1 l=once p=portable] unit))
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
 
 (* once closure succeeds when requiring portable capability *)
-let portable_fun = ((fun x => x) : (unit ->[local once portable] unit)) in
+let portable_fun = ((fun x => x) : (unit ->[global once portable] unit)) in
 ((fun _ => portable_fun)
- : (unit ->[local once portable] (unit ->[local once portable] unit)))
-> (unit ->[a=local r=r2 l=once p=portable] (unit ->[a=local r=r1 l=once p=portable] unit))
+ : (unit ->[global once portable] (unit ->[global once portable] unit)))
+> (unit ->[a=global r=r2 l=once p=portable] (unit ->[a=global r=r1 l=once p=portable] unit))
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
 
 (* once closure fails via pair.left path *)
 let pair_left =
-  (((fun x => x) : (unit ->[local many] unit)), unit)
-  : ((unit ->[local many] unit) *[unique local] unit)
+  (((fun x => x) : (unit ->[global many] unit)), unit)
+  : ((unit ->[global many] unit) *[unique global] unit)
 in
 ((fun _ => pair_left)
- : (unit ->[local once] ((unit ->[local many] unit) *[unique local] unit)))
-> (unit ->[a=local r=r3 l=once p=nonportable] ((unit ->[a=local r=r2 l=many p=nonportable] unit) *[u=unique a=local r=r1] unit))
+ : (unit ->[global once] ((unit ->[global many] unit) *[unique global] unit)))
+> (unit ->[a=global r=r3 l=once p=nonportable] ((unit ->[a=global r=r2 l=many p=nonportable] unit) *[u=unique a=global r=r1] unit))
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
@@ -139,12 +139,12 @@ in
 (* once closure fails via pair.right path *)
 let pair_right =
   (unit,
-   ((fun x => x) : (unit ->[local many] unit)))
-  : (unit *[unique local] (unit ->[local many] unit))
+   ((fun x => x) : (unit ->[global many] unit)))
+  : (unit *[unique global] (unit ->[global many] unit))
 in
 ((fun _ => pair_right)
- : (unit ->[local once] (unit *[unique local] (unit ->[local many] unit))))
-> (unit ->[a=local r=r3 l=once p=nonportable] (unit *[u=unique a=local r=r2] (unit ->[a=local r=r1 l=many p=nonportable] unit)))
+ : (unit ->[global once] (unit *[unique global] (unit ->[global many] unit))))
+> (unit ->[a=global r=r3 l=once p=nonportable] (unit *[u=unique a=global r=r2] (unit ->[a=global r=r1 l=many p=nonportable] unit)))
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
@@ -154,12 +154,12 @@ in
 
 (* once closure fails via sum.left path *)
 let sum_left =
-  (left(((fun x => x) : (unit ->[local many] unit))))
-  : ((unit ->[local many] unit) +[unique local] unit)
+  (left(((fun x => x) : (unit ->[global many] unit))))
+  : ((unit ->[global many] unit) +[unique global] unit)
 in
 ((fun _ => sum_left)
- : (unit ->[local once] ((unit ->[local many] unit) +[unique local] unit)))
-> (unit ->[a=local r=r3 l=once p=nonportable] ((unit ->[a=local r=r2 l=many p=nonportable] unit) +[u=unique a=local r=r1] unit))
+ : (unit ->[global once] ((unit ->[global many] unit) +[unique global] unit)))
+> (unit ->[a=global r=r3 l=once p=nonportable] ((unit ->[a=global r=r2 l=many p=nonportable] unit) +[u=unique a=global r=r1] unit))
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
@@ -169,12 +169,12 @@ in
 
 (* once closure fails via sum.right path *)
 let sum_right =
-  (right(((fun x => x) : (unit ->[local many] unit))))
-  : (unit +[unique local] (unit ->[local many] unit))
+  (right(((fun x => x) : (unit ->[global many] unit))))
+  : (unit +[unique global] (unit ->[global many] unit))
 in
 ((fun _ => sum_right)
- : (unit ->[local once] (unit +[unique local] (unit ->[local many] unit))))
-> (unit ->[a=local r=r3 l=once p=nonportable] (unit +[u=unique a=local r=r2] (unit ->[a=local r=r1 l=many p=nonportable] unit)))
+ : (unit ->[global once] (unit +[unique global] (unit ->[global many] unit))))
+> (unit ->[a=global r=r3 l=once p=nonportable] (unit +[u=unique a=global r=r2] (unit ->[a=global r=r1 l=many p=nonportable] unit)))
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
@@ -185,18 +185,18 @@ in
 (* once closure fails via nested pair path chain *)
 let nested_pair =
   ((unit,
-    ((fun x => x) : (unit ->[local many] unit)))
-   : (unit *[unique local] (unit ->[local many] unit)))
+    ((fun x => x) : (unit ->[global many] unit)))
+   : (unit *[unique global] (unit ->[global many] unit)))
 in
 let bundle =
   (nested_pair, unit)
-  : ((unit *[unique local] (unit ->[local many] unit)) *[unique local] unit)
+  : ((unit *[unique global] (unit ->[global many] unit)) *[unique global] unit)
 in
 ((fun _ => bundle)
  : (unit
-    ->[local once]
-    ((unit *[unique local] (unit ->[local many] unit)) *[unique local] unit)))
-> (unit ->[a=local r=r4 l=once p=nonportable] ((unit *[u=unique a=local r=r3] (unit ->[a=local r=r2 l=many p=nonportable] unit)) *[u=unique a=local r=r1] unit))
+    ->[global once]
+    ((unit *[unique global] (unit ->[global many] unit)) *[unique global] unit)))
+> (unit ->[a=global r=r4 l=once p=nonportable] ((unit *[u=unique a=global r=r3] (unit ->[a=global r=r2 l=many p=nonportable] unit)) *[u=unique a=global r=r1] unit))
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
@@ -209,18 +209,18 @@ in
 
 (* once closure fails via nested sum path chain *)
 let nested_sum_fn =
-  (left(((fun x => x) : (unit ->[local many] unit))))
-  : ((unit ->[local many] unit) +[unique local] unit)
+  (left(((fun x => x) : (unit ->[global many] unit))))
+  : ((unit ->[global many] unit) +[unique global] unit)
 in
 let bundle =
   (right(nested_sum_fn))
-  : (unit +[unique local] ((unit ->[local many] unit) +[unique local] unit))
+  : (unit +[unique global] ((unit ->[global many] unit) +[unique global] unit))
 in
 ((fun _ => bundle)
  : (unit
-    ->[local once]
-    (unit +[unique local] ((unit ->[local many] unit) +[unique local] unit))))
-> (unit ->[a=local r=r4 l=once p=nonportable] (unit +[u=unique a=local r=r3] ((unit ->[a=local r=r2 l=many p=nonportable] unit) +[u=unique a=local r=r1] unit)))
+    ->[global once]
+    (unit +[unique global] ((unit ->[global many] unit) +[unique global] unit))))
+> (unit ->[a=global r=r4 l=once p=nonportable] (unit +[u=unique a=global r=r3] ((unit ->[a=global r=r2 l=many p=nonportable] unit) +[u=unique a=global r=r1] unit)))
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
@@ -234,52 +234,52 @@ in
 (* many closure succeeds on nested pair with once-qualified function *)
 let nested_pair_once =
   ((unit,
-    ((fun x => x) : (unit ->[local once] unit)))
-   : (unit *[unique local] (unit ->[local once] unit)))
+    ((fun x => x) : (unit ->[global once] unit)))
+   : (unit *[unique global] (unit ->[global once] unit)))
 in
 let bundle =
   (nested_pair_once, unit)
-  : ((unit *[unique local] (unit ->[local once] unit)) *[unique local] unit)
+  : ((unit *[unique global] (unit ->[global once] unit)) *[unique global] unit)
 in
 ((fun _ => bundle)
  : (unit
-    ->[local many]
-    ((unit *[local] (unit ->[local once] unit)) *[local] unit)))
+    ->[global many]
+    ((unit *[global] (unit ->[global once] unit)) *[global] unit)))
 > error: mode solver detected linearity inconsistency
 
 (* many closure succeeds on nested sum with once-qualified function *)
 let nested_sum_once =
-  (left(((fun x => x) : (unit ->[local once] unit))))
-  : ((unit ->[local once] unit) +[unique local] unit)
+  (left(((fun x => x) : (unit ->[global once] unit))))
+  : ((unit ->[global once] unit) +[unique global] unit)
 in
 let bundle =
   (right(nested_sum_once))
-  : (unit +[unique local] ((unit ->[local once] unit) +[unique local] unit))
+  : (unit +[unique global] ((unit ->[global once] unit) +[unique global] unit))
 in
 ((fun _ => bundle)
  : (unit
-    ->[local many]
-    (unit +[local] ((unit ->[local once] unit) +[local] unit))))
+    ->[global many]
+    (unit +[global] ((unit ->[global once] unit) +[global] unit))))
 > error: mode solver detected linearity inconsistency
 
 (* once closure fails when capturing a many-closure as a value *)
-let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
+let unique_pair = ((unit, unit) : (unit *[unique global] unit)) in
 let inner =
-  ((fun _ => unique_pair) : (unit ->[local many] (unit *[local] unit)))
+  ((fun _ => unique_pair) : (unit ->[global many] (unit *[global] unit)))
 in
 ((fun _ => inner)
- : (unit ->[local once] (unit ->[local many] (unit *[local] unit))))
-> (unit ->[a=local r=r3 l=once p=nonportable] (unit ->[a=local r=r2 l=many p=nonportable] (unit *[u=aliased a=local r=r1] unit)))
+ : (unit ->[global once] (unit ->[global many] (unit *[global] unit))))
+> (unit ->[a=global r=r3 l=once p=nonportable] (unit ->[a=global r=r2 l=many p=nonportable] (unit *[u=aliased a=global r=r1] unit)))
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
 >   r3 ∈ [0, inf]
 
 (* many closure succeeds when capturing a once-closure as a value *)
-let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
+let unique_pair = ((unit, unit) : (unit *[unique global] unit)) in
 let inner =
-  ((fun _ => unique_pair) : (unit ->[local once] (unit *[unique local] unit)))
+  ((fun _ => unique_pair) : (unit ->[global once] (unit *[unique global] unit)))
 in
 ((fun _ => inner)
- : (unit ->[local many] (unit ->[local once] (unit *[unique local] unit))))
+ : (unit ->[global many] (unit ->[global once] (unit *[unique global] unit))))
 > error: mode solver detected linearity inconsistency

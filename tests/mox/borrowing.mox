@@ -5,7 +5,7 @@ let a = (unit, unit) in let! (q,r) = a in (q,r)
 > (unit *[u=u1 a=a1 r=r1] unit)
 > mode vars
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 
 let fst = (fun p => let (x,y) = p in x) in
@@ -13,7 +13,7 @@ borrow a = (unit, unit) for b = fst a in let! (q,r) = a in (b, q)
 > (unit *[u=u1 a=a1 r=r1] unit)
 > mode vars
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 
 (* We can even borrow stack allocated data that contains heap allocated data! *)
@@ -23,7 +23,7 @@ borrow a = $(unit, p) for b = fst a in let! (q,r) = a in (b, q)
 > (unit *[u=u1 a=a1 r=r1] unit)
 > mode vars
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 
 (* This ought to be OK but is rejected. Related to Leo's ideas? *)

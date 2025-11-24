@@ -3,8 +3,7 @@
 module Solver = struct
   type sort_areality =
     | Global
-    | Regional
-    | Local
+    | Borrowed
 
   type sort_contention =
     | Uncontended

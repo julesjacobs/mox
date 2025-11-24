@@ -151,11 +151,11 @@ let fresh_mode_vars () : mode_vars =
     regionality = Modesolver.Regionality.new_var () }
 
 let _force_storage_local (storage : storage_mode) =
-  Modesolver.Areality.restrict_domain [Areality.local] storage.areality;
+  Modesolver.Areality.restrict_domain [Areality.global] storage.areality;
   Modesolver.Regionality.restrict_domain [Regionality.stack] storage.regionality
 
 let force_future_local (future : future_mode) region =
-  Modesolver.Areality.restrict_domain [Areality.local] future.areality;
+  Modesolver.Areality.restrict_domain [Areality.global] future.areality;
   Modesolver.Regionality.restrict_domain [Regionality.of_int region] future.regionality
 
 let force_storage_unique (storage : storage_mode) =
@@ -196,8 +196,7 @@ let const_ref_mode ~contention : ref_mode =
 let precise_ref_mode () =
   const_ref_mode ~contention:Contention.uncontended
 
-let nonborrowed_arealities =
-  [ Areality.global; Areality.regional; Areality.local ]
+let nonborrowed_arealities = [ Areality.global ]
 
 let nonborrowed_mode_vars () : mode_vars =
   let mode = fresh_mode_vars () in

@@ -1,23 +1,23 @@
 (* locking downgrades captured storage when the closure is many *)
-let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
+let unique_pair = ((unit, unit) : (unit *[unique global] unit)) in
 ((fun _ => unique_pair)
- : (unit ->[local many] (unit *[unique local] unit)))
+ : (unit ->[global many] (unit *[unique global] unit)))
 > error: mode solver detected uniqueness inconsistency
 
 (* once-qualified closures can retain unique storage *)
-let unique_pair = ((unit, unit) : (unit *[unique local] unit)) in
+let unique_pair = ((unit, unit) : (unit *[unique global] unit)) in
 ((fun _ => unique_pair)
- : (unit ->[local once] (unit *[unique local] unit)))
-> (unit ->[a=local r=r2 l=once p=nonportable] (unit *[u=unique a=local r=r1] unit))
+ : (unit ->[global once] (unit *[unique global] unit)))
+> (unit ->[a=global r=r2 l=once p=nonportable] (unit *[u=unique a=global r=r1] unit))
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
 
 (* closures reject functions that exceed their mode budget *)
-let aliased_fun = ((fun x => x) : (unit ->[local many] unit)) in
+let aliased_fun = ((fun x => x) : (unit ->[global many] unit)) in
 ((fun _ => aliased_fun)
- : (unit ->[local once] (unit ->[local many] unit)))
-> (unit ->[a=local r=r2 l=once p=nonportable] (unit ->[a=local r=r1 l=many p=nonportable] unit))
+ : (unit ->[global once] (unit ->[global many] unit)))
+> (unit ->[a=global r=r2 l=once p=nonportable] (unit ->[a=global r=r1 l=many p=nonportable] unit))
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]

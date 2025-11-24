@@ -42,7 +42,6 @@ region
 > error: mode solver detected regionality inconsistency (1 <= 0)
 
 (* Complex example with fold where we do the recursive call under a region *)
-
 (* No matter how deeply we allocate the cons, we cannot allow this as it can escape arbitrarily many regions. *)
 let fold = fun f => fun z => rec go xs => match xs with [] => z | a :: as => region (f a (go as)) 
 in fold (fun x => fun y => x $$$$$$$:: y) [] [1,2,3]
@@ -53,7 +52,7 @@ let fold = fun f => fun z => rec go xs => match xs with [] => z | a :: as => reg
 in fold (fun x => fun y => $$(1,2)) (2,3) [1,2,3]
 > (int *[u=aliased a=a1 r=0] int)
 > mode vars
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 
 (* Destructive pair matching is only allowed on unique pairs *)
 let x = (1,2) in 
@@ -73,7 +72,7 @@ borrow y = x for z = fst y in let! (a,b) = y in (z,b)
 > (int *[u=u1 a=a1 r=r1] int)
 > mode vars
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 
 (* In the borrow, data becomes aliased *)
@@ -96,7 +95,7 @@ let! (a,b) = y in a
 > (int *[u=aliased a=a1 r=r1] int)
 > mode vars
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 
 (* Concurrency: catching data races *)
 let r = ref 3 in

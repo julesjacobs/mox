@@ -100,20 +100,8 @@ let%expect_test "areality default relation is cartesian product" =
   [%expect {|
     borrowed -> borrowed
     borrowed -> global
-    borrowed -> local
-    borrowed -> regional
-    global -> borrowed
     global -> global
-    global -> local
-    global -> regional
-    local -> borrowed
-    local -> global
-    local -> local
-    local -> regional
-    regional -> borrowed
-    regional -> global
-    regional -> local
-    regional -> regional
+    global -> borrowed
   |}]
 
 let%expect_test "relation intersections refine results" =
@@ -123,18 +111,21 @@ let%expect_test "relation intersections refine results" =
   let rel1 =
     Relations.make
       [
-        (Modes.Areality.Global, Modes.Areality.Regional);
-        (Modes.Areality.Regional, Modes.Areality.Local);
+        (Modes.Areality.Global, Modes.Areality.Global);
+        (Modes.Areality.Global, Modes.Areality.Borrowed);
+        (Modes.Areality.Borrowed, Modes.Areality.Borrowed);
       ]
   in
-  let rel2 = Relations.make [ (Modes.Areality.Regional, Modes.Areality.Local) ] in
+  let rel2 =
+    Relations.make [ (Modes.Areality.Global, Modes.Areality.Borrowed) ]
+  in
   A.assert_relation rel1 x y;
   A.assert_relation rel2 x y;
   print_relation ~to_string_a:Modes.Areality.to_string
     ~to_string_b:Modes.Areality.to_string
     (A.get_relation x y);
   [%expect {|
-    regional -> local
+    global -> borrowed
   |}]
 
 let%expect_test "assert_leq_in for contention reverses ordering" =
@@ -214,7 +205,7 @@ let%expect_test "assert_predicate after relation narrows outgoing edges" =
     Relations.make
       [
         (Modes.Portability.Portable, Modes.Areality.Global);
-        (Modes.Portability.NonPortable, Modes.Areality.Local);
+        (Modes.Portability.NonPortable, Modes.Areality.Borrowed);
       ]
   in
   Modesolver.assert_relation rel p a;
@@ -224,7 +215,7 @@ let%expect_test "assert_predicate after relation narrows outgoing edges" =
     (Modesolver.get_relation p a);
   [%expect {|
     portable -> global
- |}]
+  |}]
 
 let%expect_test "inconsistent cross-axis assertion raises" =
   let module U = Modesolver.Uniqueness in

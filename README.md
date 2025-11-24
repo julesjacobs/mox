@@ -60,12 +60,12 @@ Future axes (restrictions on upcoming use):
 |----------------|-------------------------------------|-------------|
 | Linearity (`l`)| `many ≤ₜₒ once ≤ₜₒ never`               | same as `≤ₜₒ` |
 | Portability (`p`)| `portable ≤ₜₒ nonportable`          | same as `≤ₜₒ` |
-| Areality (`a`) | `global ≤ₜₒ regional ≤ₜₒ local ≤ₜₒ borrowed` | `global ≤ᵢₙ regional ≤ᵢₙ local`, `borrowed ≤ᵢₙ borrowed` |
+| Areality (`a`) | `global ≤ₜₒ borrowed` | `global ≤ᵢₙ global`, `borrowed ≤ᵢₙ borrowed` |
 | Regionality (`r`)| `r∞ ≤ₜₒ r4 ≤ₜₒ … ≤ₜₒ r0` (reverse numeric) | same as `≤ₜₒ` |
 
 - Past axes flip when stored: a unique container may hold only unique children (`aliased ≤ᵢₙ unique`), whereas future axes (except for `borrowed`) weaken going inward (a `many` value can live inside an `once` container).
 - Linearity and portability also interact with closures: capturing an environment in a `many` closure marks those bindings as `aliased`, and capturing into a `portable` closure forces their contention to become `contended`.
-- Areality tracks placement: `local` data must not leak beyond its region, and `borrowed` states only live in other `borrowed` data.
+- Areality now only distinguishes owned (`global`) values from temporary `borrowed` ones; borrowed values cannot be nested inside non-borrowed data.
 - Regionality tracks concrete regions (heap = `r∞`, stack = `r0`), ordered in reverse numeric order so outer regions are “smaller”.
 
 These component-wise relations power the mode solver described in `tex/mox.tex`.
@@ -74,7 +74,7 @@ These component-wise relations power the mode solver described in `tex/mox.tex`.
 
 ### Stack allocation and locality
 
-Stack-allocated constructors are indicated with `$` and keep their areality at `local`. You can repeat `$` to target an older stack region (`$` = region 0, `$$` = region 1, `$$$` = region 2, …). Such values cannot escape their enclosing `region`:
+Stack-allocated constructors are indicated with `$` and pin their regionality to a stack slot. You can repeat `$` to target an older stack region (`$` = region 0, `$$` = region 1, `$$$` = region 2, …). Areality stays `global`, but the regionality axis keeps stack data from escaping its enclosing `region`:
 
 ```mox
 region
@@ -91,7 +91,7 @@ region
   tmp
 ```
 
-Inference rejects the program because `local` data cannot escape.
+Inference rejects the program because stack-bound regionality cannot escape.
 
 ### Destructive matching and uniqueness
 

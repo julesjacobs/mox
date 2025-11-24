@@ -1,6 +1,6 @@
 (* pair with stricter modes on both sides *)
-(((unit, unit), unit) : ((unit *[unique local] unit) *[unique local] unit))
-> ((unit *[u=unique a=local r=r2] unit) *[u=unique a=local r=r1] unit)
+(((unit, unit), unit) : ((unit *[unique global] unit) *[unique global] unit))
+> ((unit *[u=unique a=global r=r2] unit) *[u=unique a=global r=r1] unit)
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]

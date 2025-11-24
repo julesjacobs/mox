@@ -17,7 +17,7 @@ let pair = (unit, unit) in pair
 > (unit *[u=u1 a=a1 r=r1] unit)
 > mode vars
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 
 left(unit)
@@ -26,17 +26,17 @@ left(unit)
 >   'a in {u=u2; c=c1; l=l1; p=p1; a=a2; r=r2}
 > mode vars
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 >   r2 ∈ [0, inf]
->   a2 ∈ {borrowed, global, local, regional}
+>   a2 ∈ {borrowed, global}
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
 >   c1 ∈ {contended, shared, uncontended}
 >   u2 ∈ {aliased, unique}
 > mode rels
 >   (u2,u1) ∉ {(unique,aliased)}
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
+>   (a2,a1) ∈ {(global,global), (borrowed,borrowed)}
 >   r1-r2 <= 0
 
 right(unit)
@@ -45,17 +45,17 @@ right(unit)
 >   'a in {u=u2; c=c1; l=l1; p=p1; a=a2; r=r2}
 > mode vars
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 >   r2 ∈ [0, inf]
->   a2 ∈ {borrowed, global, local, regional}
+>   a2 ∈ {borrowed, global}
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
 >   c1 ∈ {contended, shared, uncontended}
 >   u2 ∈ {aliased, unique}
 > mode rels
 >   (u2,u1) ∉ {(unique,aliased)}
->   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
+>   (a2,a1) ∈ {(global,global), (borrowed,borrowed)}
 >   r1-r2 <= 0
 
 fun x => x
@@ -64,7 +64,7 @@ fun x => x
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 
 (fun x => x) unit
 > unit
@@ -107,7 +107,7 @@ let r = ref unit in fork (let x = !r in x)
 let x = $(unit, unit) in x
 > (unit *[u=u1 a=a1 r=0] unit)
 > mode vars
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 
 stack (unit, unit)
@@ -129,43 +129,43 @@ match left(unit) with left(x) => left(x) | right(y) => right(y)
 >   'a in {u=u6; c=c5; l=l5; p=p5; a=a6; r=r6}
 > mode vars
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 >   r2 ∈ [0, inf]
->   a2 ∈ {borrowed, global, local, regional}
+>   a2 ∈ {borrowed, global}
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
 >   c1 ∈ {contended, shared, uncontended}
 >   u2 ∈ {aliased, unique}
 >   r3 ∈ [0, inf]
->   a3 ∈ {borrowed, global, local, regional}
+>   a3 ∈ {borrowed, global}
 >   p2 ∈ {nonportable, portable}
 >   l2 ∈ {many, never, once}
 >   c2 ∈ {contended, shared, uncontended}
 >   u3 ∈ {aliased, unique}
 >   r4 ∈ [0, inf]
->   a4 ∈ {borrowed, global, local, regional}
+>   a4 ∈ {borrowed, global}
 >   p3 ∈ {nonportable, portable}
 >   l3 ∈ {many, never, once}
 >   c3 ∈ {contended, shared, uncontended}
 >   u4 ∈ {aliased, unique}
 >   r5 ∈ [0, inf]
->   a5 ∈ {borrowed, global, local, regional}
+>   a5 ∈ {borrowed, global}
 >   p4 ∈ {nonportable, portable}
 >   l4 ∈ {many, never, once}
 >   c4 ∈ {contended, shared, uncontended}
 >   u5 ∈ {aliased, unique}
 >   r6 ∈ [0, inf]
->   a6 ∈ {borrowed, global, local, regional}
+>   a6 ∈ {borrowed, global}
 >   p5 ∈ {nonportable, portable}
 >   l5 ∈ {many, never, once}
 >   c5 ∈ {contended, shared, uncontended}
 >   u6 ∈ {aliased, unique}
 > mode rels
 >   (u6,u1) ∉ {(unique,aliased)}
->   (a6,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
->   (a5,a1) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
->   (a3,a1) ∉ {(regional,global), (local,global), (local,regional), (borrowed,global), (borrowed,regional), (borrowed,local)}
+>   (a6,a1) ∈ {(global,global), (borrowed,borrowed)}
+>   (a5,a1) ∉ {(borrowed,global)}
+>   (a3,a1) ∉ {(borrowed,global)}
 >   r1-r6 <= 0
 >   r1-r5 <= 0
 >   r1-r3 <= 0
@@ -199,7 +199,7 @@ let shared = ref unit in (shared, shared)
 > mode vars
 >   c1 ∈ {contended, shared, uncontended}
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 
 let shared = ref unit in let alias = shared in (shared, alias)
@@ -207,7 +207,7 @@ let shared = ref unit in let alias = shared in (shared, alias)
 > mode vars
 >   c1 ∈ {contended, shared, uncontended}
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 
 let shared = (unit, unit) in (fun f => f shared, fun g => g shared)
@@ -219,28 +219,28 @@ let shared = (unit, unit) in (fun f => f shared, fun g => g shared)
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, once}
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   p2 ∈ {nonportable, portable}
 >   l2 ∈ {many, once}
 >   r2 ∈ [0, inf]
->   a2 ∈ {borrowed, global, local, regional}
+>   a2 ∈ {borrowed, global}
 >   r3 ∈ [0, inf]
->   a3 ∈ {borrowed, global, local, regional}
+>   a3 ∈ {borrowed, global}
 >   r4 ∈ [0, inf]
->   a4 ∈ {borrowed, global, local, regional}
+>   a4 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 >   p3 ∈ {nonportable, portable}
 >   l3 ∈ {many, once}
 >   r5 ∈ [0, inf]
->   a5 ∈ {borrowed, global, local, regional}
+>   a5 ∈ {borrowed, global}
 >   p4 ∈ {nonportable, portable}
 >   l4 ∈ {many, once}
 >   r6 ∈ [0, inf]
->   a6 ∈ {borrowed, global, local, regional}
+>   a6 ∈ {borrowed, global}
 >   r7 ∈ [0, inf]
->   a7 ∈ {borrowed, global, local, regional}
+>   a7 ∈ {borrowed, global}
 > mode rels
->   (a5,a4) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
+>   (a5,a4) ∈ {(global,global), (borrowed,borrowed)}
 >   r4-r5 <= 0
 >   r1-r4 ∈ [0, inf]
 
@@ -253,28 +253,28 @@ let shared = ((unit, unit) : (unit *[unique] unit)) in (fun f => f shared, fun g
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, once}
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   p2 ∈ {nonportable, portable}
 >   l2 ∈ {many, once}
 >   r2 ∈ [0, inf]
->   a2 ∈ {borrowed, global, local, regional}
+>   a2 ∈ {borrowed, global}
 >   r3 ∈ [0, inf]
->   a3 ∈ {borrowed, global, local, regional}
+>   a3 ∈ {borrowed, global}
 >   r4 ∈ [0, inf]
->   a4 ∈ {borrowed, global, local, regional}
+>   a4 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 >   p3 ∈ {nonportable, portable}
 >   l3 ∈ {many, once}
 >   r5 ∈ [0, inf]
->   a5 ∈ {borrowed, global, local, regional}
+>   a5 ∈ {borrowed, global}
 >   p4 ∈ {nonportable, portable}
 >   l4 ∈ {many, once}
 >   r6 ∈ [0, inf]
->   a6 ∈ {borrowed, global, local, regional}
+>   a6 ∈ {borrowed, global}
 >   r7 ∈ [0, inf]
->   a7 ∈ {borrowed, global, local, regional}
+>   a7 ∈ {borrowed, global}
 > mode rels
->   (a5,a4) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
+>   (a5,a4) ∈ {(global,global), (borrowed,borrowed)}
 >   r4-r5 <= 0
 >   r1-r4 ∈ [0, inf]
 
@@ -315,7 +315,7 @@ let f = fun x => (x, x) in f (ref unit)
 > mode vars
 >   c1 ∈ {contended, shared, uncontended}
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 >   c2 ∈ {contended, shared, uncontended}
 
@@ -331,9 +331,9 @@ let f = (fun x => x) : unit ->[portable] unit in (f, f)
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   r2 ∈ [0, inf]
->   a2 ∈ {borrowed, global, local, regional}
+>   a2 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 > mode rels
 >   r1-r2 ∈ [0, inf]
@@ -351,7 +351,7 @@ let shared = ref unit in let mk = fun _ => shared in (mk unit, mk unit)
 > mode vars
 >   c1 ∈ {contended, shared, uncontended}
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 >   c2 ∈ {contended, shared, uncontended}
 
@@ -368,31 +368,31 @@ let alias = ((unit, unit) : (unit *[unique] unit)) in let (a,b) = alias in (a,b)
 > (unit *[u=u1 a=a1 r=r1] unit)
 > mode vars
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, global, local, regional}
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 
-let alias = ((unit, unit) : (unit *[unique local] unit)) in fork (let (a,b) = alias in a)
-> error: mode solver detected areality inconsistency
+let alias = ((unit, unit) : (unit *[unique global] unit)) in fork (let (a,b) = alias in a)
+> unit
 
-let alias = ((unit, unit) : (unit *[aliased local] unit)) in fork (let (a,b) = alias in a)
-> error: mode solver detected areality inconsistency
+let alias = ((unit, unit) : (unit *[aliased global] unit)) in fork (let (a,b) = alias in a)
+> unit
 
 let alias = ((unit, unit) : (unit *[aliased] unit)) in fork (let (a,b) = alias in a)
 > unit
 
-let shared = ((unit, unit) : (unit *[aliased local] unit)) in let alias = shared in (shared, alias)
+let shared = ((unit, unit) : (unit *[aliased global] unit)) in let alias = shared in (shared, alias)
 > ((unit *[u=aliased a=a1 r=r1] unit) *[u=u1 a=a2 r=r2] (unit *[u=aliased a=a1 r=r1] unit))
 > mode vars
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, local}
+>   a1 ∈ {borrowed, global}
 >   r2 ∈ [0, inf]
->   a2 ∈ {borrowed, local}
+>   a2 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 > mode rels
 >   r1-r2 ∈ [0, inf]
 
-let shared = ((unit, unit) : (unit *[aliased local] unit)) in match left(shared) with left(x) => x | right(y) => shared
+let shared = ((unit, unit) : (unit *[aliased global] unit)) in match left(shared) with left(x) => x | right(y) => shared
 > (unit *[u=aliased a=a1 r=r1] unit)
 > mode vars
 >   r1 ∈ [0, inf]
->   a1 ∈ {borrowed, local}
+>   a1 ∈ {borrowed, global}

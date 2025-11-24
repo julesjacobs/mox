@@ -229,26 +229,22 @@ module Portability = struct
 end
 
 module Areality_spec = struct
-  type t = Global | Regional | Local | Borrowed
+  type t = Global | Borrowed
 
-  let order_to = [ Global; Regional; Local; Borrowed ]
-  let order_in = linear_order [ Global; Regional; Local ] @ [ (Borrowed, Borrowed) ]
+  let order_to = [ Global; Borrowed ]
+  let order_in = []
   let default = Global
   let show = function
     | Global -> "global"
-    | Regional -> "regional"
-    | Local -> "local"
     | Borrowed -> "borrowed"
   let equal = ( = )
 end
 
 module Areality = struct
   include Make_axis (Areality_spec)
-  type nonrec t = Areality_spec.t = Global | Regional | Local | Borrowed
+  type nonrec t = Areality_spec.t = Global | Borrowed
 
   let global = Global
-  let regional = Regional
-  let local = Local
   let borrowed = Borrowed
 end
 

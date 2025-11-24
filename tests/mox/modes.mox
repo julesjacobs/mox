@@ -1,18 +1,18 @@
 (* mode inference on pairs and sums *)
-((unit, (unit, unit)) : (unit *[unique local] (unit * unit)))
-> (unit *[u=unique a=local r=r2] (unit *[u=aliased a=global r=r1] unit))
+((unit, (unit, unit)) : (unit *[unique global] (unit * unit)))
+> (unit *[u=unique a=global r=r2] (unit *[u=aliased a=global r=r1] unit))
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
 > mode rels
 >   r1-r2 ∈ [0, inf]
 
-(((left(unit)), (right(unit))) : ((unit +[unique local] empty) * (unit +[unique local] unit)))
+(((left(unit)), (right(unit))) : ((unit +[unique global] empty) * (unit +[unique global] unit)))
 > error: mode solver detected uniqueness inconsistency
 
 (* arrow annotations roundtrip *)
-((fun f => f) : ((unit ->[local once portable] unit) -> (unit ->[local once portable] unit)))
-> ((unit ->[a=local r=r3 l=once p=portable] unit) ->[a=global r=r2 l=many p=nonportable] (unit ->[a=local r=r1 l=once p=portable] unit))
+((fun f => f) : ((unit ->[global once portable] unit) -> (unit ->[global once portable] unit)))
+> ((unit ->[a=global r=r3 l=once p=portable] unit) ->[a=global r=r2 l=many p=nonportable] (unit ->[a=global r=r1 l=once p=portable] unit))
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
@@ -27,5 +27,5 @@
 >   r1 ∈ [0, inf]
 
 (* violation: arrow modes stronger than implementation *)
-((fun f => f) : ((unit ->[local once] unit) -> (unit ->[local once portable] unit)))
+((fun f => f) : ((unit ->[global once] unit) -> (unit ->[global once portable] unit)))
 > error: mode solver detected portability inconsistency
