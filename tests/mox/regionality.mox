@@ -32,3 +32,9 @@ let x = $(1,2) in if ? then x else x
 > mode vars
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
+
+(* CR jujacobs: bug! We stack allocate that under arbitrarily many regions! *)
+let fold = fun f => fun z => rec go xs => match xs with [] => z | a :: as => region (f a (go as)) in fold (fun x => fun y => $$(1,2)) (2,3) [1,2,3]
+> (int *[u=aliased a=a1 r=0] int)
+> mode vars
+>   a1 ∈ {borrowed, global, local, regional}
