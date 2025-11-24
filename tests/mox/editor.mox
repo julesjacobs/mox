@@ -4,8 +4,9 @@ region $(1,2)
 
 (* Normal pairs can *)
 region (1,2)
-> (int *[u=u1 a=global] int)
+> (int *[u=u1 a=global r=r1] int)
 > mode vars
+>   r1 ∈ [r0, rinf]
 >   u1 ∈ {aliased, unique}
 
 (* Automatic modalities: can store global data in stack allocated data *)
@@ -13,7 +14,9 @@ let x = (1,2) in
 region
   let y = $(x,x) in
   let (a,b) = y in a
-> (int *[u=aliased a=global] int)
+> (int *[u=aliased a=global r=r1] int)
+> mode vars
+>   r1 ∈ [r0, rinf]
 
 (* The reverse is not allowed *)
 region
@@ -37,8 +40,9 @@ let! (a,b) = x in a
 let x = (1,2) in
 let fst = (fun p => let (x,y) = p in x) in
 borrow y = x for z = fst y in let! (a,b) = y in (z,b)
-> (int *[u=u1 a=a1] int)
+> (int *[u=u1 a=a1 r=r1] int)
 > mode vars
+>   r1 ∈ [r0, rinf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 
@@ -59,8 +63,9 @@ borrow y = x for z = fst y in let! (a,b) = y in (z,b)
 let x = (1,2) in
 let y = (x,x) in
 let! (a,b) = y in a
-> (int *[u=aliased a=a1] int)
+> (int *[u=aliased a=a1 r=r1] int)
 > mode vars
+>   r1 ∈ [r0, rinf]
 >   a1 ∈ {borrowed, global, local, regional}
 
 (* Concurrency: catching data races *)

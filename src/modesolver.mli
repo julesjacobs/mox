@@ -7,6 +7,7 @@ type 'a mode_var = 'a var
 
 val new_var : encode:('a -> int) -> decode:(int -> 'a) -> domain:'a list -> 'a var
 val id : 'a var -> Intsolver.var
+val int_id : 'a var -> int
 val assert_relation : ('a, 'b) Relations.t -> 'a var -> 'b var -> unit
 val get_relation : 'a var -> 'b var -> ('a, 'b) Relations.t
 val assert_predicate : ('a, 'a) Relations.t -> 'a var -> unit
@@ -42,3 +43,16 @@ module Contention : AXIS_SOLVER with type mode = Modes.Contention.t
 module Linearity : AXIS_SOLVER with type mode = Modes.Linearity.t
 module Portability : AXIS_SOLVER with type mode = Modes.Portability.t
 module Areality : AXIS_SOLVER with type mode = Modes.Areality.t
+module Regionality : sig
+  type mode = Modes.Regionality.t
+  type var
+
+  val new_var : ?domain:mode list -> unit -> var
+  val restrict_domain : mode list -> var -> unit
+  val assert_leq_to : var -> var -> unit
+  val assert_leq_in : var -> var -> unit
+  val join_to : var -> var -> var
+  val bottom_in : var
+  val get_bounds : var -> int * int
+  val id : var -> int
+end

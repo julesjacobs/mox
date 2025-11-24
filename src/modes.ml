@@ -252,6 +252,41 @@ module Areality = struct
   let borrowed = Borrowed
 end
 
+module Regionality_spec = struct
+  type t = Infty | Region of int
+
+  let max_region = 8
+
+  let descending_regions =
+    let rec loop n acc =
+      if n < 0 then acc else loop (n - 1) (Region n :: acc)
+    in
+    loop max_region []
+
+  let order_to = Infty :: descending_regions
+  let order_in = linear_order order_to
+  let default = Infty
+
+  let show = function
+    | Infty -> "rinf"
+    | Region n -> Printf.sprintf "r%d" n
+
+  let equal a b =
+    match (a, b) with
+    | Infty, Infty -> true
+    | Region x, Region y -> x = y
+    | _ -> false
+end
+
+module Regionality = struct
+  include Make_axis (Regionality_spec)
+  type nonrec t = Regionality_spec.t = Infty | Region of int
+
+  let heap = Infty
+  let stack = Region 0
+  let of_int n = Region n
+end
+
 let concat parts =
   parts |> List.filter (fun s -> s <> "") |> String.concat " "
 
@@ -314,71 +349,85 @@ module Future = struct
   type t =
     { linearity : Linearity.t;
       portability : Portability.t;
-      areality : Areality.t }
+      areality : Areality.t;
+      regionality : Regionality.t }
 
   let default =
     { linearity = Linearity.default;
       portability = Portability.default;
-      areality = Areality.default }
+      areality = Areality.default;
+      regionality = Regionality.default }
 
-  let make ~linearity ~portability ~areality = { linearity; portability; areality }
+  let make ~linearity ~portability ~areality ~regionality =
+    { linearity; portability; areality; regionality }
 
   let leq_to a b =
     Linearity.leq_to a.linearity b.linearity
     && Portability.leq_to a.portability b.portability
     && Areality.leq_to a.areality b.areality
+    && Regionality.leq_to a.regionality b.regionality
 
   let leq_in = leq_to
 
   let join_to a b =
     { linearity = Linearity.join_to a.linearity b.linearity;
       portability = Portability.join_to a.portability b.portability;
-      areality = Areality.join_to a.areality b.areality }
+      areality = Areality.join_to a.areality b.areality;
+      regionality = Regionality.join_to a.regionality b.regionality }
 
   let meet_to a b =
     { linearity = Linearity.meet_to a.linearity b.linearity;
       portability = Portability.meet_to a.portability b.portability;
-      areality = Areality.meet_to a.areality b.areality }
+      areality = Areality.meet_to a.areality b.areality;
+      regionality = Regionality.meet_to a.regionality b.regionality }
 
   let top_to =
     { linearity = Linearity.top_to;
       portability = Portability.top_to;
-      areality = Areality.top_to }
+      areality = Areality.top_to;
+      regionality = Regionality.top_to }
 
   let bottom_to =
     { linearity = Linearity.bottom_to;
       portability = Portability.bottom_to;
-      areality = Areality.bottom_to }
+      areality = Areality.bottom_to;
+      regionality = Regionality.bottom_to }
 
   let meet_in a b =
     { linearity = Linearity.meet_in a.linearity b.linearity;
       portability = Portability.meet_in a.portability b.portability;
-      areality = Areality.meet_in a.areality b.areality }
+      areality = Areality.meet_in a.areality b.areality;
+      regionality = Regionality.meet_in a.regionality b.regionality }
 
   let join_in a b =
     { linearity = Linearity.join_in a.linearity b.linearity;
       portability = Portability.join_in a.portability b.portability;
-      areality = Areality.join_in a.areality b.areality }
+      areality = Areality.join_in a.areality b.areality;
+      regionality = Regionality.join_in a.regionality b.regionality }
 
   let top_in =
     { linearity = Linearity.top_in;
       portability = Portability.top_in;
-      areality = Areality.top_in }
+      areality = Areality.top_in;
+      regionality = Regionality.top_in }
 
   let bottom_in =
     { linearity = Linearity.bottom_in;
       portability = Portability.bottom_in;
-      areality = Areality.bottom_in }
+      areality = Areality.bottom_in;
+      regionality = Regionality.bottom_in }
 
   let extract names =
     let areality, names = Areality.extract names in
+    let regionality, names = Regionality.extract names in
     let linearity, names = Linearity.extract names in
     let portability, names = Portability.extract names in
-    ({ areality; linearity; portability }, names)
+    ({ areality; linearity; portability; regionality }, names)
 
   let to_string t =
     concat
       [ Areality.to_short_string t.areality;
+        Regionality.to_short_string t.regionality;
         Linearity.to_short_string t.linearity;
         Portability.to_short_string t.portability ]
 end

@@ -66,7 +66,8 @@ and free_vars_without expr vars = remove_vars vars (free_vars expr)
 (* Used on data types such as pairs and sums. *)
 type storage_mode =
   { uniqueness : Modesolver.Uniqueness.var;
-    areality : Modesolver.Areality.var }
+    areality : Modesolver.Areality.var;
+    regionality : Modesolver.Regionality.var }
 
 type ref_mode =
   { contention : Modesolver.Contention.var }
@@ -75,7 +76,8 @@ type ref_mode =
 type future_mode =
   { linearity : Modesolver.Linearity.var;
     portability : Modesolver.Portability.var;
-    areality : Modesolver.Areality.var }
+    areality : Modesolver.Areality.var;
+    regionality : Modesolver.Regionality.var }
 
 (* Used on meta-variables to constrain contents via the <=in relation. *)
 type mode_vars =
@@ -83,7 +85,8 @@ type mode_vars =
     contention : Modesolver.Contention.var;
     linearity : Modesolver.Linearity.var;
     portability : Modesolver.Portability.var;
-    areality : Modesolver.Areality.var }
+    areality : Modesolver.Areality.var;
+    regionality : Modesolver.Regionality.var }
 
 (* -------------------------------------------------------------------------- *)
 (* Types and metas. *)
@@ -126,7 +129,8 @@ let mk_constraint constraint_ =
 
 let fresh_storage_mode () : storage_mode =
   { uniqueness = Modesolver.Uniqueness.new_var ();
-    areality = Modesolver.Areality.new_var () }
+    areality = Modesolver.Areality.new_var ();
+    regionality = Modesolver.Regionality.new_var () }
 
 let fresh_ref_mode () : ref_mode =
   { contention = Modesolver.Contention.new_var () }
@@ -134,20 +138,24 @@ let fresh_ref_mode () : ref_mode =
 let fresh_future_mode () : future_mode =
   { linearity = Modesolver.Linearity.new_var ();
     portability = Modesolver.Portability.new_var ();
-    areality = Modesolver.Areality.new_var () }
+    areality = Modesolver.Areality.new_var ();
+    regionality = Modesolver.Regionality.new_var () }
 
 let fresh_mode_vars () : mode_vars =
   { uniqueness = Modesolver.Uniqueness.new_var ();
     contention = Modesolver.Contention.new_var ();
     linearity = Modesolver.Linearity.new_var ();
     portability = Modesolver.Portability.new_var ();
-    areality = Modesolver.Areality.new_var () }
+    areality = Modesolver.Areality.new_var ();
+    regionality = Modesolver.Regionality.new_var () }
 
 let force_storage_local (storage : storage_mode) =
-  Modesolver.Areality.restrict_domain [Areality.local] storage.areality
+  Modesolver.Areality.restrict_domain [Areality.local] storage.areality;
+  Modesolver.Regionality.restrict_domain [Regionality.stack] storage.regionality
 
 let force_future_local (future : future_mode) =
-  Modesolver.Areality.restrict_domain [Areality.local] future.areality
+  Modesolver.Areality.restrict_domain [Areality.local] future.areality;
+  Modesolver.Regionality.restrict_domain [Regionality.stack] future.regionality
 
 let force_storage_unique (storage : storage_mode) =
   Modesolver.Uniqueness.restrict_domain [Uniqueness.unique] storage.uniqueness
@@ -155,12 +163,18 @@ let force_storage_unique (storage : storage_mode) =
 (* Monotone: de-duplicate identical patterns across constructors. *)
 let fresh_storage ~alloc () =
   let s = fresh_storage_mode () in
-  (match alloc with Ast.Stack -> force_storage_local s | Ast.Heap -> ());
+  (match alloc with
+  | Ast.Stack -> force_storage_local s
+  | Ast.Heap ->
+      Modesolver.Regionality.restrict_domain [Regionality.heap] s.regionality);
   s
 
 let fresh_future ~alloc () =
   let f = fresh_future_mode () in
-  (match alloc with Ast.Stack -> force_future_local f | Ast.Heap -> ());
+  (match alloc with
+  | Ast.Stack -> force_future_local f
+  | Ast.Heap ->
+      Modesolver.Regionality.restrict_domain [Regionality.heap] f.regionality);
   f
 module Mode_consts = struct
   let uniqueness value = Modesolver.Uniqueness.new_var ~domain:[value] ()
@@ -168,6 +182,7 @@ module Mode_consts = struct
   let areality value = Modesolver.Areality.new_var ~domain:[value] ()
   let linearity value = Modesolver.Linearity.new_var ~domain:[value] ()
   let portability value = Modesolver.Portability.new_var ~domain:[value] ()
+  let regionality value = Modesolver.Regionality.new_var ~domain:[value] ()
 end
 
 let const_ref_mode ~contention : ref_mode =
@@ -197,7 +212,9 @@ let many_mode_vars () : mode_vars =
 
 let global_mode_vars () : mode_vars =
   let mode = fresh_mode_vars () in
-  { mode with areality = Mode_consts.areality Areality.global }
+  { mode with
+      areality = Mode_consts.areality Areality.global;
+      regionality = Mode_consts.regionality Regionality.heap }
 
 let fresh_meta_id =
   let counter = ref 0 in
@@ -220,17 +237,20 @@ let fresh_meta ?solution ?(constraints = []) () : meta =
 let assert_future_leq_to (lower : future_mode) (upper : future_mode) =
   Modesolver.Linearity.assert_leq_to lower.linearity upper.linearity;
   Modesolver.Portability.assert_leq_to lower.portability upper.portability;
-  Modesolver.Areality.assert_leq_to lower.areality upper.areality
+  Modesolver.Areality.assert_leq_to lower.areality upper.areality;
+  Modesolver.Regionality.assert_leq_to lower.regionality upper.regionality
 
 let future_for_sub () : future_mode =
   { linearity = Mode_consts.linearity Linearity.once;
     portability = Mode_consts.portability Portability.nonportable;
-    areality = Mode_consts.areality Areality.borrowed }
+    areality = Mode_consts.areality Areality.borrowed;
+    regionality = Mode_consts.regionality Regionality.heap }
 
 let future_for_alias () : future_mode =
   { linearity = Mode_consts.linearity Linearity.many;
     portability = Mode_consts.portability Portability.nonportable;
-    areality = Mode_consts.areality Areality.borrowed }
+    areality = Mode_consts.areality Areality.borrowed;
+    regionality = Mode_consts.regionality Regionality.heap }
 
 let assert_equal_in assert_leq var1 var2 =
   assert_leq var1 var2;
@@ -259,7 +279,8 @@ let rec zonk ty =
 let assert_storage_within (storage : storage_mode) (mode_vars : mode_vars) =
   (* Enforce ŝ ≤₍in₎ m, where ŝ embeds the storage annotation. *)
   Modesolver.Uniqueness.assert_leq_in storage.uniqueness mode_vars.uniqueness;
-  Modesolver.Areality.assert_leq_in storage.areality mode_vars.areality
+  Modesolver.Areality.assert_leq_in storage.areality mode_vars.areality;
+  Modesolver.Regionality.assert_leq_in storage.regionality mode_vars.regionality
 
 let push_storage_to_components (storage : storage_mode) (container_mode : mode_vars) =
   (* Computes m ∧ ŝ: components inherit the container's ambient constraints and
@@ -269,6 +290,8 @@ let push_storage_to_components (storage : storage_mode) (container_mode : mode_v
   Modesolver.Uniqueness.assert_leq_in component_mode.uniqueness container_mode.uniqueness;
   Modesolver.Areality.assert_leq_in component_mode.areality storage.areality;
   Modesolver.Areality.assert_leq_in component_mode.areality container_mode.areality;
+  Modesolver.Regionality.assert_leq_in component_mode.regionality storage.regionality;
+  Modesolver.Regionality.assert_leq_in component_mode.regionality container_mode.regionality;
   assert_equal_in Modesolver.Contention.assert_leq_in component_mode.contention container_mode.contention;
   assert_equal_in Modesolver.Linearity.assert_leq_in component_mode.linearity container_mode.linearity;
   assert_equal_in Modesolver.Portability.assert_leq_in component_mode.portability container_mode.portability;
@@ -283,6 +306,7 @@ let push_ref_to_payload (ref_mode : ref_mode) (container_mode : mode_vars) =
   Modesolver.Contention.assert_leq_in payload_mode.contention container_mode.contention;
   Modesolver.Uniqueness.restrict_domain [Uniqueness.aliased] payload_mode.uniqueness;
   Modesolver.Areality.restrict_domain [Areality.global] payload_mode.areality;
+  Modesolver.Regionality.restrict_domain [Regionality.heap] payload_mode.regionality;
   Modesolver.Linearity.restrict_domain [Linearity.many] payload_mode.linearity;
   assert_equal_in Modesolver.Portability.assert_leq_in payload_mode.portability container_mode.portability;
   payload_mode
@@ -333,6 +357,7 @@ and assert_in ty mode_vars =
   | TyArrow (domain, future, codomain) ->
     (* \hat{f} ≤₍in₎ m *)
     Modesolver.Areality.assert_leq_in future.areality mode_vars.areality;
+    Modesolver.Regionality.assert_leq_in future.regionality mode_vars.regionality;
     Modesolver.Linearity.assert_leq_in future.linearity mode_vars.linearity;
     Modesolver.Portability.assert_leq_in future.portability mode_vars.portability
 
@@ -447,6 +472,8 @@ and assert_leq original locked future =
       Modesolver.assert_linearity_dagger future.linearity locked_storage.uniqueness;
       Modesolver.Areality.assert_leq_to original_storage.areality locked_storage.areality;
       Modesolver.Areality.assert_leq_to original_storage.areality future.areality;
+      Modesolver.Regionality.assert_leq_to original_storage.regionality locked_storage.regionality;
+      Modesolver.Regionality.assert_leq_to original_storage.regionality future.regionality;
       assert_leq original_left locked_left future;
       assert_leq original_right locked_right future
   | TyList (original_elem, original_storage), TyList (locked_elem, locked_storage) ->
@@ -455,6 +482,8 @@ and assert_leq original locked future =
       Modesolver.assert_linearity_dagger future.linearity locked_storage.uniqueness;
       Modesolver.Areality.assert_leq_to original_storage.areality locked_storage.areality;
       Modesolver.Areality.assert_leq_to original_storage.areality future.areality;
+      Modesolver.Regionality.assert_leq_to original_storage.regionality locked_storage.regionality;
+      Modesolver.Regionality.assert_leq_to original_storage.regionality future.regionality;
       assert_leq original_elem locked_elem future
   | TyRef (original_payload, original_mode), TyRef (locked_payload, locked_mode) ->
       log_lock "ref lock enforcement";
@@ -502,7 +531,8 @@ and set_meta_solution meta ty =
 
 let storage_mode_of_ast (storage : Ast.storage_mode) : storage_mode =
   { uniqueness = Mode_consts.uniqueness storage.uniqueness;
-    areality = Mode_consts.areality storage.areality }
+    areality = Mode_consts.areality storage.areality;
+    regionality = Mode_consts.regionality storage.regionality }
 
 let ref_mode_of_ast (mode : Ast.ref_mode) : ref_mode =
   { contention = Mode_consts.contention mode.contention }
@@ -510,7 +540,8 @@ let ref_mode_of_ast (mode : Ast.ref_mode) : ref_mode =
 let future_mode_of_ast (future : Future.t) : future_mode =
   { linearity = Mode_consts.linearity future.linearity;
     portability = Mode_consts.portability future.portability;
-    areality = Mode_consts.areality future.areality }
+    areality = Mode_consts.areality future.areality;
+    regionality = Mode_consts.regionality future.regionality }
 
 let rec ty_of_ast (ty_syntax : Ast.ty) : ty =
   match ty_syntax with
@@ -551,15 +582,14 @@ module ModeInfoSet = Set.Make (String)
 
 module ModeName = struct
   type t =
-    { tbl : (Intsolver.var, string) Hashtbl.t;
+    { tbl : (int, string) Hashtbl.t;
       mutable counter : int;
       prefix : string }
 
   let create prefix =
     { tbl = Hashtbl.create 16; counter = 0; prefix }
 
-  let name t var =
-    let key = Modesolver.id var in
+  let name t key =
     match Hashtbl.find_opt t.tbl key with
     | Some n -> n
     | None ->
@@ -600,12 +630,14 @@ end
 type mode_print_state =
   { u : ModeName.t;
     a : ModeName.t;
+    r : ModeName.t;
     l : ModeName.t;
     p : ModeName.t;
     c : ModeName.t;
     meta_names : MetaNames.t;
     mutable u_vars : Modesolver.Uniqueness.var list;
     mutable a_vars : Modesolver.Areality.var list;
+    mutable r_vars : Modesolver.Regionality.var list;
     mutable l_vars : Modesolver.Linearity.var list;
     mutable p_vars : Modesolver.Portability.var list;
     mutable c_vars : Modesolver.Contention.var list;
@@ -615,12 +647,14 @@ type mode_print_state =
 let make_mode_print_state () =
   { u = ModeName.create "u";
     a = ModeName.create "a";
+    r = ModeName.create "r";
     l = ModeName.create "l";
     p = ModeName.create "p";
     c = ModeName.create "c";
     meta_names = MetaNames.create ();
     u_vars = [];
     a_vars = [];
+    r_vars = [];
     l_vars = [];
     p_vars = [];
     c_vars = [];
@@ -640,6 +674,10 @@ let remember_uni_var state var =
 let remember_are_var state var =
   if List.exists (fun existing -> existing == var) state.a_vars then ()
   else state.a_vars <- state.a_vars @ [ var ]
+
+let remember_reg_var state var =
+  if List.exists (fun existing -> existing == var) state.r_vars then ()
+  else state.r_vars <- state.r_vars @ [ var ]
 
 let remember_lin_var state var =
   if List.exists (fun existing -> existing == var) state.l_vars then ()
@@ -661,67 +699,87 @@ let domain_to_string describe values =
   |> List.sort_uniq String.compare
   |> String.concat ", "
 
-let render_mode_var state names remember describe var =
+let render_mode_var state names remember describe id_of var =
   remember var;
   match Modesolver.get_domain var with
   | [] ->
-      let name = ModeName.name names var in
+      let name = ModeName.name names (id_of var) in
       register_mode_info state (Printf.sprintf "%s ∈ ∅" name);
       name
   | [value] -> describe value
   | values ->
-      let name = ModeName.name names var in
+      let name = ModeName.name names (id_of var) in
       register_mode_info state
         (Printf.sprintf "%s ∈ {%s}" name (domain_to_string describe values));
       name
 
 let render_uni state var =
-  render_mode_var state state.u (remember_uni_var state) Modes.Uniqueness.to_string var
+  render_mode_var state state.u (remember_uni_var state) Modes.Uniqueness.to_string Modesolver.int_id var
 
 let render_are state var =
-  render_mode_var state state.a (remember_are_var state) Modes.Areality.to_string var
+  render_mode_var state state.a (remember_are_var state) Modes.Areality.to_string Modesolver.int_id var
+
+let render_reg state var =
+  remember_reg_var state var;
+  let lb, ub = Modesolver.Regionality.get_bounds var in
+  let to_str n =
+    if n = Infsolver.infinity then "rinf" else Printf.sprintf "r%d" n
+  in
+  if lb = ub then to_str lb
+  else
+    let name = ModeName.name state.r (Modesolver.Regionality.id var) in
+    register_mode_info state
+      (Printf.sprintf "%s ∈ [%s, %s]" name (to_str lb) (to_str ub));
+    name
 
 let render_lin state var =
-  render_mode_var state state.l (remember_lin_var state) Modes.Linearity.to_string var
+  render_mode_var state state.l (remember_lin_var state) Modes.Linearity.to_string Modesolver.int_id var
 
 let render_port state var =
-  render_mode_var state state.p (remember_port_var state) Modes.Portability.to_string var
+  render_mode_var state state.p (remember_port_var state) Modes.Portability.to_string Modesolver.int_id var
 
 let render_cont state var =
-  render_mode_var state state.c (remember_cont_var state) Modes.Contention.to_string var
+  render_mode_var state state.c (remember_cont_var state) Modes.Contention.to_string Modesolver.int_id var
 
 let future_mode_diffs state (future : future_mode) =
   let baseline = future_for_sub () in
   let add_if_diff label render var baseline_var acc =
     if Modesolver.get_domain var = Modesolver.get_domain baseline_var then acc
     else (Printf.sprintf "%s=%s" label (render state var)) :: acc
+  and add_if_diff_bounds label render bounds_of var baseline_var acc =
+    if bounds_of var = bounds_of baseline_var then acc
+    else (Printf.sprintf "%s=%s" label (render state var)) :: acc
   in
   []
   |> add_if_diff "a" render_are future.areality baseline.areality
+  |> add_if_diff_bounds "r" render_reg Modesolver.Regionality.get_bounds future.regionality baseline.regionality
   |> add_if_diff "l" render_lin future.linearity baseline.linearity
   |> add_if_diff "p" render_port future.portability baseline.portability
 
 let string_of_storage_mode state (storage : storage_mode) =
-  Printf.sprintf "u=%s a=%s"
+  Printf.sprintf "u=%s a=%s r=%s"
     (render_uni state storage.uniqueness)
     (render_are state storage.areality)
+    (render_reg state storage.regionality)
 
 let string_of_ref_mode state (mode : ref_mode) =
   Printf.sprintf "c=%s" (render_cont state mode.contention)
 
 let string_of_future_mode state (future : future_mode) =
-  Printf.sprintf "a=%s l=%s p=%s"
+  Printf.sprintf "a=%s r=%s l=%s p=%s"
     (render_are state future.areality)
+    (render_reg state future.regionality)
     (render_lin state future.linearity)
     (render_port state future.portability)
 
 let string_of_mode_vars state (mode_vars : mode_vars) =
-  Printf.sprintf "{u=%s; c=%s; l=%s; p=%s; a=%s}"
+  Printf.sprintf "{u=%s; c=%s; l=%s; p=%s; a=%s; r=%s}"
     (render_uni state mode_vars.uniqueness)
     (render_cont state mode_vars.contention)
     (render_lin state mode_vars.linearity)
     (render_port state mode_vars.portability)
     (render_are state mode_vars.areality)
+    (render_reg state mode_vars.regionality)
 
 let rec string_of_ty_core state ty =
   match zonk ty with
@@ -878,7 +936,7 @@ let relation_display describe left right relation =
   else
     `Complement complement_str
 
-let axis_relation_lines names vars describe get_relation =
+let axis_relation_lines names vars describe get_relation id_of =
   let vars = List.rev vars in
   let all_pairs =
     vars
@@ -895,8 +953,8 @@ let axis_relation_lines names vars describe get_relation =
         let relation = get_relation left right in
         if relation_is_cartesian left right relation then acc
         else
-          let left_name = ModeName.name names left in
-          let right_name = ModeName.name names right in
+          let left_name = ModeName.name names (id_of left) in
+          let right_name = ModeName.name names (id_of right) in
           let line =
             match relation_display describe left right relation with
             | `Present relation_str ->
@@ -911,11 +969,11 @@ let axis_relation_lines names vars describe get_relation =
 
 let render_mode_relations state =
   List.concat
-    [ axis_relation_lines state.u state.u_vars Modes.Uniqueness.to_string Modesolver.Uniqueness.get_relation;
-      axis_relation_lines state.a state.a_vars Modes.Areality.to_string Modesolver.Areality.get_relation;
-      axis_relation_lines state.l state.l_vars Modes.Linearity.to_string Modesolver.Linearity.get_relation;
-      axis_relation_lines state.p state.p_vars Modes.Portability.to_string Modesolver.Portability.get_relation;
-      axis_relation_lines state.c state.c_vars Modes.Contention.to_string Modesolver.Contention.get_relation ]
+    [ axis_relation_lines state.u state.u_vars Modes.Uniqueness.to_string Modesolver.Uniqueness.get_relation Modesolver.int_id;
+      axis_relation_lines state.a state.a_vars Modes.Areality.to_string Modesolver.Areality.get_relation Modesolver.int_id;
+      axis_relation_lines state.l state.l_vars Modes.Linearity.to_string Modesolver.Linearity.get_relation Modesolver.int_id;
+      axis_relation_lines state.p state.p_vars Modes.Portability.to_string Modesolver.Portability.get_relation Modesolver.int_id;
+      axis_relation_lines state.c state.c_vars Modes.Contention.to_string Modesolver.Contention.get_relation Modesolver.int_id ]
 
 let string_of_section label lines =
   match lines with
@@ -1222,7 +1280,8 @@ let rec infer_with_env env expr =
     let future =
       { linearity = Mode_consts.linearity Linearity.once;
         portability = Mode_consts.portability Portability.portable;
-        areality = Mode_consts.areality Areality.global }
+        areality = Mode_consts.areality Areality.global;
+        regionality = Mode_consts.regionality Regionality.heap }
     in
     let locked_env = lock_env captured_env future in
     let body_ty = infer_with_env locked_env e in

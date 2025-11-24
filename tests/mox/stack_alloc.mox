@@ -1,14 +1,15 @@
 $(unit, unit)
-> (unit *[u=u1 a=local] unit)
+> (unit *[u=u1 a=local r=r0] unit)
 > mode vars
 >   u1 ∈ {aliased, unique}
 
 $left(unit)
-> (unit +[u=u1 a=local] 'a)
+> (unit +[u=u1 a=local r=r0] 'a)
 > where
->   'a in {u=u2; c=c1; l=l1; p=p1; a=a1}
+>   'a in {u=u2; c=c1; l=l1; p=p1; a=a1; r=r1}
 > mode vars
 >   u1 ∈ {aliased, unique}
+>   r1 ∈ [r0, rinf]
 >   a1 ∈ {global, local, regional}
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
@@ -18,7 +19,7 @@ $left(unit)
 >   (u2,u1) ∉ {(unique,aliased)}
 
 $fun x => x
-> ('a ->[a=local l=l1 p=p1] 'a)
+> ('a ->[a=local r=r0 l=l1 p=p1] 'a)
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
@@ -37,8 +38,9 @@ region
 region
   let x = $(unit, unit) in
   let (a,b) = x in (unit, unit)
-> (unit *[u=u1 a=global] unit)
+> (unit *[u=u1 a=global r=r1] unit)
 > mode vars
+>   r1 ∈ [r0, rinf]
 >   u1 ∈ {aliased, unique}
 
 region
@@ -57,7 +59,9 @@ region
   let y = (x, x) in 
   let (z,w) = y in
   let (e,f) = z in e
-> (unit *[u=aliased a=global] unit)
+> (unit *[u=aliased a=global r=r1] unit)
+> mode vars
+>   r1 ∈ [r0, rinf]
 
 region
   let x = $(unit, unit) in

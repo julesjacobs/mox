@@ -14,18 +14,21 @@ borrow x = ((fun y => y) : (unit ->[once] unit)) for y = x in y
 > error: mode solver detected linearity inconsistency
 
 let pair = (unit, unit) in pair
-> (unit *[u=u1 a=a1] unit)
+> (unit *[u=u1 a=a1 r=r1] unit)
 > mode vars
+>   r1 ∈ [r0, rinf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 
 left(unit)
-> (unit +[u=u1 a=a1] 'a)
+> (unit +[u=u1 a=a1 r=r1] 'a)
 > where
->   'a in {u=u2; c=c1; l=l1; p=p1; a=a2}
+>   'a in {u=u2; c=c1; l=l1; p=p1; a=a2; r=r2}
 > mode vars
+>   r1 ∈ [r0, rinf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
+>   r2 ∈ [r0, rinf]
 >   a2 ∈ {borrowed, global, local, regional}
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
@@ -36,12 +39,14 @@ left(unit)
 >   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
 
 right(unit)
-> ('a +[u=u1 a=a1] unit)
+> ('a +[u=u1 a=a1 r=r1] unit)
 > where
->   'a in {u=u2; c=c1; l=l1; p=p1; a=a2}
+>   'a in {u=u2; c=c1; l=l1; p=p1; a=a2; r=r2}
 > mode vars
+>   r1 ∈ [r0, rinf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
+>   r2 ∈ [r0, rinf]
 >   a2 ∈ {borrowed, global, local, regional}
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
@@ -52,10 +57,11 @@ right(unit)
 >   (a2,a1) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
 
 fun x => x
-> ('a ->[a=a1 l=l1 p=p1] 'a)
+> ('a ->[a=a1 r=r1 l=l1 p=p1] 'a)
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
+>   r1 ∈ [r0, rinf]
 >   a1 ∈ {borrowed, global, local, regional}
 
 (fun x => x) unit
@@ -80,7 +86,9 @@ let (a,b) = (unit, unit) in a
 > unit
 
 (fun x => x) : unit -> unit
-> (unit ->[a=global l=many p=nonportable] unit)
+> (unit ->[a=global r=r1 l=many p=nonportable] unit)
+> mode vars
+>   r1 ∈ [r0, rinf]
 
 let r = ref unit in let alias = r in alias
 > (ref[c=uncontended] unit)
@@ -95,7 +103,7 @@ let r = ref unit in fork (let x = !r in x)
 > error: mode solver detected contention inconsistency
 
 let x = $(unit, unit) in x
-> (unit *[u=u1 a=local] unit)
+> (unit *[u=u1 a=local r=r0] unit)
 > mode vars
 >   u1 ∈ {aliased, unique}
 
@@ -106,39 +114,45 @@ let! (a,b) = $(unit, unit) in a
 > unit
 
 match left(unit) with left(x) => left(x) | right(y) => right(y)
-> (unit +[u=u1 a=a1] 'a)
+> (unit +[u=u1 a=a1 r=r1] 'a)
 > where
 >   'c <= 'b
->   'c in {u=u2; c=c1; l=l1; p=p1; a=a2}
+>   'c in {u=u2; c=c1; l=l1; p=p1; a=a2; r=r2}
 >   'b <= 'a
->   'b in {u=u3; c=c2; l=l2; p=p2; a=a3}
->   'b in {u=u4; c=c3; l=l3; p=p3; a=a4}
+>   'b in {u=u3; c=c2; l=l2; p=p2; a=a3; r=r3}
+>   'b in {u=u4; c=c3; l=l3; p=p3; a=a4; r=r4}
 >   'd <= 'a
->   'd in {u=u5; c=c4; l=l4; p=p4; a=a5}
->   'a in {u=u6; c=c5; l=l5; p=p5; a=a6}
+>   'd in {u=u5; c=c4; l=l4; p=p4; a=a5; r=r5}
+>   'a in {u=u6; c=c5; l=l5; p=p5; a=a6; r=r6}
 > mode vars
+>   r1 ∈ [r0, rinf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
+>   r2 ∈ [r0, rinf]
 >   a2 ∈ {borrowed, global, local, regional}
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
 >   c1 ∈ {contended, shared, uncontended}
 >   u2 ∈ {aliased, unique}
+>   r3 ∈ [r0, rinf]
 >   a3 ∈ {borrowed, global, local, regional}
 >   p2 ∈ {nonportable, portable}
 >   l2 ∈ {many, never, once}
 >   c2 ∈ {contended, shared, uncontended}
 >   u3 ∈ {aliased, unique}
+>   r4 ∈ [r0, rinf]
 >   a4 ∈ {borrowed, global, local, regional}
 >   p3 ∈ {nonportable, portable}
 >   l3 ∈ {many, never, once}
 >   c3 ∈ {contended, shared, uncontended}
 >   u4 ∈ {aliased, unique}
+>   r5 ∈ [r0, rinf]
 >   a5 ∈ {borrowed, global, local, regional}
 >   p4 ∈ {nonportable, portable}
 >   l4 ∈ {many, never, once}
 >   c4 ∈ {contended, shared, uncontended}
 >   u5 ∈ {aliased, unique}
+>   r6 ∈ [r0, rinf]
 >   a6 ∈ {borrowed, global, local, regional}
 >   p5 ∈ {nonportable, portable}
 >   l5 ∈ {many, never, once}
@@ -175,65 +189,81 @@ fork unit
 > unit
 
 let shared = ref unit in (shared, shared)
-> ((ref[c=c1] unit) *[u=u1 a=a1] (ref[c=c1] unit))
+> ((ref[c=c1] unit) *[u=u1 a=a1 r=r1] (ref[c=c1] unit))
 > mode vars
 >   c1 ∈ {contended, shared, uncontended}
+>   r1 ∈ [r0, rinf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 
 let shared = ref unit in let alias = shared in (shared, alias)
-> ((ref[c=c1] unit) *[u=u1 a=a1] (ref[c=c1] unit))
+> ((ref[c=c1] unit) *[u=u1 a=a1 r=r1] (ref[c=c1] unit))
 > mode vars
 >   c1 ∈ {contended, shared, uncontended}
+>   r1 ∈ [r0, rinf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 
 let shared = (unit, unit) in (fun f => f shared, fun g => g shared)
-> ((((unit *[u=aliased a=a7] unit) ->[a=a6 l=l4 p=p4] 'd) ->[a=a5 l=l3 p=p3] 'c) *[u=u1 a=a4] (((unit *[u=aliased a=a3] unit) ->[a=a2 l=l2 p=p2] 'b) ->[a=a1 l=l1 p=p1] 'a))
+> ((((unit *[u=aliased a=a7 r=r7] unit) ->[a=a6 r=r6 l=l4 p=p4] 'd) ->[a=a5 r=r5 l=l3 p=p3] 'c) *[u=u1 a=a4 r=r4] (((unit *[u=aliased a=a3 r=r3] unit) ->[a=a2 r=r2 l=l2 p=p2] 'b) ->[a=a1 r=r1 l=l1 p=p1] 'a))
 > where
 >   'd <= 'c
 >   'b <= 'a
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, once}
+>   r1 ∈ [r0, rinf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   p2 ∈ {nonportable, portable}
 >   l2 ∈ {many, once}
+>   r2 ∈ [r0, rinf]
 >   a2 ∈ {borrowed, global, local, regional}
+>   r3 ∈ [r0, rinf]
 >   a3 ∈ {borrowed, global, local, regional}
+>   r4 ∈ [r0, rinf]
 >   a4 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 >   p3 ∈ {nonportable, portable}
 >   l3 ∈ {many, once}
+>   r5 ∈ [r0, rinf]
 >   a5 ∈ {borrowed, global, local, regional}
 >   p4 ∈ {nonportable, portable}
 >   l4 ∈ {many, once}
+>   r6 ∈ [r0, rinf]
 >   a6 ∈ {borrowed, global, local, regional}
+>   r7 ∈ [r0, rinf]
 >   a7 ∈ {borrowed, global, local, regional}
 > mode rels
 >   (a5,a4) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
 
 let shared = ((unit, unit) : (unit *[unique] unit)) in (fun f => f shared, fun g => g shared)
-> ((((unit *[u=aliased a=a7] unit) ->[a=a6 l=l4 p=p4] 'd) ->[a=a5 l=l3 p=p3] 'c) *[u=u1 a=a4] (((unit *[u=aliased a=a3] unit) ->[a=a2 l=l2 p=p2] 'b) ->[a=a1 l=l1 p=p1] 'a))
+> ((((unit *[u=aliased a=a7 r=r7] unit) ->[a=a6 r=r6 l=l4 p=p4] 'd) ->[a=a5 r=r5 l=l3 p=p3] 'c) *[u=u1 a=a4 r=r4] (((unit *[u=aliased a=a3 r=r3] unit) ->[a=a2 r=r2 l=l2 p=p2] 'b) ->[a=a1 r=r1 l=l1 p=p1] 'a))
 > where
 >   'd <= 'c
 >   'b <= 'a
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, once}
+>   r1 ∈ [r0, rinf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   p2 ∈ {nonportable, portable}
 >   l2 ∈ {many, once}
+>   r2 ∈ [r0, rinf]
 >   a2 ∈ {borrowed, global, local, regional}
+>   r3 ∈ [r0, rinf]
 >   a3 ∈ {borrowed, global, local, regional}
+>   r4 ∈ [r0, rinf]
 >   a4 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 >   p3 ∈ {nonportable, portable}
 >   l3 ∈ {many, once}
+>   r5 ∈ [r0, rinf]
 >   a5 ∈ {borrowed, global, local, regional}
 >   p4 ∈ {nonportable, portable}
 >   l4 ∈ {many, once}
+>   r6 ∈ [r0, rinf]
 >   a6 ∈ {borrowed, global, local, regional}
+>   r7 ∈ [r0, rinf]
 >   a7 ∈ {borrowed, global, local, regional}
 > mode rels
 >   (a5,a4) ∈ {(global,global), (global,regional), (global,local), (regional,regional), (regional,local), (local,local), (borrowed,borrowed)}
@@ -269,9 +299,10 @@ let r = region (ref unit) in fork (let x = !r in x)
 > error: mode solver detected contention inconsistency
 
 let f = fun x => (x, x) in f (ref unit)
-> ((ref[c=c2] unit) *[u=u1 a=a1] (ref[c=c1] unit))
+> ((ref[c=c2] unit) *[u=u1 a=a1 r=r1] (ref[c=c1] unit))
 > mode vars
 >   c1 ∈ {contended, shared, uncontended}
+>   r1 ∈ [r0, rinf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 >   c2 ∈ {contended, shared, uncontended}
@@ -283,11 +314,13 @@ let refsum = ref left(unit) in region (let y = $right(unit) in refsum := y)
 > error: mode solver detected areality inconsistency
 
 let f = (fun x => x) : unit ->[portable] unit in (f, f)
-> ((unit ->[a=a1 l=l1 p=p1] unit) *[u=u1 a=a2] (unit ->[a=a1 l=l1 p=p1] unit))
+> ((unit ->[a=a1 r=r1 l=l1 p=p1] unit) *[u=u1 a=a2 r=r2] (unit ->[a=a1 r=r1 l=l1 p=p1] unit))
 > mode vars
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}
+>   r1 ∈ [r0, rinf]
 >   a1 ∈ {borrowed, global, local, regional}
+>   r2 ∈ [r0, rinf]
 >   a2 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 
@@ -295,12 +328,15 @@ let f = (fun x => x) : unit ->[nonportable] unit in (f : unit ->[portable] unit)
 > error: mode solver detected portability inconsistency
 
 let f = (fun x => x) : unit ->[portable] unit in (f : unit ->[nonportable] unit)
-> (unit ->[a=global l=many p=nonportable] unit)
+> (unit ->[a=global r=r1 l=many p=nonportable] unit)
+> mode vars
+>   r1 ∈ [r0, rinf]
 
 let shared = ref unit in let mk = fun _ => shared in (mk unit, mk unit)
-> ((ref[c=c2] unit) *[u=u1 a=a1] (ref[c=c1] unit))
+> ((ref[c=c2] unit) *[u=u1 a=a1 r=r1] (ref[c=c1] unit))
 > mode vars
 >   c1 ∈ {contended, shared, uncontended}
+>   r1 ∈ [r0, rinf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 >   c2 ∈ {contended, shared, uncontended}
@@ -315,8 +351,9 @@ let alias = ref unit in let pair = (alias, alias) in let (a,b) = pair in a := un
 > unit
 
 let alias = ((unit, unit) : (unit *[unique] unit)) in let (a,b) = alias in (a,b)
-> (unit *[u=u1 a=a1] unit)
+> (unit *[u=u1 a=a1 r=r1] unit)
 > mode vars
+>   r1 ∈ [r0, rinf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 
@@ -330,13 +367,16 @@ let alias = ((unit, unit) : (unit *[aliased] unit)) in fork (let (a,b) = alias i
 > unit
 
 let shared = ((unit, unit) : (unit *[aliased local] unit)) in let alias = shared in (shared, alias)
-> ((unit *[u=aliased a=a1] unit) *[u=u1 a=a2] (unit *[u=aliased a=a1] unit))
+> ((unit *[u=aliased a=a1 r=r1] unit) *[u=u1 a=a2 r=r2] (unit *[u=aliased a=a1 r=r1] unit))
 > mode vars
+>   r1 ∈ [r0, rinf]
 >   a1 ∈ {borrowed, local}
+>   r2 ∈ [r0, rinf]
 >   a2 ∈ {borrowed, local}
 >   u1 ∈ {aliased, unique}
 
 let shared = ((unit, unit) : (unit *[aliased local] unit)) in match left(shared) with left(x) => x | right(y) => shared
-> (unit *[u=aliased a=a1] unit)
+> (unit *[u=aliased a=a1 r=r1] unit)
 > mode vars
+>   r1 ∈ [r0, rinf]
 >   a1 ∈ {borrowed, local}

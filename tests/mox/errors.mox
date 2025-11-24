@@ -1,10 +1,12 @@
 left(unit)
-> (unit +[u=u1 a=a1] 'a)
+> (unit +[u=u1 a=a1 r=r1] 'a)
 > where
->   'a in {u=u2; c=c1; l=l1; p=p1; a=a2}
+>   'a in {u=u2; c=c1; l=l1; p=p1; a=a2; r=r2}
 > mode vars
+>   r1 ∈ [r0, rinf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
+>   r2 ∈ [r0, rinf]
 >   a2 ∈ {borrowed, global, local, regional}
 >   p1 ∈ {nonportable, portable}
 >   l1 ∈ {many, never, once}

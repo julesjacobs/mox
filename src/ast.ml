@@ -8,7 +8,8 @@ type arrow_mode = Modes.Future.t
 (** Types as described in tex/mox.tex. *)
 type storage_mode =
   { uniqueness : Modes.Uniqueness.t;
-    areality : Modes.Areality.t }
+    areality : Modes.Areality.t;
+    regionality : Modes.Regionality.t }
 
 type ref_mode =
   { contention : Modes.Contention.t }

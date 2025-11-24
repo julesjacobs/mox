@@ -75,6 +75,17 @@ let restrict_domain_generic domain var =
 let new_var ~encode ~decode ~domain =
   new_var_internal ~axis_name:"mode" ~encode ~decode ~domain
 let id var = var.id
+let int_id_tbl : (Intsolver.var, int) Hashtbl.t = Hashtbl.create 32
+let int_id_counter = ref 0
+
+let int_id (type a) (var : a mode_var) : int =
+  match Hashtbl.find_opt int_id_tbl var.id with
+  | Some n -> n
+  | None ->
+      incr int_id_counter;
+      let n = !int_id_counter in
+      Hashtbl.add int_id_tbl var.id n;
+      n
 let assert_relation = assert_relation_generic
 let get_relation = get_relation_generic
 let assert_predicate = assert_predicate_generic
@@ -254,3 +265,65 @@ module Areality = Make (struct
   let leq_in = Modes.Areality.leq_in
   let bottom_in = Modes.Areality.bottom_in
 end)
+
+module Regionality = struct
+  type mode = Modes.Regionality.t
+  type var = Infsolver.var
+
+  let axis_name = "regionality"
+  let id_table : (var, int) Hashtbl.t = Hashtbl.create 32
+  let id_counter = ref 0
+  let to_int = function
+    | Modes.Regionality.Infty -> Infsolver.infinity
+    | Modes.Regionality.Region n -> n
+
+  let id (v : var) =
+    match Hashtbl.find_opt id_table v with
+    | Some n -> n
+    | None ->
+        incr id_counter;
+        let n = !id_counter in
+        Hashtbl.add id_table v n;
+        n
+
+  let lift f =
+    try f () with
+    | Infsolver.Contradiction msg ->
+        let detail =
+          if msg = "" then axis_name ^ " inconsistency" else msg
+        in
+        raise (Inconsistent detail)
+
+  let restrict_to_single domain v =
+    match domain with
+    | [] ->
+        raise
+          (Inconsistent
+             (Printf.sprintf "%s empty domain restriction" axis_name))
+    | [ value ] -> Infsolver.assert_eq_const v (to_int value)
+    | _ ->
+        invalid_arg "Regionality only supports singleton domain restrictions"
+
+  let new_var ?domain () =
+    let v = Infsolver.create_var ~name:axis_name () in
+    (match domain with None -> () | Some d -> lift (fun () -> restrict_to_single d v));
+    v
+
+  let restrict_domain domain v = lift (fun () -> restrict_to_single domain v)
+
+  let assert_leq_to v1 v2 =
+    (* order is reversed arithmetic: r1 <= r2 iff r1 >= r2 *)
+    lift (fun () -> Infsolver.assert_leq v2 v1)
+
+  let assert_leq_in = assert_leq_to
+
+  let join_to v1 v2 =
+    let z = new_var () in
+    assert_leq_to v1 z;
+    assert_leq_to v2 z;
+    z
+
+  let bottom_in = new_var ~domain:[Modes.Regionality.Infty] ()
+
+  let get_bounds v = lift (fun () -> (Infsolver.get_lower v, Infsolver.get_upper v))
+end

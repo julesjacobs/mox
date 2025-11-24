@@ -61,10 +61,12 @@ Future axes (restrictions on upcoming use):
 | Linearity (`l`)| `many ≤ₜₒ once ≤ₜₒ never`               | same as `≤ₜₒ` |
 | Portability (`p`)| `portable ≤ₜₒ nonportable`          | same as `≤ₜₒ` |
 | Areality (`a`) | `global ≤ₜₒ regional ≤ₜₒ local ≤ₜₒ borrowed` | `global ≤ᵢₙ regional ≤ᵢₙ local`, `borrowed ≤ᵢₙ borrowed` |
+| Regionality (`r`)| `r∞ ≤ₜₒ r4 ≤ₜₒ … ≤ₜₒ r0` (reverse numeric) | same as `≤ₜₒ` |
 
 - Past axes flip when stored: a unique container may hold only unique children (`aliased ≤ᵢₙ unique`), whereas future axes (except for `borrowed`) weaken going inward (a `many` value can live inside an `once` container).
 - Linearity and portability also interact with closures: capturing an environment in a `many` closure marks those bindings as `aliased`, and capturing into a `portable` closure forces their contention to become `contended`.
 - Areality tracks placement: `local` data must not leak beyond its region, and `borrowed` states only live in other `borrowed` data.
+- Regionality tracks concrete regions (heap = `r∞`, stack = `r0`), ordered in reverse numeric order so outer regions are “smaller”.
 
 These component-wise relations power the mode solver described in `tex/mox.tex`.
 

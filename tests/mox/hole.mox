@@ -7,10 +7,16 @@
 > unit
 
 (? : (unit -> unit))
-> (unit ->[a=global l=many p=nonportable] unit)
+> (unit ->[a=global r=r1 l=many p=nonportable] unit)
+> mode vars
+>   r1 ∈ [r0, rinf]
 
 (left(?) : (unit + empty))
-> (unit +[u=aliased a=global] empty)
+> (unit +[u=aliased a=global r=r1] empty)
+> mode vars
+>   r1 ∈ [r0, rinf]
 
 ((?, unit) : (unit * unit))
-> (unit *[u=aliased a=global] unit)
+> (unit *[u=aliased a=global r=r1] unit)
+> mode vars
+>   r1 ∈ [r0, rinf]

@@ -42,10 +42,13 @@ let r = ref unit in
 let f = fun x => x in
 let g = f : unit ->[portable] unit in
 (f, g)
-> ((unit ->[a=global l=many p=portable] unit) *[u=u1 a=a1] (unit ->[a=global l=many p=portable] unit))
+> ((unit ->[a=global r=r3 l=many p=portable] unit) *[u=u1 a=a1 r=r2] (unit ->[a=global r=r1 l=many p=portable] unit))
 > mode vars
+>   r1 ∈ [r0, rinf]
+>   r2 ∈ [r0, rinf]
 >   a1 ∈ {global, local, regional}
 >   u1 ∈ {aliased, unique}
+>   r3 ∈ [r0, rinf]
 
 let f = (fun x => x) : unit ->[nonportable] unit in
 f : unit ->[portable] unit
@@ -53,7 +56,9 @@ f : unit ->[portable] unit
 
 let f = (fun x => x) : unit ->[portable] unit in
 f : unit ->[nonportable] unit
-> (unit ->[a=global l=many p=nonportable] unit)
+> (unit ->[a=global r=r1 l=many p=nonportable] unit)
+> mode vars
+>   r1 ∈ [r0, rinf]
 
 let x = $(unit, unit) in 
 fork (let (a,b) = x in a)
@@ -80,16 +85,18 @@ r := unit
 > unit
 
 let r = ref unit in (r,r)
-> ((ref[c=c1] unit) *[u=u1 a=a1] (ref[c=c1] unit))
+> ((ref[c=c1] unit) *[u=u1 a=a1 r=r1] (ref[c=c1] unit))
 > mode vars
 >   c1 ∈ {contended, shared, uncontended}
+>   r1 ∈ [r0, rinf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 
 let r1 = ref unit in 
 let r2 = ref unit in 
 (r1, r2)
-> ((ref[c=uncontended] unit) *[u=u1 a=a1] (ref[c=uncontended] unit))
+> ((ref[c=uncontended] unit) *[u=u1 a=a1 r=r1] (ref[c=uncontended] unit))
 > mode vars
+>   r1 ∈ [r0, rinf]
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}

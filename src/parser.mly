@@ -2,7 +2,9 @@
 open Ast
 
 let default_storage_mode =
-  { uniqueness = Modes.Uniqueness.default; areality = Modes.Areality.default }
+  { uniqueness = Modes.Uniqueness.default;
+    areality = Modes.Areality.default;
+    regionality = Modes.Regionality.default }
 
 let default_ref_mode =
   { contention = Modes.Contention.default }
@@ -10,11 +12,12 @@ let default_ref_mode =
 let storage_mode_from_list names =
   let uniqueness, remaining = Modes.Uniqueness.extract names in
   let areality, remaining = Modes.Areality.extract remaining in
+  let regionality, remaining = Modes.Regionality.extract remaining in
   if remaining <> [] then
     invalid_arg
       (Printf.sprintf "Modes [%s] not allowed on products/sums"
          (String.concat ", " remaining));
-  { uniqueness; areality }
+  { uniqueness; areality; regionality }
 
 let ref_mode_from_list names =
   let contention, remaining = Modes.Contention.extract names in

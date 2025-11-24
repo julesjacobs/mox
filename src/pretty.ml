@@ -78,6 +78,7 @@ and string_of_ty = function
   | TyArrow (t1, modes, t2) ->
       let parts =
         [ Modes.Areality.to_short_string modes.Modes.Future.areality;
+          Modes.Regionality.to_short_string modes.Modes.Future.regionality;
           Modes.Linearity.to_short_string modes.Modes.Future.linearity;
           Modes.Portability.to_short_string modes.Modes.Future.portability ]
         |> List.filter (fun s -> String.trim s <> "")
@@ -91,7 +92,8 @@ and string_of_ty = function
   | TyPair (t1, mode, t2) ->
       let parts =
         [ Modes.Uniqueness.to_short_string mode.uniqueness;
-          Modes.Areality.to_short_string mode.areality ]
+          Modes.Areality.to_short_string mode.areality;
+          Modes.Regionality.to_short_string mode.regionality ]
         |> List.filter (fun s -> String.trim s <> "")
       in
       let sep =
@@ -103,7 +105,8 @@ and string_of_ty = function
   | TySum (t1, mode, t2) ->
       let parts =
         [ Modes.Uniqueness.to_short_string mode.uniqueness;
-          Modes.Areality.to_short_string mode.areality ]
+          Modes.Areality.to_short_string mode.areality;
+          Modes.Regionality.to_short_string mode.regionality ]
         |> List.filter (fun s -> String.trim s <> "")
       in
       let sep =
@@ -115,7 +118,8 @@ and string_of_ty = function
   | TyList (elem, mode) ->
       let parts =
         [ Modes.Uniqueness.to_short_string mode.uniqueness;
-          Modes.Areality.to_short_string mode.areality ]
+          Modes.Areality.to_short_string mode.areality;
+          Modes.Regionality.to_short_string mode.regionality ]
         |> List.filter (fun s -> String.trim s <> "")
       in
       let prefix =
