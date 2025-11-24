@@ -252,39 +252,51 @@ module Areality = struct
   let borrowed = Borrowed
 end
 
-module Regionality_spec = struct
+module Regionality = struct
   type t = Infty | Region of int
 
-  let max_region = 8
-
-  let descending_regions =
-    let rec loop n acc =
-      if n < 0 then acc else loop (n - 1) (Region n :: acc)
-    in
-    loop max_region []
-
-  let order_to = Infty :: descending_regions
-  let order_in = linear_order order_to
   let default = Infty
-
-  let show = function
-    | Infty -> "inf"
-    | Region n -> string_of_int n
 
   let equal a b =
     match (a, b) with
     | Infty, Infty -> true
     | Region x, Region y -> x = y
     | _ -> false
-end
 
-module Regionality = struct
-  include Make_axis (Regionality_spec)
-  type nonrec t = Regionality_spec.t = Infty | Region of int
+  let to_string = function Infty -> "inf" | Region n -> string_of_int n
+  let to_short_string v = if equal v default then "" else to_string v
+
+  let to_int = function Infty -> max_int | Region n -> n
+
+  (* Reverse arithmetic order: higher numeric regions are "smaller" *)
+  let leq_to a b = to_int a >= to_int b
+  let leq_in = leq_to
 
   let heap = Infty
   let stack = Region 0
   let of_int n = Region n
+
+  let of_string name =
+    match name with
+    | "inf" -> Some Infty
+    | _ -> (
+        match int_of_string_opt name with
+        | Some n when n >= 0 -> Some (Region n)
+        | _ -> None)
+
+  let extract names =
+    let rec aux seen acc = function
+      | [] -> (match seen with Some v -> v | None -> default), List.rev acc
+      | candidate :: rest -> (
+          match of_string candidate with
+          | Some value ->
+              if Option.is_some seen then
+                invalid_arg
+                  (Printf.sprintf "Mode %s provided multiple times" (to_string value));
+              aux (Some value) acc rest
+          | None -> aux seen (candidate :: acc) rest)
+    in
+    aux None [] names
 end
 
 let concat parts =
@@ -305,34 +317,6 @@ module Past = struct
   let leq_in a b =
     Uniqueness.leq_in a.uniqueness b.uniqueness
     && Contention.leq_in a.contention b.contention
-
-  let join_to a b =
-    { uniqueness = Uniqueness.join_to a.uniqueness b.uniqueness;
-      contention = Contention.join_to a.contention b.contention }
-
-  let meet_to a b =
-    { uniqueness = Uniqueness.meet_to a.uniqueness b.uniqueness;
-      contention = Contention.meet_to a.contention b.contention }
-
-  let top_to =
-    { uniqueness = Uniqueness.top_to; contention = Contention.top_to }
-
-  let bottom_to =
-    { uniqueness = Uniqueness.bottom_to; contention = Contention.bottom_to }
-
-  let meet_in a b =
-    { uniqueness = Uniqueness.meet_in a.uniqueness b.uniqueness;
-      contention = Contention.meet_in a.contention b.contention }
-
-  let join_in a b =
-    { uniqueness = Uniqueness.join_in a.uniqueness b.uniqueness;
-      contention = Contention.join_in a.contention b.contention }
-
-  let top_in =
-    { uniqueness = Uniqueness.top_in; contention = Contention.top_in }
-
-  let bottom_in =
-    { uniqueness = Uniqueness.bottom_in; contention = Contention.bottom_in }
 
   let extract names =
     let uniqueness, names = Uniqueness.extract names in
@@ -369,54 +353,6 @@ module Future = struct
 
   let leq_in = leq_to
 
-  let join_to a b =
-    { linearity = Linearity.join_to a.linearity b.linearity;
-      portability = Portability.join_to a.portability b.portability;
-      areality = Areality.join_to a.areality b.areality;
-      regionality = Regionality.join_to a.regionality b.regionality }
-
-  let meet_to a b =
-    { linearity = Linearity.meet_to a.linearity b.linearity;
-      portability = Portability.meet_to a.portability b.portability;
-      areality = Areality.meet_to a.areality b.areality;
-      regionality = Regionality.meet_to a.regionality b.regionality }
-
-  let top_to =
-    { linearity = Linearity.top_to;
-      portability = Portability.top_to;
-      areality = Areality.top_to;
-      regionality = Regionality.top_to }
-
-  let bottom_to =
-    { linearity = Linearity.bottom_to;
-      portability = Portability.bottom_to;
-      areality = Areality.bottom_to;
-      regionality = Regionality.bottom_to }
-
-  let meet_in a b =
-    { linearity = Linearity.meet_in a.linearity b.linearity;
-      portability = Portability.meet_in a.portability b.portability;
-      areality = Areality.meet_in a.areality b.areality;
-      regionality = Regionality.meet_in a.regionality b.regionality }
-
-  let join_in a b =
-    { linearity = Linearity.join_in a.linearity b.linearity;
-      portability = Portability.join_in a.portability b.portability;
-      areality = Areality.join_in a.areality b.areality;
-      regionality = Regionality.join_in a.regionality b.regionality }
-
-  let top_in =
-    { linearity = Linearity.top_in;
-      portability = Portability.top_in;
-      areality = Areality.top_in;
-      regionality = Regionality.top_in }
-
-  let bottom_in =
-    { linearity = Linearity.bottom_in;
-      portability = Portability.bottom_in;
-      areality = Areality.bottom_in;
-      regionality = Regionality.bottom_in }
-
   let extract names =
     let areality, names = Areality.extract names in
     let regionality, names = Regionality.extract names in
@@ -441,24 +377,6 @@ module Mode = struct
 
   let leq_to a b = Past.leq_to a.past b.past && Future.leq_to a.future b.future
   let leq_in a b = Past.leq_in a.past b.past && Future.leq_in a.future b.future
-
-  let join_to a b =
-    { past = Past.join_to a.past b.past; future = Future.join_to a.future b.future }
-
-  let meet_to a b =
-    { past = Past.meet_to a.past b.past; future = Future.meet_to a.future b.future }
-
-  let top_to = { past = Past.top_to; future = Future.top_to }
-  let bottom_to = { past = Past.bottom_to; future = Future.bottom_to }
-
-  let meet_in a b =
-    { past = Past.meet_in a.past b.past; future = Future.meet_in a.future b.future }
-
-  let join_in a b =
-    { past = Past.join_in a.past b.past; future = Future.join_in a.future b.future }
-
-  let top_in = { past = Past.top_in; future = Future.top_in }
-  let bottom_in = { past = Past.bottom_in; future = Future.bottom_in }
 
   let extract names =
     let past, names = Past.extract names in
