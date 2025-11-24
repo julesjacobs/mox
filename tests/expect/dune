@@ -1,5 +1,5 @@
 (library
  (name modesolver_expect)
- (modules modesolver_expect)
+ (modules modesolver_expect infsolver_expect)
  (libraries mox)
  (preprocess (pps ppx_expect)))
