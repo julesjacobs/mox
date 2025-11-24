@@ -98,12 +98,19 @@ let%expect_test "areality default relation is cartesian product" =
     ~to_string_b:Modes.Areality.to_string
     (A.get_relation x y);
   [%expect {|
+    borrowed -> borrowed
+    borrowed -> global
+    borrowed -> local
+    borrowed -> regional
+    global -> borrowed
     global -> global
     global -> local
     global -> regional
+    local -> borrowed
     local -> global
     local -> local
     local -> regional
+    regional -> borrowed
     regional -> global
     regional -> local
     regional -> regional
@@ -140,10 +147,10 @@ let%expect_test "assert_leq_in for contention reverses ordering" =
     (C.get_relation a b);
   [%expect {|
     contended -> contended
-    shared -> contended
+    contended -> shared
+    contended -> uncontended
     shared -> shared
-    uncontended -> contended
-    uncontended -> shared
+    shared -> uncontended
     uncontended -> uncontended
   |}]
 
@@ -322,9 +329,10 @@ let%expect_test "linearity join_to produces upper bounds" =
     ~to_string_b:Modes.Linearity.to_string
     (L.get_relation join join);
   [%expect {|
-    once -> once
-    once -> never
     never -> never
+    never -> once
+    once -> never
+    once -> once
   |}]
 
 let%expect_test "linearity join_to bounded by constraint" =

@@ -158,9 +158,9 @@ let%expect_test "contradiction from predecessor and leq cycle with constant" =
   | Contradiction msg -> Printf.printf "contradiction: %s\n" msg);
   dump [ ("x", x); ("y", y) ];
   [%expect {|
-    contradiction: Variable 'y' Inconsistent: Lower(101) > Upper(100)
-    x: [101, +oo]
-    y: [101, 100]
+    contradiction: Variable 'y' Inconsistent: Lower(+oo) > Upper(100)
+    x: [3, +oo]
+    y: [+oo, 100]
   |}]
 
 let%expect_test "infinity propagation through leq" =

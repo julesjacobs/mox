@@ -7,6 +7,7 @@ module Solver = struct
 
   let infinity = max_int
   let safe_max = max_int - (1 lsl 60) 
+  let string_of_value v = if v = infinity then "+oo" else string_of_int v
 
   (* Robust Addition: a + b *)
   let safe_add a b =
@@ -107,8 +108,9 @@ module Solver = struct
     let ub = Hashtbl.find st.uppers v_id in
     if lb > ub then
       raise (Contradiction
-               (Printf.sprintf "Variable '%s' Inconsistent: Lower(%d) > Upper(%d)"
-                  (var_name v_id) lb ub))
+               (Printf.sprintf
+                  "Variable '%s' Inconsistent: Lower(%s) > Upper(%s)"
+                  (var_name v_id) (string_of_value lb) (string_of_value ub)))
 
   (* Add edge u -> v with weight w *)
   (* This implies v >= u + w *)
