@@ -458,7 +458,8 @@ and assert_leq original locked future region_delta =
     (string_of_ty_shallow original) (string_of_ty_shallow locked);
   outer_equiv original locked;
   let assert_region_with_delta base target =
-    Modesolver.Regionality.decrease_by base region_delta target
+    (* Modesolver.Regionality.decrease_by base region_delta target *)
+    Modesolver.Regionality.increase_by target region_delta base
   in
   match (zonk original, zonk locked) with
   | TyMeta original_meta, TyMeta locked_meta ->
