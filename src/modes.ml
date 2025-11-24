@@ -232,7 +232,7 @@ module Areality_spec = struct
   type t = Global | Borrowed
 
   let order_to = [ Global; Borrowed ]
-  let order_in = []
+  let order_in = linear_order [ Global; Borrowed ]
   let default = Global
   let show = function
     | Global -> "global"

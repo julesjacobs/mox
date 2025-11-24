@@ -113,7 +113,8 @@ and constraint_ =
       { original : meta;
         locked : meta;
         future : future_mode;
-        region_delta : int }
+        region_delta : int;
+        borrow : bool }
   | In of
       { target : meta;
         mode_vars : mode_vars }
@@ -201,12 +202,6 @@ let nonborrowed_arealities = [ Areality.global ]
 let nonborrowed_mode_vars () : mode_vars =
   let mode = fresh_mode_vars () in
   Modesolver.Areality.restrict_domain nonborrowed_arealities mode.areality;
-  mode
-
-let borrowed_mode_vars () : mode_vars =
-  let mode = fresh_mode_vars () in
-  Modesolver.Areality.restrict_domain [Areality.borrowed] mode.areality;
-  Modesolver.Uniqueness.restrict_domain [Uniqueness.aliased] mode.uniqueness;
   mode
 
 let many_mode_vars () : mode_vars =
@@ -480,7 +475,12 @@ and outer_equiv ty1 ty2 =
       let right = string_of_ty_shallow ty_right in
       type_error (Printf.sprintf "type mismatch between %s and %s" left right)
 
-and assert_leq original locked future region_delta =
+and apply_borrow_to_storage ~borrow (original_storage : storage_mode) (locked_storage : storage_mode) =
+  if borrow then (
+    Modesolver.assert_borrow_uniqueness original_storage.uniqueness locked_storage.uniqueness;
+    Modesolver.assert_borrow_areality original_storage.uniqueness locked_storage.areality)
+
+and assert_leq ?(borrow = false) original locked future region_delta =
   log_lock "leq %s into %s"
     (string_of_ty_shallow original) (string_of_ty_shallow locked);
   outer_equiv original locked;
@@ -490,7 +490,7 @@ and assert_leq original locked future region_delta =
   match (zonk original, zonk locked) with
   | TyMeta original_meta, TyMeta locked_meta ->
       log_lock "record meta constraint original=?%d locked=?%d Δr=%d" original_meta.id locked_meta.id region_delta;
-      let constraint_ = mk_constraint (Leq { original = original_meta; locked = locked_meta; future; region_delta }) in
+      let constraint_ = mk_constraint (Leq { original = original_meta; locked = locked_meta; future; region_delta; borrow }) in
       add_constraint original_meta constraint_;
       add_constraint locked_meta constraint_
   | TyUnit, TyUnit -> ()
@@ -502,22 +502,24 @@ and assert_leq original locked future region_delta =
       log_lock "pair/sum storage lock";
       (* Unique component joins with dagger(future), areality unchanged. *)
       Modesolver.Uniqueness.assert_leq_to original_storage.uniqueness locked_storage.uniqueness;
+      apply_borrow_to_storage ~borrow original_storage locked_storage;
       Modesolver.assert_linearity_dagger future.linearity locked_storage.uniqueness;
       Modesolver.Areality.assert_leq_to original_storage.areality locked_storage.areality;
       Modesolver.Areality.assert_leq_to original_storage.areality future.areality;
       assert_region_with_delta original_storage.regionality locked_storage.regionality;
       Modesolver.Regionality.assert_leq_to original_storage.regionality future.regionality;
-      assert_leq original_left locked_left future region_delta;
-      assert_leq original_right locked_right future region_delta
+      assert_leq ~borrow original_left locked_left future region_delta;
+      assert_leq ~borrow original_right locked_right future region_delta
   | TyList (original_elem, original_storage), TyList (locked_elem, locked_storage) ->
       log_lock "list storage lock";
       Modesolver.Uniqueness.assert_leq_to original_storage.uniqueness locked_storage.uniqueness;
+      apply_borrow_to_storage ~borrow original_storage locked_storage;
       Modesolver.assert_linearity_dagger future.linearity locked_storage.uniqueness;
       Modesolver.Areality.assert_leq_to original_storage.areality locked_storage.areality;
       Modesolver.Areality.assert_leq_to original_storage.areality future.areality;
       assert_region_with_delta original_storage.regionality locked_storage.regionality;
       Modesolver.Regionality.assert_leq_to original_storage.regionality future.regionality;
-      assert_leq original_elem locked_elem future region_delta
+      assert_leq ~borrow original_elem locked_elem future region_delta
   | TyRef (original_payload, original_mode), TyRef (locked_payload, locked_mode) ->
       log_lock "ref lock enforcement";
       Modesolver.Contention.assert_leq_to original_mode.contention locked_mode.contention;
@@ -544,13 +546,16 @@ and assert_subtype lower upper =
 and assert_alias source target =
   assert_leq source target (future_for_alias ()) 0
 
+and assert_borrowed_subtype lower upper =
+  assert_leq ~borrow:true lower upper (future_for_sub ()) 0
+
 and fire_constraint constraint_record =
   if constraint_record.fired then ()
   else (
     constraint_record.fired <- true;
     match constraint_record.constraint_ with
-    | Leq { original; locked; future; region_delta } ->
-        assert_leq (TyMeta original) (TyMeta locked) future region_delta
+    | Leq { original; locked; future; region_delta; borrow } ->
+        assert_leq ~borrow (TyMeta original) (TyMeta locked) future region_delta
     | In { target; mode_vars } ->
         assert_in (TyMeta target) mode_vars )
 
@@ -899,7 +904,7 @@ let render_constraints state metas =
   let meta_ref meta = MetaNames.name state.meta_names meta.id in
   let describe_constraint cr =
     match cr.constraint_ with
-    | Leq { original; locked; future } ->
+    | Leq { original; locked; future; borrow; region_delta = _ } ->
         if IntSet.mem original.id meta_ids || IntSet.mem locked.id meta_ids then
           let mode_diffs = future_mode_diffs state future in
           let modifier =
@@ -907,7 +912,10 @@ let render_constraints state metas =
             | [] -> ""
             | diffs -> Printf.sprintf "[%s]" (String.concat " " diffs)
           in
-          Some (Printf.sprintf "%s <=%s %s" (meta_ref original) modifier (meta_ref locked))
+          let borrow_suffix = if borrow then " (borrow)" else "" in
+          Some
+            (Printf.sprintf "%s <=%s %s%s" (meta_ref original) modifier
+               (meta_ref locked) borrow_suffix)
         else
           None
     | In { target; mode_vars } ->
@@ -1178,8 +1186,7 @@ let rec infer_with_env env expr =
       assert_in ty_x borrow_source_mode;
       let env_e2_base, env_e3_base = split_env env_rest fv_e2 fv_e3 in
       let ty_x_borrowed = TyMeta (fresh_meta ()) in
-      assert_subtype ty_x ty_x_borrowed;
-      assert_in ty_x_borrowed (borrowed_mode_vars ());
+      assert_borrowed_subtype ty_x ty_x_borrowed;
       let env_e2 = (x, ty_x_borrowed) :: env_e2_base in
       let ty_y = infer_with_env env_e2 e2 in
       let mode = nonborrowed_mode_vars () in

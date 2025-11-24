@@ -17,7 +17,7 @@ unit
 >   u2 ∈ {aliased, unique}
 > mode rels
 >   (u2,u1) ∉ {(unique,aliased)}
->   (a2,a1) ∈ {(global,global), (borrowed,borrowed)}
+>   (a2,a1) ∉ {(borrowed,global)}
 >   r1-r2 <= 0
 
 [unit]
@@ -159,7 +159,7 @@ let (x, y) = pair in x
 > mode rels
 >   (u2,u1) ∉ {(unique,aliased)}
 >   (a4,a1) ∉ {(borrowed,global)}
->   (a3,a1) ∈ {(global,global), (borrowed,borrowed)}
+>   (a3,a1) ∉ {(borrowed,global)}
 >   r1-r4 <= 0
 >   r1-r3 <= 0
 

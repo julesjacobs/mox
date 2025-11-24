@@ -14,7 +14,7 @@ left(unit)
 >   u2 ∈ {aliased, unique}
 > mode rels
 >   (u2,u1) ∉ {(unique,aliased)}
->   (a2,a1) ∈ {(global,global), (borrowed,borrowed)}
+>   (a2,a1) ∉ {(borrowed,global)}
 >   r1-r2 <= 0
 
 unit unit

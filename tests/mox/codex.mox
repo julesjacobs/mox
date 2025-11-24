@@ -8,7 +8,9 @@ borrow x = unit for y = x in y
 > unit
 
 borrow x = (unit, unit) for y = x in y
-> error: mode solver detected areality inconsistency
+> (unit *[u=aliased a=global r=r1] unit)
+> mode vars
+>   r1 ∈ [0, inf]
 
 borrow x = ((fun y => y) : (unit ->[once] unit)) for y = x in y
 > error: mode solver detected linearity inconsistency
@@ -36,7 +38,7 @@ left(unit)
 >   u2 ∈ {aliased, unique}
 > mode rels
 >   (u2,u1) ∉ {(unique,aliased)}
->   (a2,a1) ∈ {(global,global), (borrowed,borrowed)}
+>   (a2,a1) ∉ {(borrowed,global)}
 >   r1-r2 <= 0
 
 right(unit)
@@ -55,7 +57,7 @@ right(unit)
 >   u2 ∈ {aliased, unique}
 > mode rels
 >   (u2,u1) ∉ {(unique,aliased)}
->   (a2,a1) ∈ {(global,global), (borrowed,borrowed)}
+>   (a2,a1) ∉ {(borrowed,global)}
 >   r1-r2 <= 0
 
 fun x => x
@@ -163,7 +165,7 @@ match left(unit) with left(x) => left(x) | right(y) => right(y)
 >   u6 ∈ {aliased, unique}
 > mode rels
 >   (u6,u1) ∉ {(unique,aliased)}
->   (a6,a1) ∈ {(global,global), (borrowed,borrowed)}
+>   (a6,a1) ∉ {(borrowed,global)}
 >   (a5,a1) ∉ {(borrowed,global)}
 >   (a3,a1) ∉ {(borrowed,global)}
 >   r1-r6 <= 0
@@ -240,7 +242,7 @@ let shared = (unit, unit) in (fun f => f shared, fun g => g shared)
 >   r7 ∈ [0, inf]
 >   a7 ∈ {borrowed, global}
 > mode rels
->   (a5,a4) ∈ {(global,global), (borrowed,borrowed)}
+>   (a5,a4) ∉ {(borrowed,global)}
 >   r4-r5 <= 0
 >   r1-r4 ∈ [0, inf]
 
@@ -274,7 +276,7 @@ let shared = ((unit, unit) : (unit *[unique] unit)) in (fun f => f shared, fun g
 >   r7 ∈ [0, inf]
 >   a7 ∈ {borrowed, global}
 > mode rels
->   (a5,a4) ∈ {(global,global), (borrowed,borrowed)}
+>   (a5,a4) ∉ {(borrowed,global)}
 >   r4-r5 <= 0
 >   r1-r4 ∈ [0, inf]
 

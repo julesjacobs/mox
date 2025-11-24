@@ -26,14 +26,23 @@ borrow a = $(unit, p) for b = fst a in let! (q,r) = a in (b, q)
 >   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 
-(* This ought to be OK but is rejected. Related to Leo's ideas? *)
 let fst = (fun p => let (x,y) = p in x) in
 let p = (unit, unit) in
 borrow a = $(p, unit) for b = fst a in let! (q,r) = a in (b, q)
-> error: mode solver detected areality inconsistency
+> ((unit *[u=aliased a=global r=r3] unit) *[u=u1 a=a2 r=r2] (unit *[u=aliased a=a1 r=r1] unit))
+> mode vars
+>   r1 ∈ [0, inf]
+>   a1 ∈ {borrowed, global}
+>   r2 ∈ [0, inf]
+>   a2 ∈ {borrowed, global}
+>   u1 ∈ {aliased, unique}
+>   r3 ∈ [0, inf]
+> mode rels
+>   r2-r3 <= 0
+>   r1-r2 ∈ [0, inf]
 
 borrow a = (unit, unit) for b = a in let! (q,r) = a in (b, q)
-> error: mode solver detected areality inconsistency
+> error: mode solver detected uniqueness inconsistency
 
 let x = (unit, unit) in
 borrow a = x for b = (let (q,r) = a in q) in let! (q,r) = a in (b,a)

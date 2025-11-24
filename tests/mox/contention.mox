@@ -42,10 +42,11 @@ let r = ref unit in
 let f = fun x => x in
 let g = f : unit ->[portable] unit in
 (f, g)
-> ((unit ->[a=global r=r3 l=many p=portable] unit) *[u=u1 a=global r=r2] (unit ->[a=global r=r1 l=many p=portable] unit))
+> ((unit ->[a=global r=r3 l=many p=portable] unit) *[u=u1 a=a1 r=r2] (unit ->[a=global r=r1 l=many p=portable] unit))
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 >   r3 ∈ [0, inf]
 > mode rels

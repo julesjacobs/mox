@@ -54,6 +54,12 @@ in fold (fun x => fun y => $$(1,2)) (2,3) [1,2,3]
 > mode vars
 >   a1 ∈ {borrowed, global}
 
+(* Concurrency: catching data races *)
+let r = ref 3 in
+let g = fun x => r := !r + x in
+let _ = fork (g 1) in g 2
+> error: mode solver detected portability inconsistency
+
 (* Destructive pair matching is only allowed on unique pairs *)
 let x = (1,2) in 
 let! (a,b) = x in a
@@ -86,7 +92,7 @@ let x = (1,2) in
 let r = ref (3,4) in
 let fst = (fun p => let _ = (r := p) in let (x,y) = p in x) in
 borrow y = x for z = fst y in let! (a,b) = y in (z,b)
-> error: mode solver detected areality inconsistency
+> error: mode solver detected uniqueness inconsistency
 
 (* We can store aliased data in unique data *)
 let x = (1,2) in
@@ -97,8 +103,48 @@ let! (a,b) = y in a
 >   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, global}
 
-(* Concurrency: catching data races *)
-let r = ref 3 in
-let g = fun x => r := !r + x in
-let _ = fork (g 1) in g 2
-> error: mode solver detected portability inconsistency
+(* Partial borrowing *)
+let map = fun f => rec go xs => match xs with [] => [] | x :: xs => f x :: go xs in
+let fst = fun p => let (a,b) = p in a in
+let lst = [([1],[2]),([3],[4]),([5],[6])] in
+borrow xs = lst for ys = map fst xs in
+(xs, ys)
+> ((list[u=u5 a=a4 r=r7] ((list[u=aliased a=global r=r6] int) *[u=u4 a=a3 r=r5] (list[u=u3 a=a2 r=r4] int))) *[u=u2 a=a1 r=r3] (list[u=u1 a=global r=r2] (list[u=aliased a=global r=r1] int)))
+> mode vars
+>   r1 ∈ [0, inf]
+>   r2 ∈ [0, inf]
+>   u1 ∈ {aliased, unique}
+>   r3 ∈ [0, inf]
+>   a1 ∈ {borrowed, global}
+>   u2 ∈ {aliased, unique}
+>   r4 ∈ [0, inf]
+>   a2 ∈ {borrowed, global}
+>   u3 ∈ {aliased, unique}
+>   r5 ∈ [0, inf]
+>   a3 ∈ {borrowed, global}
+>   u4 ∈ {aliased, unique}
+>   r6 ∈ [0, inf]
+>   r7 ∈ [0, inf]
+>   a4 ∈ {borrowed, global}
+>   u5 ∈ {aliased, unique}
+> mode rels
+>   (u5,u2) ∉ {(unique,aliased)}
+>   (u4,u2) ∉ {(unique,aliased)}
+>   (u3,u2) ∉ {(unique,aliased)}
+>   (a4,a1) ∉ {(borrowed,global)}
+>   (a3,a1) ∉ {(borrowed,global)}
+>   (a2,a1) ∉ {(borrowed,global)}
+>   r6-r7 ∈ [0, inf]
+>   r5-r7 ∈ [0, inf]
+>   r4-r7 ∈ [0, inf]
+>   r3-r7 <= 0
+>   r5-r6 <= 0
+>   r3-r6 <= 0
+>   r2-r6 <= 0
+>   r1-r6 <= 0
+>   r4-r5 ∈ [0, inf]
+>   r3-r5 <= 0
+>   r3-r4 <= 0
+>   r2-r3 ∈ [0, inf]
+>   r1-r3 ∈ [0, inf]
+>   r1-r2 ∈ [0, inf]

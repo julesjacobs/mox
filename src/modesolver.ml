@@ -127,6 +127,23 @@ let assert_linearity_dagger lin_var uniq_var =
 let assert_portability_dagger port_var cont_var =
   assert_relation portability_contention_dagger_relation port_var cont_var
 
+let borrow_uniqueness_relation =
+  Relations.make
+    [ (Modes.Uniqueness.unique, Modes.Uniqueness.aliased);
+      (Modes.Uniqueness.aliased, Modes.Uniqueness.aliased) ]
+
+let borrow_uniqueness_areality_relation =
+  Relations.make
+    [ (Modes.Uniqueness.unique, Modes.Areality.borrowed);
+      (Modes.Uniqueness.aliased, Modes.Areality.global);
+      (Modes.Uniqueness.aliased, Modes.Areality.borrowed) ]
+
+let assert_borrow_uniqueness src dst =
+  assert_relation borrow_uniqueness_relation src dst
+
+let assert_borrow_areality uniq_var are_var =
+  assert_relation borrow_uniqueness_areality_relation uniq_var are_var
+
 module type AXIS = sig
   type t
 

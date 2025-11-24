@@ -96,11 +96,11 @@ fun f => rec map xs => match xs with [] => [] | x :: xs => f x :: map xs
 >   (a13,a1) ∉ {(borrowed,global)}
 >   (a12,a1) ∉ {(borrowed,global)}
 >   (a11,a1) ∉ {(borrowed,global)}
->   (a10,a1) ∈ {(global,global), (borrowed,borrowed)}
+>   (a10,a1) ∉ {(borrowed,global)}
 >   (a9,a1) ∉ {(borrowed,global)}
 >   (a8,a3) ∉ {(borrowed,global)}
 >   (a7,a3) ∉ {(borrowed,global)}
->   (a6,a3) ∈ {(global,global), (borrowed,borrowed)}
+>   (a6,a3) ∉ {(borrowed,global)}
 >   (a5,a2) ∉ {(borrowed,global)}
 >   (p3,p1) ∉ {(nonportable,portable)}
 >   r1-r13 <= 0

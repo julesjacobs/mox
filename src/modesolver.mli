@@ -18,6 +18,10 @@ val assert_linearity_dagger :
   Modes.Linearity.t mode_var -> Modes.Uniqueness.t mode_var -> unit
 val assert_portability_dagger :
   Modes.Portability.t mode_var -> Modes.Contention.t mode_var -> unit
+val assert_borrow_uniqueness :
+  Modes.Uniqueness.t mode_var -> Modes.Uniqueness.t mode_var -> unit
+val assert_borrow_areality :
+  Modes.Uniqueness.t mode_var -> Modes.Areality.t mode_var -> unit
 
 module type AXIS_SOLVER = sig
   type mode

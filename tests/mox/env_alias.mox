@@ -9,12 +9,13 @@ let non_shared1 = ((unit, unit) : (unit *[unique] unit)) in
 let non_shared2 = ((unit, unit) : (unit *[unique] unit)) in
 (((fun f => f non_shared1) : ((unit *[unique] unit) -> unit) ->[once] unit),
  ((fun g => g non_shared2) : ((unit *[unique] unit) -> unit) ->[once] unit))
-> ((((unit *[u=unique a=global r=r7] unit) ->[a=global r=r6 l=many p=nonportable] unit) ->[a=global r=r5 l=once p=nonportable] unit) *[u=u1 a=global r=r4] (((unit *[u=unique a=global r=r3] unit) ->[a=global r=r2 l=many p=nonportable] unit) ->[a=global r=r1 l=once p=nonportable] unit))
+> ((((unit *[u=unique a=global r=r7] unit) ->[a=global r=r6 l=many p=nonportable] unit) ->[a=global r=r5 l=once p=nonportable] unit) *[u=u1 a=a1 r=r4] (((unit *[u=unique a=global r=r3] unit) ->[a=global r=r2 l=many p=nonportable] unit) ->[a=global r=r1 l=once p=nonportable] unit))
 > mode vars
 >   r1 ∈ [0, inf]
 >   r2 ∈ [0, inf]
 >   r3 ∈ [0, inf]
 >   r4 ∈ [0, inf]
+>   a1 ∈ {borrowed, global}
 >   u1 ∈ {aliased, unique}
 >   r5 ∈ [0, inf]
 >   r6 ∈ [0, inf]
@@ -89,7 +90,7 @@ let (x, y) = pair in
 >   r3 ∈ [0, inf]
 >   a3 ∈ {borrowed, global}
 > mode rels
->   (a3,a2) ∈ {(global,global), (borrowed,borrowed)}
+>   (a3,a2) ∉ {(borrowed,global)}
 >   r2-r3 <= 0
 >   r1-r2 ∈ [0, inf]
 
@@ -143,7 +144,7 @@ let (x, y) = pair in
 >   r3 ∈ [0, inf]
 >   a3 ∈ {borrowed, global}
 > mode rels
->   (a3,a2) ∈ {(global,global), (borrowed,borrowed)}
+>   (a3,a2) ∉ {(borrowed,global)}
 >   r2-r3 <= 0
 >   r1-r2 ∈ [0, inf]
 
