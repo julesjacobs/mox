@@ -505,7 +505,9 @@ and assert_leq original locked future region_delta =
       assert_future_leq_to original_future future;
       assert_future_leq_to original_future locked_future;
       assert_subtype locked_domain original_domain;
-      assert_subtype original_codomain locked_codomain
+      assert_subtype original_codomain locked_codomain;
+      assert_region_with_delta original_future.regionality locked_future.regionality;
+      assert_region_with_delta original_future.regionality future.regionality
   | _ ->
       type_error "assert_lock: not equivalent"
 
