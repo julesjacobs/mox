@@ -39,7 +39,7 @@ type bin_op =
 
 (** Expressions as described in tex/mox.tex. *)
 type alloc =
-  | Stack
+  | Stack of int
   | Heap
 
 type bind_kind =

@@ -1,7 +1,7 @@
 open Ast
 
 let stack_prefix = function
-  | Stack -> "$"
+  | Stack region -> String.make (region + 1) '$'
   | Heap -> ""
 
 let bind_prefix = function

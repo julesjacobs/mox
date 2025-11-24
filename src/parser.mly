@@ -27,6 +27,9 @@ let ref_mode_from_list names =
          (String.concat ", " remaining));
   { contention }
 
+let alloc_of_stack_depth depth =
+  if depth <= 0 then Heap else Stack (depth - 1)
+
 let rec list_literal alloc elems =
   List.fold_right
     (fun elem acc -> ListCons (alloc, elem, acc))
@@ -68,13 +71,17 @@ let rec list_literal alloc elems =
 %inline open_inr:
   | RIGHT LPAREN { () }
 
+stack_prefix_nonempty:
+  | STACK { 1 }
+  | STACK stack_prefix_nonempty { $2 + 1 }
+
 %inline with_opt_stack(Open):
-  | Open       { Heap }
-  | STACK Open { Stack }
+  | Open { Heap }
+  | stack_prefix_nonempty Open { alloc_of_stack_depth $1 }
 
 %inline kw_with_opt_stack(Kw):
-  | Kw         { Heap }
-  | STACK Kw   { Stack }
+  | Kw { Heap }
+  | stack_prefix_nonempty Kw { alloc_of_stack_depth $1 }
 
 expr_eof:
   | expr EOF { $1 }

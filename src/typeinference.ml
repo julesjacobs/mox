@@ -154,9 +154,9 @@ let _force_storage_local (storage : storage_mode) =
   Modesolver.Areality.restrict_domain [Areality.local] storage.areality;
   Modesolver.Regionality.restrict_domain [Regionality.stack] storage.regionality
 
-let force_future_local (future : future_mode) =
+let force_future_local (future : future_mode) region =
   Modesolver.Areality.restrict_domain [Areality.local] future.areality;
-  Modesolver.Regionality.restrict_domain [Regionality.stack] future.regionality
+  Modesolver.Regionality.restrict_domain [Regionality.of_int region] future.regionality
 
 let force_storage_unique (storage : storage_mode) =
   Modesolver.Uniqueness.restrict_domain [Uniqueness.unique] storage.uniqueness
@@ -165,9 +165,11 @@ let force_storage_unique (storage : storage_mode) =
 let fresh_storage ~alloc () =
   let s = fresh_storage_mode () in
   (match alloc with
-  | Ast.Stack -> 
-    (* force_storage_local s; *)
-    Modesolver.Regionality.restrict_domain [Regionality.of_int 0] s.regionality
+  | Ast.Stack region ->
+      (* force_storage_local s; *)
+      Modesolver.Regionality.restrict_domain
+        [Regionality.of_int region]
+        s.regionality
   | Ast.Heap ->
       Modesolver.Regionality.restrict_domain [Regionality.heap] s.regionality);
   s
@@ -175,7 +177,7 @@ let fresh_storage ~alloc () =
 let fresh_future ~alloc () =
   let f = fresh_future_mode () in
   (match alloc with
-  | Ast.Stack -> force_future_local f
+  | Ast.Stack region -> force_future_local f region
   | Ast.Heap ->
       Modesolver.Regionality.restrict_domain [Regionality.heap] f.regionality);
   f

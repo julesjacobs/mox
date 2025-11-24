@@ -4,6 +4,26 @@ $(unit, unit)
 >   a1 ∈ {borrowed, global, local, regional}
 >   u1 ∈ {aliased, unique}
 
+region $$(1,2)
+> (int *[u=u1 a=global r=r1] int)
+> mode vars
+>   r1 ∈ [0, inf]
+>   u1 ∈ {aliased, unique}
+
+$$(unit, unit)
+> (unit *[u=u1 a=a1 r=r1] unit)
+> mode vars
+>   r1 ∈ [0, 1]
+>   a1 ∈ {borrowed, global, local, regional}
+>   u1 ∈ {aliased, unique}
+
+$$$(1,2)
+> (int *[u=u1 a=a1 r=r1] int)
+> mode vars
+>   r1 ∈ [0, 2]
+>   a1 ∈ {borrowed, global, local, regional}
+>   u1 ∈ {aliased, unique}
+
 $left(unit)
 > (unit +[u=u1 a=a1 r=0] 'a)
 > where

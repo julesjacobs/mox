@@ -74,7 +74,7 @@ These component-wise relations power the mode solver described in `tex/mox.tex`.
 
 ### Stack allocation and locality
 
-Stack-allocated constructors are indicated with `$` and keep their areality at `local`. Such values cannot escape their enclosing `region`:
+Stack-allocated constructors are indicated with `$` and keep their areality at `local`. You can repeat `$` to target an older stack region (`$` = region 0, `$$` = region 1, `$$$` = region 2, …). Such values cannot escape their enclosing `region`:
 
 ```mox
 region

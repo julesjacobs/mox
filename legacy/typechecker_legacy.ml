@@ -435,7 +435,7 @@ let lock_env mode env =
 
 let require_local_storage alloc context (storage : storage_mode) =
   match alloc with
-  | Stack ->
+  | Stack _ ->
       if not (Modes.Areality.equal storage.areality Modes.Areality.local) then
         raise
           (Mode_error
@@ -444,7 +444,7 @@ let require_local_storage alloc context (storage : storage_mode) =
 
 let require_local_future alloc context future =
   match alloc with
-  | Stack ->
+  | Stack _ ->
       if not
            (Modes.Areality.equal future.Modes.Future.areality
               Modes.Areality.local)
@@ -504,7 +504,7 @@ let rec infer_expr env expr =
       let left_ty = infer_expr env_left left in
       let right_ty = infer_expr env_right right in
       let storage =
-        match alloc with Stack -> stack_storage_mode | Heap -> default_storage_mode
+        match alloc with Stack _ -> stack_storage_mode | Heap -> default_storage_mode
       in
       make_pair_ty left_ty storage right_ty
   | Let (_, x, e1, e2) ->
