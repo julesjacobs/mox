@@ -5,9 +5,8 @@ $(unit, unit)
 >   u1 ∈ {aliased, unique}
 
 region $$(1,2)
-> (int *[u=u1 a=global r=r1] int)
+> (int *[u=u1 a=global r=0] int)
 > mode vars
->   r1 ∈ [0, inf]
 >   u1 ∈ {aliased, unique}
 
 $$(unit, unit)

@@ -210,15 +210,29 @@ module Solver = struct
   let get_lower x = 
     match get_dist 0 x.id with Some w -> w | None -> 0
 
+  let implied_upper v_id =
+    let base = Hashtbl.find st.uppers v_id in
+    match Hashtbl.find_opt st.dist v_id with
+    | None -> base
+    | Some row ->
+        Hashtbl.fold
+          (fun target weight acc ->
+            let target_upper = Hashtbl.find st.uppers target in
+            let candidate =
+              if target_upper = infinity then infinity else target_upper - weight
+            in
+            if candidate < acc then candidate else acc)
+          row base
+
   let get_upper x = 
-    Hashtbl.find st.uppers x.id
+    implied_upper x.id
 
   let print_model () =
     Printf.printf "\n--- Transitive Closure Solver ---\n";
     List.iter (fun i ->
       if i <> 0 then
         let lb = match get_dist 0 i with Some w -> if w=infinity then "+oo" else string_of_int w | None -> "0" in
-        let ub = let u = Hashtbl.find st.uppers i in if u=infinity then "+oo" else string_of_int u in
+        let ub = let u = implied_upper i in if u=infinity then "+oo" else string_of_int u in
         Printf.printf "%s: [%s, %s]\n" (var_name i) lb ub
     ) (List.rev st.nodes)
 

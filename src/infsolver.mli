@@ -89,7 +89,7 @@ val assert_predecessor : var -> var -> unit
 (** Returns the current dynamic lower bound of the variable. *)
 val get_lower : var -> int
 
-(** Returns the current static upper bound of the variable. *)
+(** Returns the tightest upper bound implied by the current constraints. *)
 val get_upper : var -> int
 
 (** Prints the current bounds of all variables to stdout. 

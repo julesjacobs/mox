@@ -77,9 +77,7 @@ let x = (region
   let y = $right(unit) in
   r := y) in
 !r
-> (unit +[u=aliased a=global r=r1] unit)
-> mode vars
->   r1 ∈ [0, inf]
+> (unit +[u=aliased a=global r=0] unit)
 
 let r = ref unit in 
 let s = (r, r) in 
