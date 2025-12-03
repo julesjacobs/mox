@@ -8,10 +8,10 @@ let r = ref unit in r := unit
 > unit
 
 let r = ref unit in fork (r := unit)
-> error: mode solver detected contention inconsistency
+> unit
 
 let r = ref unit in fork (let x = !r in unit)
-> error: mode solver detected contention inconsistency
+> unit
 
 let r = ref unit in 
 let g = fun x => r := x in
@@ -21,17 +21,14 @@ g unit
 let r = ref unit in 
 let g = fun x => r := x in
 fork (g unit)
-> error: mode solver detected portability inconsistency
+> unit
 
-(* CR jujacobs: bug! *)
 ref unit : ref unit
 > (ref[c=uncontended u=aliased] unit)
 
-(* CR jujacobs: bug! *)
 ref unit : ref[uncontended] unit
 > (ref[c=uncontended u=aliased] unit)
 
-(* CR jujacobs: bug! *)
 ref unit : ref[contended] unit
 > (ref[c=contended u=aliased] unit)
 
@@ -103,3 +100,13 @@ let r2 = ref unit in
 > mode vars
 >   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, global}
+
+let r = ref 1 in
+let h = fun x => r := x in
+fork (h 2) 
+> unit
+
+let r = ref 1 in
+let h = fun x => r := x in
+let _ = fork (h 2) in h 3
+> error: mode solver detected portability inconsistency

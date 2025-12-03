@@ -127,6 +127,27 @@ let assert_linearity_dagger lin_var uniq_var =
 let assert_portability_dagger port_var cont_var =
   assert_relation portability_contention_dagger_relation port_var cont_var
 
+let ref_writable_relation =
+  Relations.make
+    [ (Modes.Contention.uncontended, Modes.Uniqueness.unique);
+      (Modes.Contention.uncontended, Modes.Uniqueness.aliased);
+      (Modes.Contention.shared, Modes.Uniqueness.unique);
+      (Modes.Contention.contended, Modes.Uniqueness.unique) ]
+
+let ref_readable_relation =
+  Relations.make
+    [ (Modes.Contention.uncontended, Modes.Uniqueness.unique);
+      (Modes.Contention.uncontended, Modes.Uniqueness.aliased);
+      (Modes.Contention.shared, Modes.Uniqueness.unique);
+      (Modes.Contention.shared, Modes.Uniqueness.aliased);
+      (Modes.Contention.contended, Modes.Uniqueness.unique) ]
+
+let assert_ref_writable cont_var uniq_var =
+  assert_relation ref_writable_relation cont_var uniq_var
+
+let assert_ref_readable cont_var uniq_var =
+  assert_relation ref_readable_relation cont_var uniq_var
+
 let borrow_uniqueness_relation =
   Relations.make
     [ (Modes.Uniqueness.unique, Modes.Uniqueness.aliased);

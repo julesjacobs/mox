@@ -1370,10 +1370,8 @@ let rec infer_with_env env expr =
   | Ast.Deref e ->
     let ref_ty = infer_with_env env e in
     let payload = TyMeta (fresh_meta ()) in
-    let ref_mode =
-      { contention = Mode_consts.contention Contention.shared;
-        uniqueness = Mode_consts.uniqueness Uniqueness.aliased }
-    in
+    let ref_mode = fresh_ref_mode () in
+    Modesolver.assert_ref_readable ref_mode.contention ref_mode.uniqueness;
     let expected = mk_ref payload ref_mode in
     assert_subtype ref_ty expected;
     payload
@@ -1381,10 +1379,8 @@ let rec infer_with_env env expr =
     let lhs_ty = infer_with_env env lhs in
     let rhs_ty = infer_with_env env rhs in
     let payload = TyMeta (fresh_meta ()) in
-    let ref_mode =
-      { contention = Mode_consts.contention Contention.uncontended;
-        uniqueness = Mode_consts.uniqueness Uniqueness.aliased }
-    in
+    let ref_mode = fresh_ref_mode () in
+    Modesolver.assert_ref_writable ref_mode.contention ref_mode.uniqueness;
     let expected = mk_ref payload ref_mode in
     assert_subtype lhs_ty expected;
     assert_subtype rhs_ty payload;

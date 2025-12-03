@@ -22,6 +22,10 @@ val assert_borrow_uniqueness :
   Modes.Uniqueness.t mode_var -> Modes.Uniqueness.t mode_var -> unit
 val assert_borrow_areality :
   Modes.Uniqueness.t mode_var -> Modes.Areality.t mode_var -> unit
+val assert_ref_writable :
+  Modes.Contention.t mode_var -> Modes.Uniqueness.t mode_var -> unit
+val assert_ref_readable :
+  Modes.Contention.t mode_var -> Modes.Uniqueness.t mode_var -> unit
 
 module type AXIS_SOLVER = sig
   type mode

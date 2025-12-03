@@ -101,10 +101,10 @@ let r = ref unit in let g = fun x => r := x in g unit
 > unit
 
 let r = ref unit in fork (r := unit)
-> error: mode solver detected contention inconsistency
+> unit
 
 let r = ref unit in fork (let x = !r in x)
-> error: mode solver detected contention inconsistency
+> unit
 
 let x = $(unit, unit) in x
 > (unit *[u=u1 a=a1 r=0] unit)
@@ -182,7 +182,7 @@ let r = ref unit in (r : ref[contended] unit)
 > (ref[c=contended u=aliased] unit)
 
 let r = ref unit in let f = fun x => r := x in fork (f unit)
-> error: mode solver detected portability inconsistency
+> unit
 
 let r = ref unit in fork (let g = fun x => x in g unit)
 > unit
@@ -287,7 +287,7 @@ let shared = ref unit in let _ = shared := unit in shared
 > (ref[c=uncontended u=aliased] unit)
 
 let shared = ref unit in fork (let alias = shared in alias := unit)
-> error: mode solver detected contention inconsistency
+> unit
 
 let shared = left(unit) in let alias = shared in match alias with left(x) => x | right(y) => unit
 > unit
@@ -311,7 +311,7 @@ let u = region (ref unit) in u
 >   c1 ∈ {contended, shared, uncontended}
 
 let r = region (ref unit) in fork (let x = !r in x)
-> error: mode solver detected contention inconsistency
+> unit
 
 let f = fun x => (x, x) in f (ref unit)
 > ((ref[c=c2 u=aliased] unit) *[u=u1 a=a1 r=r1] (ref[c=c1 u=aliased] unit))
@@ -359,10 +359,10 @@ let shared = ref unit in let mk = fun _ => shared in (mk unit, mk unit)
 >   c2 ∈ {contended, shared, uncontended}
 
 let shared = ref unit in let mk = fun _ => !shared in fork (mk unit)
-> error: mode solver detected portability inconsistency
+> unit
 
 let shared = ref unit in let mk = fun _ => shared in fork ((mk unit) := unit)
-> error: mode solver detected contention inconsistency
+> unit
 
 let alias = ref unit in let pair = (alias, alias) in let (a,b) = pair in a := unit
 > unit
