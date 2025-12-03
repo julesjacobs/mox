@@ -110,3 +110,9 @@ let r = ref 1 in
 let h = fun x => r := x in
 let _ = fork (h 2) in h 3
 > error: mode solver detected portability inconsistency
+
+(* CR jujacobs: this could be allowed since we only alias after fork *)
+let r = ref 1 in
+let h = fun x => r := x in
+fork (let _ = (h 2)  in h 3)
+> error: mode solver detected linearity inconsistency
