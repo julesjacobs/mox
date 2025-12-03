@@ -7,7 +7,8 @@ let default_storage_mode =
     regionality = Modes.Regionality.default }
 
 let default_ref_mode =
-  { contention = Modes.Contention.default }
+  { contention = Modes.Contention.default;
+    uniqueness = Modes.Uniqueness.default }
 
 let storage_mode_from_list names =
   let uniqueness, remaining = Modes.Uniqueness.extract names in
@@ -21,11 +22,12 @@ let storage_mode_from_list names =
 
 let ref_mode_from_list names =
   let contention, remaining = Modes.Contention.extract names in
+  let uniqueness, remaining = Modes.Uniqueness.extract remaining in
   if remaining <> [] then
     invalid_arg
-      (Printf.sprintf "Only contention modes are allowed on references, but saw [%s]"
+      (Printf.sprintf "Only contention/uniqueness modes are allowed on references, but saw [%s]"
          (String.concat ", " remaining));
-  { contention }
+  { contention; uniqueness }
 
 let alloc_of_stack_depth depth =
   if depth <= 0 then Heap else Stack (depth - 1)

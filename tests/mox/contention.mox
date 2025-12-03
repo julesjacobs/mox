@@ -1,5 +1,5 @@
 let r = ref unit in r
-> (ref[c=uncontended] unit)
+> (ref[c=uncontended u=unique] unit)
 
 let r = ref unit in !r
 > unit
@@ -25,15 +25,15 @@ fork (g unit)
 
 (* CR jujacobs: bug! *)
 ref unit : ref unit
-> (ref[c=uncontended] unit)
+> (ref[c=uncontended u=aliased] unit)
 
 (* CR jujacobs: bug! *)
 ref unit : ref[uncontended] unit
-> (ref[c=uncontended] unit)
+> (ref[c=uncontended u=aliased] unit)
 
 (* CR jujacobs: bug! *)
 ref unit : ref[contended] unit
-> (ref[c=contended] unit)
+> (ref[c=contended u=aliased] unit)
 
 let r = ref unit in
 (fun x => r := x) : unit ->[portable] unit
@@ -74,7 +74,7 @@ let! (a,b) = x in unit
 > error: mode solver detected uniqueness inconsistency
 
 ref $(unit, unit)
-> (ref[c=uncontended] (unit *[u=aliased a=global r=0] unit))
+> (ref[c=uncontended u=unique] (unit *[u=aliased a=global r=0] unit))
 
 let r = ref left(unit) in
 let x = (region
@@ -89,7 +89,7 @@ r := unit
 > unit
 
 let r = ref unit in (r,r)
-> ((ref[c=c1] unit) *[u=u1 a=a1 r=r1] (ref[c=c1] unit))
+> ((ref[c=c1 u=aliased] unit) *[u=u1 a=a1 r=r1] (ref[c=c1 u=aliased] unit))
 > mode vars
 >   c1 ∈ {contended, shared, uncontended}
 >   r1 ∈ [0, inf]
@@ -99,8 +99,7 @@ let r = ref unit in (r,r)
 let r1 = ref unit in 
 let r2 = ref unit in 
 (r1, r2)
-> ((ref[c=uncontended] unit) *[u=u1 a=a1 r=r1] (ref[c=uncontended] unit))
+> ((ref[c=uncontended u=unique] unit) *[u=unique a=a1 r=r1] (ref[c=uncontended u=unique] unit))
 > mode vars
 >   r1 ∈ [0, inf]
 >   a1 ∈ {borrowed, global}
->   u1 ∈ {aliased, unique}

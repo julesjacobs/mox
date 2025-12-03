@@ -100,8 +100,8 @@ let%expect_test "areality default relation is cartesian product" =
   [%expect {|
     borrowed -> borrowed
     borrowed -> global
-    global -> global
     global -> borrowed
+    global -> global
   |}]
 
 let%expect_test "relation intersections refine results" =

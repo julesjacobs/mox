@@ -1,0 +1,41 @@
+(* Basic unique ref *)
+fun x =>
+  let r = (ref x : ref[unique] int) in
+  !r
+> (int ->[a=a1 r=r1 l=l1 p=p1] int)
+> mode vars
+>   p1 ∈ {nonportable, portable}
+>   l1 ∈ {many, never, once}
+>   r1 ∈ [0, inf]
+>   a1 ∈ {borrowed, global}
+
+(* Check printing of unique ref *)
+fun x =>
+  (ref x : ref[unique] int)
+> (int ->[a=a1 r=r1 l=l1 p=p1] (ref[c=uncontended u=unique] int))
+> mode vars
+>   p1 ∈ {nonportable, portable}
+>   l1 ∈ {many, never, once}
+>   r1 ∈ [0, inf]
+>   a1 ∈ {borrowed, global}
+
+(* Check printing of aliased ref *)
+fun x =>
+  (ref x : ref[aliased] int)
+> (int ->[a=a1 r=r1 l=l1 p=p1] (ref[c=uncontended u=aliased] int))
+> mode vars
+>   p1 ∈ {nonportable, portable}
+>   l1 ∈ {many, never, once}
+>   r1 ∈ [0, inf]
+>   a1 ∈ {borrowed, global}
+
+(* Subtyping check *)
+fun r =>
+  let r2 = (r : ref[unique] int) in
+  unit
+> ((ref[c=uncontended u=unique] int) ->[a=a1 r=r1 l=l1 p=p1] unit)
+> mode vars
+>   p1 ∈ {nonportable, portable}
+>   l1 ∈ {many, never, once}
+>   r1 ∈ [0, inf]
+>   a1 ∈ {borrowed, global}

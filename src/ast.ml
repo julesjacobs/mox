@@ -12,7 +12,8 @@ type storage_mode =
     regionality : Modes.Regionality.t }
 
 type ref_mode =
-  { contention : Modes.Contention.t }
+  { contention : Modes.Contention.t;
+    uniqueness : Modes.Uniqueness.t }
 
 type ty =
   | TyUnit

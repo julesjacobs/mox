@@ -134,7 +134,8 @@ and string_of_ty = function
       Printf.sprintf "(%s%s)" prefix (string_of_ty elem)
   | TyRef (payload, mode) ->
       let parts =
-        [ Modes.Contention.to_short_string mode.contention ]
+        [ Modes.Contention.to_short_string mode.contention;
+          Modes.Uniqueness.to_short_string mode.uniqueness ]
         |> List.filter (fun s -> String.trim s <> "")
       in
       let suffix =

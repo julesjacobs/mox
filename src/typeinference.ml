@@ -70,7 +70,8 @@ type storage_mode =
     regionality : Modesolver.Regionality.var }
 
 type ref_mode =
-  { contention : Modesolver.Contention.var }
+  { contention : Modesolver.Contention.var;
+    uniqueness : Modesolver.Uniqueness.var }
 
 (* Used on function types and lock constraints. *)
 type future_mode =
@@ -135,7 +136,8 @@ let fresh_storage_mode () : storage_mode =
     regionality = Modesolver.Regionality.new_var () }
 
 let fresh_ref_mode () : ref_mode =
-  { contention = Modesolver.Contention.new_var () }
+  { contention = Modesolver.Contention.new_var ();
+    uniqueness = Modesolver.Uniqueness.new_var () }
 
 let fresh_future_mode () : future_mode =
   { linearity = Modesolver.Linearity.new_var ();
@@ -191,11 +193,12 @@ module Mode_consts = struct
   let regionality value = Modesolver.Regionality.new_var ~domain:[value] ()
 end
 
-let const_ref_mode ~contention : ref_mode =
-  { contention = Mode_consts.contention contention }
+let const_ref_mode ~contention ?(uniqueness = Uniqueness.aliased) () : ref_mode =
+  { contention = Mode_consts.contention contention;
+    uniqueness = Mode_consts.uniqueness uniqueness }
 
 let precise_ref_mode () =
-  const_ref_mode ~contention:Contention.uncontended
+  const_ref_mode ~uniqueness:Uniqueness.unique ~contention:Contention.uncontended ()
 
 let nonborrowed_arealities = [ Areality.global ]
 
@@ -297,7 +300,8 @@ let push_storage_to_components (storage : storage_mode) (container_mode : mode_v
   component_mode
 
 let assert_ref_within (ref_mode : ref_mode) (mode_vars : mode_vars) =
-  Modesolver.Contention.assert_leq_in ref_mode.contention mode_vars.contention
+  Modesolver.Contention.assert_leq_in ref_mode.contention mode_vars.contention;
+  Modesolver.Uniqueness.assert_leq_in ref_mode.uniqueness mode_vars.uniqueness
 
 let push_ref_to_payload (ref_mode : ref_mode) (container_mode : mode_vars) =
   let payload_mode = fresh_mode_vars () in
@@ -523,6 +527,8 @@ and assert_leq ?(borrow = false) original locked future region_delta =
   | TyRef (original_payload, original_mode), TyRef (locked_payload, locked_mode) ->
       log_lock "ref lock enforcement";
       Modesolver.Contention.assert_leq_to original_mode.contention locked_mode.contention;
+      Modesolver.Uniqueness.assert_leq_to original_mode.uniqueness locked_mode.uniqueness;
+      Modesolver.assert_linearity_dagger future.linearity locked_mode.uniqueness;
       Modesolver.assert_portability_dagger future.portability locked_mode.contention;
       (* CR jujacobs: check this carefully. Do we need ot make that nonportable? *)
       assert_subtype original_payload locked_payload;
@@ -576,7 +582,8 @@ let storage_mode_of_ast (storage : Ast.storage_mode) : storage_mode =
     regionality = Mode_consts.regionality storage.regionality }
 
 let ref_mode_of_ast (mode : Ast.ref_mode) : ref_mode =
-  { contention = Mode_consts.contention mode.contention }
+  { contention = Mode_consts.contention mode.contention;
+    uniqueness = Mode_consts.uniqueness mode.uniqueness }
 
 let future_mode_of_ast (future : Future.t) : future_mode =
   { linearity = Mode_consts.linearity future.linearity;
@@ -804,7 +811,7 @@ let string_of_storage_mode state (storage : storage_mode) =
     (render_reg state storage.regionality)
 
 let string_of_ref_mode state (mode : ref_mode) =
-  Printf.sprintf "c=%s" (render_cont state mode.contention)
+  Printf.sprintf "c=%s u=%s" (render_cont state mode.contention) (render_uni state mode.uniqueness)
 
 let string_of_future_mode state (future : future_mode) =
   Printf.sprintf "a=%s r=%s l=%s p=%s"
@@ -1364,7 +1371,8 @@ let rec infer_with_env env expr =
     let ref_ty = infer_with_env env e in
     let payload = TyMeta (fresh_meta ()) in
     let ref_mode =
-      { contention = Mode_consts.contention Contention.shared }
+      { contention = Mode_consts.contention Contention.shared;
+        uniqueness = Mode_consts.uniqueness Uniqueness.aliased }
     in
     let expected = mk_ref payload ref_mode in
     assert_subtype ref_ty expected;
@@ -1374,7 +1382,8 @@ let rec infer_with_env env expr =
     let rhs_ty = infer_with_env env rhs in
     let payload = TyMeta (fresh_meta ()) in
     let ref_mode =
-      { contention = Mode_consts.contention Contention.uncontended }
+      { contention = Mode_consts.contention Contention.uncontended;
+        uniqueness = Mode_consts.uniqueness Uniqueness.aliased }
     in
     let expected = mk_ref payload ref_mode in
     assert_subtype lhs_ty expected;
